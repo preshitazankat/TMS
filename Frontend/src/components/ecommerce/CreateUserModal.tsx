@@ -1,0 +1,148 @@
+import React, { useState, ChangeEvent, FormEvent } from "react";
+
+interface UserForm {
+  name: string;
+  email: string;
+  password: string;
+  department: string;
+  designation:string;
+  role: "Admin" | "Sales" | "TL" | "Developer";
+}
+
+interface CreateUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (user: UserForm) => void;
+}
+
+const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCreate }) => {
+  const [form, setForm] = useState<UserForm>({
+    name: "",
+    email: "",
+    password: "",
+    department: "",
+    designation:"",
+    role: "Developer",
+  });
+
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  setForm({ ...form, [e.target.name]: e.target.value });
+};
+ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  try {
+    // Call the onCreate callback first (optional, if you want local state update)
+    onCreate(form);
+
+    // Send data to your backend
+    const response = await fetch(`${apiUrl}/users/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to create user");
+    }
+    localStorage.setItem("token", data.token);
+
+    console.log("User created:", data);
+
+    // Reset form after successful creation
+    setForm({ name: "", email: "", password: "", department: "",designation:"", role: "Developer" });
+
+    // Close the modal
+    onClose();
+  } catch (error) {
+    console.error("Error creating user:", error);
+    alert("Failed to create user. Please try again.");
+  }
+};
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Create New User</h2>
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <input
+            name="name"
+            placeholder="Name"
+            value={form.name}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            required
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            required
+          />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            required
+          />
+          <input
+            name="department"
+            placeholder="Department"
+            value={form.department}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          />
+          <input
+            name="designation"
+            placeholder="Designation"
+            value={form.designation}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+          />
+          <select
+  name="role"
+  value={form.role}
+  onChange={handleChange}
+  className="w-full border p-2 rounded"
+  required
+>
+  <option value="Admin">Admin</option>
+  <option value="Sales">Sales</option>
+  <option value="TL">TL</option>
+  <option value="Developer">Developer</option>
+</select>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateUserModal;
