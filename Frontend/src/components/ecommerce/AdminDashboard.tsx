@@ -98,22 +98,27 @@ const AdminDashboard: React.FC = () => {
             </thead>
             <tbody>
               {filteredUsers.map((user, idx) => (
-                <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-white">
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{idx + 1}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.name}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.email}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.department}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.designation}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.role}</td>
-                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex gap-2">
-                    <button
-                      onClick={() => handleEditClick(user)}
-                      className="px-3 py-1 text-xs font-medium rounded-md bg-yellow-400 text-gray-900 hover:bg-yellow-500"
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
+                <tr
+  key={user._id}
+  className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-white"
+>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{idx + 1}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.name}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.email}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.department}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.designation}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.role}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <button
+      onClick={() => handleEditClick(user)}
+      className="px-3 py-1 text-xs font-medium rounded-md bg-yellow-400 text-gray-900 hover:bg-yellow-500"
+    >
+      Edit
+    </button>
+  </td>
+</tr>
+
+               
               ))}
             </tbody>
           </table>

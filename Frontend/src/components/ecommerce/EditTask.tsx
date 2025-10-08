@@ -118,7 +118,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   //   "Drashti Pipaliya",
   // ];
 
-  const DeliveryTypes = ["API", "Data Service"];
+  const DeliveryTypes = ["API", "Data as a Service"];
   const PlatformTypes = ["Web", "App", "Both"];
 
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
