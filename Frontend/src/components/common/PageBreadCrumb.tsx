@@ -37,7 +37,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ items }) => {
                 )}
                 {!isLast && (
                   <svg
-                    className="stroke-current"
+                    className="stroke-current text-white"
                     width="17"
                     height="16"
                     viewBox="0 0 17 16"

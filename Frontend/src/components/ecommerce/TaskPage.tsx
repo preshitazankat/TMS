@@ -63,7 +63,7 @@ const TaskPage: React.FC = () => {
   const fetchTasks = async () => {
     try {
       const queryParams = new URLSearchParams({
-        search: searchText,
+        search: searchText.trim(),
         status: statusFilter,
         page: page.toString(),
         limit: limit.toString(),
@@ -198,7 +198,7 @@ if (role === "Developer" && decoded) {
           { title: "Tasks", path: "/tasks" },
         ]}
       />
-
+ 
       {/* Search + Filter + Create */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex gap-2 flex-1">
@@ -371,7 +371,7 @@ if (role === "Developer" && decoded) {
           >
             Prev
           </button>
-          <span className="px-3 py-1">
+          <span className="px-3 py-1 text-white">
             {page} / {totalPages}
           </span>
           <button

@@ -170,7 +170,7 @@ export const updateTask = async (req, res) => {
     //   ? normalizeEnum(body.priority, ["High", "Medium", "Low",], "Medium")
     //   : undefined;
     const typeOfDelivery = body.typeOfDelivery
-      ? normalizeEnum(body.typeOfDelivery, ["api", "data as aservice"], undefined)
+      ? normalizeEnum(body.typeOfDelivery, ["api", "data as a aservice"], undefined)
       : undefined;
     const typeOfPlatform = body.typeOfPlatform
       ? normalizeEnum(body.typeOfPlatform, ["web", "app", "both"], undefined)
@@ -372,75 +372,205 @@ export const submitTask = async (req, res) => {
 
 
 
+// export const getTask = async (req, res) => {
+//   try {
+//     const { search, status, page = 1, limit = 10 } = req.query;
+//     const query = {};
+
+//     // search filter
+//     if (search) {
+//       const searchRegex = new RegExp(search, "i");
+//       query.$or = [
+//         { projectCode: searchRegex },
+//         { title: searchRegex },
+//         { assignedTo: searchRegex },
+//         { assignedBy: searchRegex },
+//         { domain: { $elemMatch: { $regex: searchRegex } } },
+//       ];
+//     }
+
+//     if (status) query.status = status.toLowerCase();
+
+//     let token = req.headers.authorization?.split(" ")[1];
+// let userId;
+// let role;
+// if (token) {
+//   const decoded = jwtDecode(token);
+//   userId = decoded?.id;
+//   role = decoded?.role;
+// }
+
+
+
+// //    if (role === "Developer" && userId) {
+// //   query.$or = [
+// //     { assignedTo: userId }, // matches ObjectId
+// //     { [`developers.${userId}`]: { $exists: true } } // keep if developers is stored as map
+// //   ];
+// // }
+
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//     // fetch tasks
+//     let tasksRaw = await Task.find(query)
+//   .populate("assignedBy", "name role")
+//   .populate("assignedTo", "name role")
+//   .sort({ _id: -1 })
+//   .skip(skip)
+//   .limit(parseInt(limit))
+//   .lean();
+
+//   if (search) {
+//   const searchLower = search.toLowerCase();
+//   tasksRaw = tasksRaw.filter(task => {
+//     const assignedByName = task.assignedBy?.name?.toLowerCase() || "";
+//     const assignedToName = task.assignedTo?.name?.toLowerCase() || "";
+//     const projectCode = task.projectCode?.toLowerCase() || "";
+//     const title = task.title?.toLowerCase() || "";
+
+//     const domainStr = Object.keys(task.developers || {})
+//       .concat(task.domain || [])
+//       .join(" ")
+//       .toLowerCase();
+
+//     return (
+//       projectCode.includes(searchLower) ||
+//       title.includes(searchLower) ||
+//       assignedByName.includes(searchLower) ||
+//       assignedToName.includes(searchLower) ||
+//       domainStr.includes(searchLower)
+//     );
+//   });
+// }
+
+// if (role === "Developer" && userId) {
+//   tasksRaw = tasksRaw.filter(task => {
+//     // assignedTo can be populated object or string
+//     const assignedToId =
+//       typeof task.assignedTo === "string"
+//         ? task.assignedTo
+//         : task.assignedTo?._id?.toString();
+
+//     const assignedToMatches = assignedToId === userId;
+
+//     const developersMatches = Object.values(task.developers || {}).some(
+//       devs => devs.map(String).includes(userId) // ensure strings
+//     );
+
+//     return assignedToMatches || developersMatches;
+//   });
+// }
+//     const totalCount = await Task.countDocuments(query);
+//     const totalPages = Math.ceil(totalCount / limit);
+
+//     // populate developers map with names
+//     for (const task of tasksRaw) {
+//       const devMap = decodeDevelopers(task.developers || {});
+//       for (const domain of Object.keys(devMap)) {
+//         const devIds = devMap[domain] || [];
+//         if (devIds.length) {
+//           const users = await User.find({ _id: { $in: devIds } }).select("name");
+//           devMap[domain] = users.map(u => u.name);
+//         } else {
+//           devMap[domain] = [];
+//         }
+//       }
+//       task.developers = devMap;
+
+//       // decode submissions if needed
+//       task.submissions = decodeSubmissions(task.submissions || {});
+//       task.status = applyDelayedStatus(task).status;
+
+//       // convert assignedBy/assignedTo to name strings
+//       task.assignedBy = task.assignedBy?.name || task.assignedBy || "-";
+//       task.assignedTo = task.assignedTo?.name || task.assignedTo || "-";
+//     }
+
+//     res.json({ tasks: tasksRaw, totalCount, totalPages, currentPage: parseInt(page) });
+//   } catch (err) {
+//     console.error("GetTasks Error:", err);
+//     res.status(500).json({ error: err.message || "Server error" });
+//   }
+// };
+
+
+// STATS
+
+
+
 export const getTask = async (req, res) => {
   try {
-    const { search, status, page = 1, limit = 10 } = req.query;
-    const query = {};
+    const { search = "", status, page = 1, limit = 10 } = req.query;
 
-    // search filter
-    if (search) {
-      const searchRegex = new RegExp(search, "i");
-      query.$or = [
-        { projectCode: searchRegex },
-        { title: searchRegex },
-        { assignedTo: searchRegex },
-        { assignedBy: searchRegex },
-        { domain: { $elemMatch: { $regex: searchRegex } } },
-      ];
-    }
-
-    if (status) query.status = status.toLowerCase();
-
+    // decode user role
     let token = req.headers.authorization?.split(" ")[1];
-let userId;
-let role;
-if (token) {
-  const decoded = jwtDecode(token);
-  userId = decoded?.id;
-  role = decoded?.role;
-}
-
-
-
-//    if (role === "Developer" && userId) {
-//   query.$or = [
-//     { assignedTo: userId }, // matches ObjectId
-//     { [`developers.${userId}`]: { $exists: true } } // keep if developers is stored as map
-//   ];
-// }
+    let userId, role;
+    if (token) {
+      const decoded = jwtDecode(token);
+      userId = decoded?.id;
+      role = decoded?.role;
+    }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // fetch tasks
+    // fetch all tasks (filtered by status if provided)
+    const query = {};
+    if (status) query.status = status.toLowerCase();
+
     let tasksRaw = await Task.find(query)
-  .populate("assignedBy", "name role")
-  .populate("assignedTo", "name role")
-  .sort({ _id: -1 })
-  .skip(skip)
-  .limit(parseInt(limit))
-  .lean();
+      .populate("assignedBy", "name role")
+      .populate("assignedTo", "name role")
+      .sort({ _id: -1 })
+      .lean();
 
-if (role === "Developer" && userId) {
-  tasksRaw = tasksRaw.filter(task => {
-    // assignedTo can be populated object or string
-    const assignedToId =
-      typeof task.assignedTo === "string"
-        ? task.assignedTo
-        : task.assignedTo?._id?.toString();
+    // role-based restriction (Developer sees only their tasks)
+    if (role === "Developer" && userId) {
+      tasksRaw = tasksRaw.filter(task => {
+        const assignedToId =
+          typeof task.assignedTo === "string"
+            ? task.assignedTo
+            : task.assignedTo?._id?.toString();
 
-    const assignedToMatches = assignedToId === userId;
+        const assignedToMatches = assignedToId === userId;
 
-    const developersMatches = Object.values(task.developers || {}).some(
-      devs => devs.map(String).includes(userId) // ensure strings
-    );
+        const developersMatches = Object.values(task.developers || {}).some(
+          devs => devs.map(String).includes(userId)
+        );
 
-    return assignedToMatches || developersMatches;
-  });
-}
-    const totalCount = await Task.countDocuments(query);
+        return assignedToMatches || developersMatches;
+      });
+    }
+
+    // search filter
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      tasksRaw = tasksRaw.filter(task => {
+        const assignedByName = task.assignedBy?.name?.toLowerCase() || "";
+        const assignedToName = task.assignedTo?.name?.toLowerCase() || "";
+        const projectCode = task.projectCode?.toLowerCase() || "";
+        const title = task.title?.toLowerCase() || "";
+        const domainStr = Object.keys(task.developers || {})
+          .concat(task.domain || [])
+          .join(" ")
+          .toLowerCase();
+
+        return (
+          projectCode.includes(searchLower) ||
+          title.includes(searchLower) ||
+          assignedByName.includes(searchLower) ||
+          assignedToName.includes(searchLower) ||
+          domainStr.includes(searchLower)
+        );
+      });
+    }
+
+    const totalCount = tasksRaw.length;
     const totalPages = Math.ceil(totalCount / limit);
 
-    // populate developers map with names
+    // pagination (after filtering)
+    tasksRaw = tasksRaw.slice(skip, skip + parseInt(limit));
+
+    // decode developers & submissions
     for (const task of tasksRaw) {
       const devMap = decodeDevelopers(task.developers || {});
       for (const domain of Object.keys(devMap)) {
@@ -448,30 +578,28 @@ if (role === "Developer" && userId) {
         if (devIds.length) {
           const users = await User.find({ _id: { $in: devIds } }).select("name");
           devMap[domain] = users.map(u => u.name);
-        } else {
-          devMap[domain] = [];
-        }
+        } else devMap[domain] = [];
       }
       task.developers = devMap;
 
-      // decode submissions if needed
       task.submissions = decodeSubmissions(task.submissions || {});
       task.status = applyDelayedStatus(task).status;
 
-      // convert assignedBy/assignedTo to name strings
       task.assignedBy = task.assignedBy?.name || task.assignedBy || "-";
       task.assignedTo = task.assignedTo?.name || task.assignedTo || "-";
     }
 
-    res.json({ tasks: tasksRaw, totalCount, totalPages, currentPage: parseInt(page) });
+    res.json({
+      tasks: tasksRaw,
+      totalCount,
+      totalPages,
+      currentPage: parseInt(page),
+    });
   } catch (err) {
     console.error("GetTasks Error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
-
-
-// STATS
 
 export const getStats = async (req, res) => {
   try {
