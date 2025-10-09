@@ -1,5 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { User } from "./types.ts";
+import { jwtDecode } from "jwt-decode";
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -26,12 +27,13 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form) return;
-    const token = localStorage.getItem("token");
+    
     try {
       const response = await fetch(`${apiUrl}/users/edit/${form._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify(form),
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // send HTTP-only cookie automatically
+      body: JSON.stringify(form),
       });
 
       const data = await response.json();

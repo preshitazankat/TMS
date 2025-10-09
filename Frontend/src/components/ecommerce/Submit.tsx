@@ -304,9 +304,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       if (taskData.developers) setDomains(Object.keys(taskData.developers));
       setTaskDetails(taskData);
     } else if (id) {
-      fetch(`${apiUrl}/tasks/${id}`,{headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },})
+      fetch(`${apiUrl}/tasks/${id}`,{method: "GET",
+  credentials: "include",})
         .then(res => res.json())
         .then(data => {
           setSubmission(prev => ({
@@ -437,7 +436,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       formData.append("platform", submission.platform || "");
       formData.append("domain", submission.domain || "");
       formData.append("country", JSON.stringify(submission.country)); // convert array to JSON string
-      formData.append("feasibleFor", submission.feasibleFor || "");
+   
       formData.append("approxVolume", submission.approxVolume || "");
       formData.append("method", submission.method || "");
       formData.append("userLogin", submission.userLogin ? "true" : "false"); // boolean as string
@@ -464,11 +463,9 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       }
 
       const res = await fetch(`${apiUrl}/tasks/${id}/submit`, {
-        method: "POST",
-        body: formData,
-         headers: {
-    Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-  },
+       method: "POST",
+  body: formData,
+  credentials: "include",
       });
 
       if (!res.ok) {

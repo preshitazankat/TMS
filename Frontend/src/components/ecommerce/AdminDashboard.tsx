@@ -100,9 +100,9 @@ const AdminDashboard: React.FC = () => {
               {filteredUsers.map((user, idx) => (
                 <tr
   key={user._id}
-  className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-white"
+  className="hover:bg-gray-50  transition-colors text-gray-800"
 >
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{idx + 1}</td>
+  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 ">{idx + 1}</td>
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.name}</td>
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.email}</td>
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.department}</td>

@@ -1,10 +1,11 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 
 // Create a new user
 export const createUser = async (req, res) => {
-  const { name, email, password, department,designation, role } = req.body;
+  const { name, email, password, department, designation, role } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: "Name, email, and password are required." });
@@ -25,13 +26,20 @@ export const createUser = async (req, res) => {
   });
   const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
-  const token = jwt.sign({ id: newUser._id,role: newUser.role, email: newUser.email,name: newUser.name }, JWT_SECRET, { expiresIn: "1d" });
+  const token = jwt.sign({ id: newUser._id, role: newUser.role, email: newUser.email, name: newUser.name }, JWT_SECRET, { expiresIn: "1d" });
 
-  //req.cookies.token = token;
+  res.cookie("token", token, {
+    httpOnly: true,       // JS cannot access
+    sameSite: "lax",
+    secure: false,   // CSRF protection
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  });
+
+
 
   await newUser.save();
- res.status(201).json({ message: "User registered successfully", token });
- 
+  res.status(201).json({ message: "User registered successfully" });
+
 };
 
 
@@ -50,10 +58,24 @@ export const loginUser = async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-  const token = jwt.sign({ id: user._id,role:user.role, email: user.email,name: user.name }, JWT_SECRET, { expiresIn: "1d" });
- // req.cookies.token = token;
-  
-  res.json({ message: "Login successful", token });
+  const token = jwt.sign({ id: user._id, role: user.role, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "1d" });
+  // req.cookies.token = token;
+
+  res.cookie("token", token, {
+    httpOnly: false,
+    sameSite: "lax",
+secure: false,
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+
+  console.log("Created JWT:", token);
+
+  res.json({ message: "Login successful" });
+// server login response
+// res
+//   .cookie("token", token, { httpOnly: true })
+//   .json({ role: user.role, name: user.name }); // send minimal info
+
 }
 
 
@@ -88,14 +110,14 @@ export const getUserProfile = async (req, res) => {
 export const editUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { name, email, department,designation, role } = req.body;
+    const { name, email, department, designation, role } = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { name, email, department,designation, role },
+      { name, email, department, designation, role },
       { new: true }
     ).select("-password");
     if (!updatedUser) return res.status(404).json({ message: "User not found" });
-    res.json({ message: "User updated successfully", user: updatedUser });  
+    res.json({ message: "User updated successfully", user: updatedUser });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -104,7 +126,7 @@ export const editUser = async (req, res) => {
 
 export const changePassword = async (req, res) => {
   try {
-     const userId = req.user.id; 
+    const userId = req.user.id;
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
@@ -132,4 +154,14 @@ export const changePassword = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false, // allow http for dev
+    sameSite: "lax",
+    path: "/", // must match the cookie path
+  });
+  res.json({ message: "Logged out successfully" });
 };

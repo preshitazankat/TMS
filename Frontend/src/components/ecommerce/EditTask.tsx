@@ -71,6 +71,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          credentials: "include"
         });
         const data = await res.json();
         setUsers(data); // store all users
@@ -88,35 +89,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
 
 
-  // Dropdown options
-  // const AssignedBy = [
-  //   "Pradeep Laungani",
-  //   "Sunil Veluri",
-  //   "Sejal Gandhi",
-  //   "Sakshi Ahuja",
-  //   "Anasrafi Malek",
-  //   "Devansh Vyas",
-  //   "Vijay Pawar",
-  //   "Jaykrishnan Nair",
-  //   "Rutvika Girase",
-  //   "Anagha Udaykumar",
-  // ];
 
-  // const AssignedTo = ["Bhargav Joshi", "Krushil Gajjar"];
-  // const Developers = [
-  //   "Bhargav Joshi",
-  //   "Nirmal Patel",
-  //   "Hrithik Joshi",
-  //   "Shivam Soni",
-  //   "Danesh Sharma",
-  //   "Ajay Chauhan",
-  //   "Ayush Thakkar",
-  //   "Ayush Patel",
-  //   "Atul Kumar",
-  //   "Sandhya Kumari",
-  //   "Khushi Patel",
-  //   "Drashti Pipaliya",
-  // ];
 
   const DeliveryTypes = ["API", "Data as a Service"];
   const PlatformTypes = ["Web", "App", "Both"];
@@ -128,7 +101,14 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     return pattern.test(url);
   };
 
-  const token = localStorage.getItem("token");
+   const getCookie = (name: string): string | null => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+    return null;
+  };
+
+   const token = getCookie("token");
 
   const normalizeUserId = (user: any) => {
   if (!user) return "";
@@ -159,13 +139,40 @@ const getUserNameById = (id: string) => {
   const user = users.find((u) => u._id === id);
   return user ? user.name : "";
 };
+  const validateForm = () => {
+  const newErrors: Record<string, string> = {};
+
+  if (!task.title.trim()) newErrors.title = "Project title is required";
+  if (!task.assignedBy) newErrors.assignedBy = "Assigned By is required";
+  if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
+  if (!task.description.trim()) newErrors.description = "Description is required";
+  if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
+  if (!task.targetDate) newErrors.targetDate = "Target Date is required";
+  if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
+  if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
+
+  if (!task.sowFile && !task.sowUrl) newErrors.sowFile = "SOW Document (file or URL) is required";
+  else if (task.sowUrl && !isValidDocumentUrl(task.sowUrl)) newErrors.sowUrl = "Invalid SOW URL";
+
+  if (!task.inputFile && !task.inputUrl) newErrors.inputFile = "Input Document (file or URL) is required";
+  else if (task.inputUrl && !isValidDocumentUrl(task.inputUrl)) newErrors.inputUrl = "Invalid Input URL";
+
+  // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
+  // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
+
+  if (!task.domain || task.domain.length === 0) newErrors.domain = "At least one Platform is required";
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
 
 
   useEffect(() => {
   if (!taskData && id) {
     fetch(`${apiUrl}/tasks/${id}`, {
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+       headers: { "Content-Type": "application/json" },
+  credentials: "include", 
     })
       .then((res) => res.json())
       .then((data) => {
@@ -175,6 +182,7 @@ const getUserNameById = (id: string) => {
           assignedBy: normalizeUserId(data.assignedBy),
           assignedTo: normalizeUserId(data.assignedTo),
           developers: normalizeDevelopers(data.developers),
+
           domain: data.domain || [],
           outputFile: Object.values(data.submissions || {})
             .map((sub: any) => sub.files)
@@ -193,7 +201,7 @@ const getUserNameById = (id: string) => {
     };
     setTask(normalizedTask);
   }
-}, [taskData, id, users]);
+}, [taskData, id, users]); 
 
 
   // --------------------------- HANDLERS -----------------------------
@@ -278,6 +286,7 @@ const getUserNameById = (id: string) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    if (!validateForm()) return;
     try {
       const formData = new FormData();
 
@@ -299,10 +308,8 @@ const getUserNameById = (id: string) => {
 
       const res = await fetch(`${apiUrl}/tasks/${id}`, {
         method: "PUT",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+  body: formData,
+  credentials: "include",
       });
 
       const data = await res.json();
@@ -369,6 +376,7 @@ const getUserNameById = (id: string) => {
 
 
           <h1 className="text-3xl font-semibold text-center text-blue-400 mb-8">{task.projectCode ? `[${task.projectCode}] ${task.title}` : "Edit Task"}</h1>
+          {errors.form && <p className="text-red-500 text-center mb-4">{errors.form}</p>}
           <form onSubmit={handleSubmit} className="space-y-6 w-full">
             {/* Title */}
             <div>
@@ -383,6 +391,7 @@ const getUserNameById = (id: string) => {
                 placeholder="Enter project title"
                 className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-gray-100 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
               />
+              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
             </div>
 
             {/* Assigned By & To */}
@@ -404,6 +413,7 @@ const getUserNameById = (id: string) => {
                     </option>
                   ))}
                 </select>
+                {errors.assignedBy && <p className="text-red-500 text-sm mt-1">{errors.assignedBy}</p>}
               </div>
 
               <div>
@@ -423,6 +433,7 @@ const getUserNameById = (id: string) => {
                     </option>
                   ))}
                 </select>
+                {errors.assignedTo && <p className="text-red-500 text-sm mt-1">{errors.assignedTo}</p>}
               </div>
             </div>
 
@@ -532,6 +543,7 @@ const getUserNameById = (id: string) => {
                 placeholder="Write task description..."
                 className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
               />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
             </div>
 
             {/* Sample File */}
@@ -562,6 +574,7 @@ const getUserNameById = (id: string) => {
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
+                {errors.typeOfDelivery && <p className="text-red-500 text-sm mt-1">{errors.typeOfDelivery}</p>}
               </div>
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -579,6 +592,7 @@ const getUserNameById = (id: string) => {
                   ))}
 
                 </select>
+                {errors.typeOfPlatform && <p className="text-red-500 text-sm mt-1">{errors.typeOfPlatform}</p>}
               </div>
             </div>
 

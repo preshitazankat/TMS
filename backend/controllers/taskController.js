@@ -169,9 +169,13 @@ export const updateTask = async (req, res) => {
     // const priority = body.priority
     //   ? normalizeEnum(body.priority, ["High", "Medium", "Low",], "Medium")
     //   : undefined;
-    const typeOfDelivery = body.typeOfDelivery
-      ? normalizeEnum(body.typeOfDelivery, ["api", "data as a aservice"], undefined)
-      : undefined;
+    const typeMap = {
+  "data service": "data as a service",
+  "api": "api",
+};
+
+const typeOfDelivery = typeMap[raw.typeOfDelivery.toLowerCase()] || undefined;
+
     const typeOfPlatform = body.typeOfPlatform
       ? normalizeEnum(body.typeOfPlatform, ["web", "app", "both"], undefined)
       : undefined;
@@ -245,23 +249,174 @@ export const updateTask = async (req, res) => {
 };
 
 // SUBMIT (domain-specific)
+// export const submitTask = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const body = req.body || {};
+    
+
+
+//     // booleans
+//     body.userLogin = body.userLogin === "true" || body.userLogin === true;
+//     body.proxyUsed = body.proxyUsed === "true" || body.proxyUsed === true;
+
+//     // domain (normalize - we take first if array)
+//     let domain = body.domain;
+//     if (typeof domain === "string") {
+//       try {
+//         const parsed = JSON.parse(domain);
+//         domain = Array.isArray(parsed) ? parsed[0] : parsed;
+//       } catch { }
+//     } else if (Array.isArray(domain)) {
+//       domain = domain[0];
+//     }
+
+//     const task = await Task.findById(id);
+//     if (!task) return res.status(404).json({ error: "Task not found" });
+
+//     // ---- FILES handling ----
+//     console.log("Files received:", req.files);
+
+//     const files = req.files.files[0].filename
+//       ? `uploads/${req.files.files[0].filename}`
+//       : null;
+
+
+//     // allow frontend to optionally pass status (e.g. "completed")
+//     const incomingStatus = body.status
+//       ? String(body.status).toLowerCase()
+//       : "submitted";
+
+//     const submissionData = {
+//       platform: body.platform,
+//       userLogin: body.userLogin,
+//       country: body.country,
+//       feasibleFor: body.feasibleFor,
+//       approxVolume: body.approxVolume,
+//       method: body.method,
+//       proxyUsed: body.proxyUsed,
+//       proxyName: body.proxyName,
+//       perRequestCredit: body.perRequestCredit,
+//       totalRequest: body.totalRequest,
+//       lastCheckedDate: body.lastCheckedDate,
+//       complexity: body.complexity,
+//       githubLink: body.githubLink,
+//       files: files,
+//       outputUrl: body.outputUrl || null, // ✅ also store url
+//       loginType: body.loginType,
+//       credentials: body.credentials,
+//       submittedAt: new Date(),
+//       status: incomingStatus,
+//       remarks: body.remarks || "",
+//     };
+
+//     if (!task.submissions || typeof task.submissions !== "object")
+//       task.submissions = {};
+
+//     // helper to set/get from submissions (supports Map or plain object)
+//     const setSubmissionForKey = (safeKey, data) => {
+//       if (task.submissions instanceof Map) {
+//         task.submissions.set(safeKey, data);
+//       } else {
+//         task.submissions[safeKey] = data;
+//       }
+//     };
+
+//     if (domain) {
+//       const safe = domain.replace(/\./g, "‧");
+//       setSubmissionForKey(safe, submissionData);
+//     } else {
+//       // legacy / root-level submission fields
+//       Object.assign(task, submissionData);
+//     }
+
+//     // recompute task status
+//     // if frontend sends status explicitly -> respect that
+//     // recompute task status only if frontend didn't explicitly set one
+//     if (body.status) {
+//       task.status = String(body.status).toLowerCase();
+//     } else {
+//       // decode both developers and submissions for correct comparison
+//       const devKeys = Object.keys(decodeDevelopers(task.developers || {}));
+//       const subsDecoded = decodeSubmissions(task.submissions || {});
+
+//       if (devKeys.length > 0) {
+//         const allSubmitted = devKeys.every((key) => {
+//           const sub = subsDecoded[key];
+//           return sub && sub.status === "submitted";
+//         });
+
+//         if (allSubmitted) {
+//           task.status = "submitted";
+//           if (!task.completeDate) {
+//             task.completeDate = new Date(); // set once
+//           }
+//         } else {
+//           task.status = "in-progress";
+//           task.completeDate = null; // optional: reset if not all submitted
+//         }
+//       } else {
+//         task.status = "in-progress";
+//         task.completeDate = null;
+//       }
+//     }
+    
+
+//     await task.save();
+
+//     const obj = task.toObject();
+//     obj.developers = decodeDevelopers(obj.developers || {});
+//     obj.submissions = decodeSubmissions(obj.submissions || {});
+//     res.json(obj);
+//   } catch (err) {
+//     console.error("SubmitTask Error:", err);
+//     res.status(500).json({ error: err.message || "Server error" });
+//   }
+// };
+
 export const submitTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = req.body || {};
 
+    // ---- ENUM NORMALIZATION ----
+    const normalizeEnum = (value, allowedValues, defaultValue) => {
+      if (!value) return defaultValue;
+      const formatted = String(value).trim().toLowerCase();
+      const match = allowedValues.find(v => v.toLowerCase() === formatted);
+      return match || defaultValue;
+    };
+
+    // Normalize typeOfDelivery and typeOfPlatform
+    body.typeOfDelivery = normalizeEnum(
+      body.typeOfDelivery,
+      ["api", "data as a service"],
+      undefined
+    );
+
+    body.typeOfPlatform = normalizeEnum(
+      body.typeOfPlatform,
+      ["web", "app", "both"],
+      undefined
+    );
+
+    body.complexity = normalizeEnum(
+      body.complexity,
+      ["Low", "Medium", "High", "Very High"],
+      undefined
+    );
 
     // booleans
     body.userLogin = body.userLogin === "true" || body.userLogin === true;
     body.proxyUsed = body.proxyUsed === "true" || body.proxyUsed === true;
 
-    // domain (normalize - we take first if array)
+    // domain (normalize - take first if array)
     let domain = body.domain;
     if (typeof domain === "string") {
       try {
         const parsed = JSON.parse(domain);
         domain = Array.isArray(parsed) ? parsed[0] : parsed;
-      } catch { }
+      } catch {}
     } else if (Array.isArray(domain)) {
       domain = domain[0];
     }
@@ -270,20 +425,17 @@ export const submitTask = async (req, res) => {
     if (!task) return res.status(404).json({ error: "Task not found" });
 
     // ---- FILES handling ----
-    console.log("Files received:", req.files);
+    let files = null;
+    if (req.files?.files?.[0]?.filename) {
+      files = `uploads/${req.files.files[0].filename}`;
+    }
 
-    const files = req.files.files[0].filename
-      ? `uploads/${req.files.files[0].filename}`
-      : null;
-
-
-    // allow frontend to optionally pass status (e.g. "completed")
-    const incomingStatus = body.status
-      ? String(body.status).toLowerCase()
-      : "submitted";
-
+    // Prepare submission data
     const submissionData = {
       platform: body.platform,
+      typeOfDelivery: body.typeOfDelivery,
+      typeOfPlatform: body.typeOfPlatform,
+      complexity: body.complexity,
       userLogin: body.userLogin,
       country: body.country,
       feasibleFor: body.feasibleFor,
@@ -294,21 +446,20 @@ export const submitTask = async (req, res) => {
       perRequestCredit: body.perRequestCredit,
       totalRequest: body.totalRequest,
       lastCheckedDate: body.lastCheckedDate,
-      complexity: body.complexity,
       githubLink: body.githubLink,
       files: files,
-      outputUrl: body.outputUrl || null, // ✅ also store url
+      outputUrl: body.outputUrl || null,
       loginType: body.loginType,
       credentials: body.credentials,
       submittedAt: new Date(),
-      status: incomingStatus,
+      status: body.status ? String(body.status).toLowerCase() : "submitted",
       remarks: body.remarks || "",
     };
 
-    if (!task.submissions || typeof task.submissions !== "object")
+    if (!task.submissions || typeof task.submissions !== "object") {
       task.submissions = {};
+    }
 
-    // helper to set/get from submissions (supports Map or plain object)
     const setSubmissionForKey = (safeKey, data) => {
       if (task.submissions instanceof Map) {
         task.submissions.set(safeKey, data);
@@ -321,34 +472,25 @@ export const submitTask = async (req, res) => {
       const safe = domain.replace(/\./g, "‧");
       setSubmissionForKey(safe, submissionData);
     } else {
-      // legacy / root-level submission fields
       Object.assign(task, submissionData);
     }
 
-    // recompute task status
-    // if frontend sends status explicitly -> respect that
-    // recompute task status only if frontend didn't explicitly set one
-    if (body.status) {
-      task.status = String(body.status).toLowerCase();
-    } else {
-      // decode both developers and submissions for correct comparison
+    // Update task status
+    if (!body.status) {
       const devKeys = Object.keys(decodeDevelopers(task.developers || {}));
       const subsDecoded = decodeSubmissions(task.submissions || {});
-
       if (devKeys.length > 0) {
-        const allSubmitted = devKeys.every((key) => {
+        const allSubmitted = devKeys.every(key => {
           const sub = subsDecoded[key];
           return sub && sub.status === "submitted";
         });
 
         if (allSubmitted) {
           task.status = "submitted";
-          if (!task.completeDate) {
-            task.completeDate = new Date(); // set once
-          }
+          if (!task.completeDate) task.completeDate = new Date();
         } else {
           task.status = "in-progress";
-          task.completeDate = null; // optional: reset if not all submitted
+          task.completeDate = null;
         }
       } else {
         task.status = "in-progress";
@@ -356,19 +498,18 @@ export const submitTask = async (req, res) => {
       }
     }
 
-
     await task.save();
 
     const obj = task.toObject();
     obj.developers = decodeDevelopers(obj.developers || {});
     obj.submissions = decodeSubmissions(obj.submissions || {});
     res.json(obj);
+
   } catch (err) {
     console.error("SubmitTask Error:", err);
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
-
 
 
 
@@ -497,12 +638,136 @@ export const submitTask = async (req, res) => {
 // STATS
 
 
+// export const getTask = async (req, res) => {
+//   try {
+//     const { search = "", status, page = 1, limit = 10 } = req.query;
+
+//     // decode user role
+//     let token = req.headers.authorization?.split(" ")[1];
+//     let userId, role;
+//     if (token) {
+//       const decoded = jwtDecode(token);
+//       userId = decoded?.id;
+//       role = decoded?.role;
+//     }
+
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//     // fetch all tasks (filtered by status if provided)
+//     const query = {};
+//     if (status) query.status = status.toLowerCase();
+
+//     let tasksRaw = await Task.find(query)
+//       .populate("assignedBy", "name role")
+//       .populate("assignedTo", "name role")
+//       .sort({ _id: -1 })
+//       .lean();
+
+//     // role-based restriction (Developer sees only their tasks)
+//     // if (role === "Developer" && userId) {
+//     //   tasksRaw = tasksRaw.filter(task => {
+//     //     const assignedToId =
+//     //       typeof task.assignedTo === "string"
+//     //         ? task.assignedTo
+//     //         : task.assignedTo?._id?.toString();
+
+//     //     const assignedToMatches = assignedToId === userId;
+
+//     //     const developersMatches = Object.values(task.developers || {}).some(
+//     //       devs => devs.map(String).includes(userId)
+//     //     );
+
+//     //     return assignedToMatches || developersMatches;
+//     //   });
+//     // }
+
+//     // search filter
+//     if (search.trim()) {
+//       const searchLower = search.toLowerCase();
+//       tasksRaw = tasksRaw.filter(task => {
+//         const assignedByName = task.assignedBy?.name?.toLowerCase() || "";
+//         const assignedToName = task.assignedTo?.name?.toLowerCase() || "";
+//         const projectCode = task.projectCode?.toLowerCase() || "";
+//         const title = task.title?.toLowerCase() || "";
+//         const domainStr = Object.keys(task.developers || {})
+//           .concat(task.domain || [])
+//           .join(" ")
+//           .toLowerCase();
+
+//         return (
+//           projectCode.includes(searchLower) ||
+//           title.includes(searchLower) ||
+//           assignedByName.includes(searchLower) ||
+//           assignedToName.includes(searchLower) ||
+//           domainStr.includes(searchLower)
+//         );
+//       });
+//     }
+
+//     if (role === "Developer" && userId) {
+//       tasksRaw = tasksRaw.filter(task => {
+//         const assignedToId =
+//           typeof task.assignedTo === "string"
+//             ? task.assignedTo
+//             : task.assignedTo?._id?.toString();
+
+//         const assignedToMatches = assignedToId === userId;
+
+//         const developersMatches = Object.values(task.developers || {}).some(
+//           devs => devs.map(String).includes(userId)
+//         );
+
+//         return assignedToMatches || developersMatches;
+//       });
+//     }
+
+//     const totalCount = tasksRaw.length;
+//     const totalPages = Math.ceil(totalCount / limit);
+
+//     // pagination (after filtering)
+//     tasksRaw = tasksRaw.slice(skip, skip + parseInt(limit));
+
+//     // decode developers & submissions
+//     for (const task of tasksRaw) {
+//       const devMap = decodeDevelopers(task.developers || {});
+//       for (const domain of Object.keys(devMap)) {
+//         const devIds = devMap[domain] || [];
+//         if (devIds.length) {
+//           const users = await User.find({ _id: { $in: devIds } }).select("name");
+//           devMap[domain] = users.map(u => u.name);
+//         } else devMap[domain] = [];
+//       }
+//       task.developers = devMap;
+
+//       task.submissions = decodeSubmissions(task.submissions || {});
+//       task.status = applyDelayedStatus(task).status;
+
+//       task.assignedBy = task.assignedBy?.name || task.assignedBy || "-";
+//       task.assignedTo = task.assignedTo?.name || task.assignedTo || "-";
+//     }
+
+//     res.json({
+//       tasks: tasksRaw,
+//       totalCount,
+//       totalPages,
+//       currentPage: parseInt(page),
+//     });
+//   } catch (err) {
+//     console.error("GetTasks Error:", err);
+//     res.status(500).json({ error: err.message || "Server error" });
+//   }
+// };
+
+
+
+// ...include your helper functions from above...
 
 export const getTask = async (req, res) => {
   try {
     const { search = "", status, page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // decode user role
+    // Decode token
     let token = req.headers.authorization?.split(" ")[1];
     let userId, role;
     if (token) {
@@ -511,66 +776,35 @@ export const getTask = async (req, res) => {
       role = decoded?.role;
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // fetch all tasks (filtered by status if provided)
+    // Build query (status filter only)
     const query = {};
     if (status) query.status = status.toLowerCase();
 
+    // Fetch tasks
     let tasksRaw = await Task.find(query)
       .populate("assignedBy", "name role")
       .populate("assignedTo", "name role")
       .sort({ _id: -1 })
       .lean();
 
-    // role-based restriction (Developer sees only their tasks)
+    // Developer role: only their tasks
     if (role === "Developer" && userId) {
       tasksRaw = tasksRaw.filter(task => {
         const assignedToId =
           typeof task.assignedTo === "string"
             ? task.assignedTo
             : task.assignedTo?._id?.toString();
-
         const assignedToMatches = assignedToId === userId;
 
         const developersMatches = Object.values(task.developers || {}).some(
-          devs => devs.map(String).includes(userId)
+          devIds => devIds.map(String).includes(userId)
         );
 
         return assignedToMatches || developersMatches;
       });
     }
 
-    // search filter
-    if (search.trim()) {
-      const searchLower = search.toLowerCase();
-      tasksRaw = tasksRaw.filter(task => {
-        const assignedByName = task.assignedBy?.name?.toLowerCase() || "";
-        const assignedToName = task.assignedTo?.name?.toLowerCase() || "";
-        const projectCode = task.projectCode?.toLowerCase() || "";
-        const title = task.title?.toLowerCase() || "";
-        const domainStr = Object.keys(task.developers || {})
-          .concat(task.domain || [])
-          .join(" ")
-          .toLowerCase();
-
-        return (
-          projectCode.includes(searchLower) ||
-          title.includes(searchLower) ||
-          assignedByName.includes(searchLower) ||
-          assignedToName.includes(searchLower) ||
-          domainStr.includes(searchLower)
-        );
-      });
-    }
-
-    const totalCount = tasksRaw.length;
-    const totalPages = Math.ceil(totalCount / limit);
-
-    // pagination (after filtering)
-    tasksRaw = tasksRaw.slice(skip, skip + parseInt(limit));
-
-    // decode developers & submissions
+    // Decode developers and submissions, and get assigned names
     for (const task of tasksRaw) {
       const devMap = decodeDevelopers(task.developers || {});
       for (const domain of Object.keys(devMap)) {
@@ -585,12 +819,42 @@ export const getTask = async (req, res) => {
       task.submissions = decodeSubmissions(task.submissions || {});
       task.status = applyDelayedStatus(task).status;
 
-      task.assignedBy = task.assignedBy?.name || task.assignedBy || "-";
-      task.assignedTo = task.assignedTo?.name || task.assignedTo || "-";
+      task.assignedBy = task.assignedBy?.name || "-";
+      task.assignedTo = task.assignedTo?.name || "-";
     }
 
+    // --- Apply search filter IN-MEMORY ---
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      tasksRaw = tasksRaw.filter(task => {
+        const assignedByName = (task.assignedBy || "").toLowerCase();
+        const assignedToName = (task.assignedTo || "").toLowerCase();
+        const projectCode = (task.projectCode || "").toLowerCase();
+        const title = (task.title || "").toLowerCase();
+        const domainStr = (task.domain || []).join(" ").toLowerCase();
+        const developersStr = Object.values(task.developers || {})
+          .flat()
+          .join(" ")
+          .toLowerCase();
+
+        return (
+          projectCode.includes(searchLower) ||
+          title.includes(searchLower) ||
+          assignedByName.includes(searchLower) ||
+          assignedToName.includes(searchLower) ||
+          domainStr.includes(searchLower) ||
+          developersStr.includes(searchLower)
+        );
+      });
+    }
+
+    // --- Pagination AFTER filtering ---
+    const totalCount = tasksRaw.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const paginatedTasks = tasksRaw.slice(skip, skip + parseInt(limit));
+
     res.json({
-      tasks: tasksRaw,
+      tasks: paginatedTasks,
       totalCount,
       totalPages,
       currentPage: parseInt(page),
@@ -600,6 +864,9 @@ export const getTask = async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
+
+
+
 
 export const getStats = async (req, res) => {
   try {
@@ -631,7 +898,7 @@ export const getStats = async (req, res) => {
     const delayed = allTasks.filter(t => t.status === "delayed").length;
     const completed = allTasks.filter(t => t.status === "submitted").length;
 
-    console.log("Developer task total:", total);
+    // console.log("Developer task total:", total);
 
     res.json({ total, completed, pending, delayed, inProgress });
   } catch (err) {
@@ -639,7 +906,6 @@ export const getStats = async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
-
 
 
 // GET SINGLE

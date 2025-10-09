@@ -8,7 +8,7 @@ import { useAuth } from "../hooks/useAuth";
 // Assume these icons are imported from an icon library
 import {
    BoxCubeIcon,
-  // CalenderIcon,
+   CalenderIcon,
   ChevronDownIcon,
   HorizontaLDots,
   // ListIcon,

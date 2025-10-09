@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router";
 // import SignIn from "./pages/AuthPages/SignIn";
 // import SignUp from "./pages/AuthPages/SignUp";
 // import NotFound from "./pages/OtherPage/NotFound";
-// import UserProfiles from "./pages/UserProfiles";
+ import UserProfiles from "./pages/UserProfiles";
 // import Videos from "./pages/UiElements/Videos";
 // import Images from "./pages/UiElements/Images";
 // import Alerts from "./pages/UiElements/Alerts";
@@ -11,11 +11,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router";
 // import Buttons from "./pages/UiElements/Buttons";
 // import LineChart from "./pages/Charts/LineChart";
 // import BarChart from "./pages/Charts/BarChart";
-// import Calendar from "./pages/Calendar";
+import Calendar from "./pages/Calendar";
 // import BasicTables from "./pages/Tables/BasicTables";
 
 // import FormElements from "./pages/Forms/FormElements";
-// import Blank from "./pages/Blank";
+import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Dashboard from "./components/ecommerce/Dashboard";
@@ -51,7 +51,7 @@ export default function App() {
               <Route path="/edit/:id" element={<EditTaskUI />} />
               <Route path="/submit/:id" element={<SubmitTaskUI />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
-              <Route path="/profile/:id"   element={<UserProfile/>}/>
+              {/* <Route path="/profile/:id"   element={<UserProfile/>}/> */}
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />
               </Route>
@@ -84,8 +84,8 @@ export default function App() {
           </Route>
 
           Auth Layout
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} /> */}
 
           {/* Fallback Route */}
           {/* <Route path="*" element={<NotFound />} /> */}

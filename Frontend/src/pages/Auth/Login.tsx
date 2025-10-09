@@ -5,7 +5,7 @@ import icon from "../../assets/icon.svg";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(""); 
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -17,11 +17,11 @@ export default function SignInPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       const data = await res.json();
       if (res.ok) {
-        localStorage.setItem("token", data.token);
         navigate("/");
       } else {
         alert(data.message);
@@ -90,12 +90,12 @@ export default function SignInPage() {
             </button>
           </form>
 
-          <p className="mt-4 text-center text-sm text-gray-400">
+          {/* <p className="mt-4 text-center text-sm text-gray-400">
             Don’t have an account?{" "}
             <Link to="/signup" className="text-blue-400 hover:underline">
               Sign up
             </Link>
-          </p>
+          </p> */}
         </div>
       </div>
 

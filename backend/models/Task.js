@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema(
     typeOfDelivery:{type:String,enum:["api","data as a service"]},
     typeOfPlatform:{type:String,enum:["web","app","both"]},
     domain: [{ type: String }],
-
+   
     developers: {
   type: Map,
   of: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],

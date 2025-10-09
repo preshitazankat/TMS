@@ -5,10 +5,12 @@ import { useNavigate } from "react-router";
 import { jwtDecode } from "jwt-decode";
 
 export default function UserDropdown() {
-  const { user, logout } = useAuth(); // fetch user from auth context
+  const { user,logout } = useAuth(); // fetch user from auth context
   const [isOpen, setIsOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
+
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const closeDropdown = () => setIsOpen(false);
@@ -18,10 +20,21 @@ export default function UserDropdown() {
     closeDropdown(); 
   };
 
-  const handleLogout = () => {
-    logout(); // your auth context logout
-    navigate("/signin");
-  };
+  const handleLogout = async () => {
+  // try {
+  //   // Call backend logout route
+  //   await fetch(`${apiUrl}/users/logout`, {
+  //     method: "POST",
+  //     credentials: "include", // important for cookies
+  //   });
+
+  //   // Redirect to login page
+  //   navigate("/login");
+  // } catch (err) {
+  //   console.error("Logout failed", err);
+  // }
+  logout()
+};
 
   
 

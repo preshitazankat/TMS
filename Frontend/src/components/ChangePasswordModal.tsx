@@ -19,16 +19,16 @@ export default function ChangePasswordModal({  onClose }: Props) {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+     
       const res = await fetch(
         `${apiUrl}/users/change-password`,
         {
          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ currentPassword, newPassword }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // send HTTP-only cookie
+      body: JSON.stringify({ currentPassword, newPassword }),
         }
       );
 

@@ -1,49 +1,49 @@
-// src/hooks/useAuth.ts
-import { useState, useEffect, useCallback } from "react";
-import {jwtDecode} from "jwt-decode";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
-interface TokenPayload {
-  id: string;
+// Define the type of the decoded JWT payload
+interface DecodedToken {
+  name?: string;
+  email?: string;
+  role?: string;
+  exp?: number; // optional: token expiry
+}
+
+interface User {
+  name: string;
   email: string;
   role: string;
-  name?: string;
-  exp?: number;
 }
 
 export const useAuth = () => {
-  const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [user, setUser] = useState<TokenPayload | null>(null);
- 
+  const [user, setUser] = useState<User>({
+    name: "",
+    email: "",
+    role: "",
+  });
+
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
+    const token = Cookies.get("token"); // read JWT from cookies
+    if (token) {
       try {
-        const decoded: TokenPayload = jwtDecode(storedToken);
-        setToken(storedToken);
-        setRole(decoded.role);
+        const decoded = jwtDecode<DecodedToken>(token); // type-safe decode
         setUser({
-          id: decoded.id,      // ✅ ensure ID is included
-          email: decoded.email,
-          role: decoded.role,
-          name: decoded.name
+          name: decoded.name || "User",
+          email: decoded.email || "",
+          role: decoded.role || "",
         });
-        
-      } catch (err) {
-        console.error("Invalid token", err);
-        logout(); // auto logout on invalid token
-      } 
+      } catch (error) {
+        console.error("Invalid JWT token:", error);
+        setUser({ name: "", email: "", role: "" });
+      }
     }
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setRole(null);
-    setUser(null);
-    // Optionally, redirect to login page:
-     window.location.href = "/login";
-  }, []);
+  const logout = () => {
+    Cookies.remove("token"); // remove token cookie
+    window.location.href = "/login"; // redirect to login
+  };
 
-  return { token, role, user, logout };
+  return { user, logout, role: user.role };
 };

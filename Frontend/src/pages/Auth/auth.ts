@@ -1,6 +1,8 @@
 // Small helper utilities for token decoding and role checks
+import Cookies from "js-cookie";
 export function decodeToken() {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
+
     if (!token) return null;
 
     try {

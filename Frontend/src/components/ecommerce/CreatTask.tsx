@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -57,8 +57,8 @@ const CreateTaskUI: React.FC = () => {
   const [domainInput, setDomainInput] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
- const [assignedByOptions, setAssignedByOptions] = useState<UserOption[]>([]);
-const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
+  const [assignedByOptions, setAssignedByOptions] = useState<UserOption[]>([]);
+  const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -175,7 +175,7 @@ const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,30 +188,31 @@ const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
         else formData.append(key, value as any);
       });
 
-     const token = localStorage.getItem("token");
-if (!token) {
-  setErrors({ form: "Please log in to create a task." });
-  return;
-}
+      // const token = localStorage.getItem("token");
+      // if (!token) {
+      //   setErrors({ form: "Please log in to create a task." });
+      //   return;
+      // }
 
-      const res = await fetch(`${apiUrl}/tasks`,{
-  method: "POST",
-  headers: {
-    
-    "Authorization": `Bearer ${token}`, // <-- important
-  },
- body: formData,
-});
+      const res = await fetch(`${apiUrl}/tasks`, {
+        method: "POST",
+        // headers: {
 
-const text = await res.text();
-let data;
-try {
-  data = JSON.parse(text);
-} catch {
-  console.error("Server returned non-JSON response:", text);
-  setErrors({ form: "Server error. Check file size and API." });
-  return;
-}
+        //   "Authorization": `Bearer ${token}`, // <-- important
+        // },
+        credentials: "include",
+        body: formData,
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("Server returned non-JSON response:", text);
+        setErrors({ form: "Server error. Check file size and API." });
+        return;
+      }
       // const data = await res.json();
 
       if (!res.ok) {
@@ -266,31 +267,31 @@ try {
 
             {/* Assigned By & To */}
             <div className="flex flex-col md:flex-row gap-4 w-full">
-  {["assignedBy", "assignedTo"].map((field) => (
-    <div className="flex-1" key={field}>
-      <label className="block text-gray-300 font-medium mb-2">
-        {field === "assignedBy" ? "Assigned By" : "Assigned To"} <span className="text-red-500">*</span>
-      </label>
-      <select
-  name={field}
-  value={String(task[field as keyof TaskType] || "")}
-  onChange={handleChange}
-  className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
->
-  <option value="" hidden>
-    Select Assignee
-  </option>
-  {(field === "assignedBy" ? assignedByOptions : assignedToOptions).map((user) => (
-    <option key={user._id} value={user._id}>
-      {user.name}
-    </option>
-  ))}
-</select>
+              {["assignedBy", "assignedTo"].map((field) => (
+                <div className="flex-1" key={field}>
+                  <label className="block text-gray-300 font-medium mb-2">
+                    {field === "assignedBy" ? "Assigned By" : "Assigned To"} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name={field}
+                    value={String(task[field as keyof TaskType] || "")}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                  >
+                    <option value="" hidden>
+                      Select Assignee
+                    </option>
+                    {(field === "assignedBy" ? assignedByOptions : assignedToOptions).map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name}
+                      </option>
+                    ))}
+                  </select>
 
-      {renderError(field)}
-    </div>
-  ))}
-</div>
+                  {renderError(field)}
+                </div>
+              ))}
+            </div>
 
 
             {/* Domain */}

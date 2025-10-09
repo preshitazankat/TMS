@@ -1,25 +1,17 @@
 // backend/middleware/Autho.js
 import jwt from "jsonwebtoken";
 
-
-
 // Middleware to authorize by roles
-// Usage: authorize(["admin", "tl"])
+// Usage: authorize(["Admin", "TL"])
 export const authorize = (allowedRoles = []) => (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Read token from cookies instead of headers
+    const token = req.cookies?.token;
 
-    if (!authHeader) {
+    if (!token) {
       return res.status(401).json({ message: "No token provided" });
     }
-
-    const token = authHeader.split(" ")[1]; // Expecting 'Bearer <token>'
-    if (!token) {
-      return res.status(401).json({ message: "Invalid token format" });
-    }
-    
-    console.log("JWT_SECRET:", process.env.JWT_SECRET);
-
+ 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -30,7 +22,7 @@ export const authorize = (allowedRoles = []) => (req, res, next) => {
     // Attach user info to request
     req.user = decoded;
 
-    // If roles are specified, check permission
+    // Check role permission
     if (allowedRoles.length > 0 && !allowedRoles.includes(decoded.role)) {
       return res.status(403).json({ message: "Forbidden: Insufficient role" });
     }
@@ -44,7 +36,7 @@ export const authorize = (allowedRoles = []) => (req, res, next) => {
 
 // Middleware to filter tasks based on developer
 export const developerOnly = (req, res, next) => {
-  if (req.user.role === "Developer") {
+  if (req.user?.role === "Developer") {
     req.onlyAssignedTasks = true; // Flag to filter tasks in controllers
   }
   next();

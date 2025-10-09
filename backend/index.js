@@ -5,10 +5,13 @@ import taskRoutes from './routes/taskRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import path from "path";
 import { fileURLToPath } from "url";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import mime from "mime";
 
 const app = express();
+
+app.use(cookieParser());
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,10 +38,9 @@ const PORT = 5000;
 
 app.use(cors({
   origin: [
-    'http://localhost:5000',      // React dev server
+    'http://localhost:5000',      // React dev server 
+    'http://172.28.148.82:3000',
     
-     
-    'http://172.28.148.82:3000', // or whatever
   ],
   credentials: true
 }));
