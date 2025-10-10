@@ -4,6 +4,7 @@ import PageMeta from "../common/PageMeta";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import CreateUserModal from "./CreateUserModal";
 import EditUserModal from "./EditUserModal";
+ import { FiEye, FiEdit2, FiSend } from "react-icons/fi"; 
 
 interface User {
   _id: string;
@@ -109,12 +110,16 @@ const AdminDashboard: React.FC = () => {
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.designation}</td>
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.role}</td>
   <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-    <button
-      onClick={() => handleEditClick(user)}
-      className="px-3 py-1 text-xs font-medium rounded-md bg-yellow-400 text-gray-900 hover:bg-yellow-500"
-    >
-      Edit
-    </button>
+  
+
+
+<FiEdit2
+  onClick={() => handleEditClick(user)}
+  className="cursor-pointer text-yellow-500 hover:text-yellow-600"
+  title="Edit"
+  size={20}
+/>
+
   </td>
 </tr>
 

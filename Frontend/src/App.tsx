@@ -52,6 +52,7 @@ export default function App() {
               <Route path="/submit/:id" element={<SubmitTaskUI />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
               {/* <Route path="/profile/:id"   element={<UserProfile/>}/> */}
+              
               <Route element={<AdminRoute />}>
                 <Route path="/admin" element={<AdminDashboard />} />
               </Route>

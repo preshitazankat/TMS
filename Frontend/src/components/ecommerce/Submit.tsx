@@ -490,7 +490,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
   const renderFileDropWithURL = (label: string) => (
     <div className="flex flex-col md:flex-row gap-4">
       <div className="flex-1">
-        <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="block mb-2 text-sm font-medium text-gray-700 ">
           {label} Document File
         </label>
         <div className="relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer bg-gray-50 dark:bg-white/[0.05] text-gray-600 dark:text-white/80">
@@ -551,7 +551,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {taskDetails?.title || ""}
           </h2>
           {taskDetails && (
-            <div className="bg-gray-800 p-6 rounded-2xl mb-8 shadow-lg border border-gray-700">
+            <div className=" p-6 rounded-2xl mb-8 shadow-lg border border-gray-700">
 
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl text-blue-400 font-semibold flex items-center gap-2">
@@ -576,17 +576,17 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     return (
                       <tr
                         key={domain}
-                        className={idx % 2 === 0 ? "bg-gray-900 hover:bg-gray-700" : "bg-gray-800 hover:bg-gray-700"}
+                        className={idx % 2 === 0 ? "bg-gray-100 hover:bg-gray-100" : "bg-gray-100 hover:bg-gray-100"}
                       >
-                        <td className="px-4 py-3 border-b border-gray-700 text-white">{domain}</td>
-                        <td className="px-4 py-3 border-b border-gray-700 text-white">
+                        <td className="px-4 py-3 border-b border-gray-700 ">{domain}</td>
+                        <td className="px-4 py-3 border-b border-gray-700 e">
                           {devs.length ? devs.join(", ") : "-"}
                         </td>
                         <td className="px-4 py-3 border-b border-gray-700">
                           <span
                             className={`px-3 py-1 rounded-full text-sm font-medium ${isSubmitted
-                              ? "bg-green-500/20 text-green-400"
-                              : "bg-yellow-500/20 text-yellow-400"
+                              ? "bg-green-500/20 text-green-600"
+                              : "bg-yellow-500/20 text-yellow-600"
                               }`}
                           >
                             {submissionStatus}
@@ -628,46 +628,72 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   Country
                 </label>
                 <CreatableSelect
-                  isMulti
-                  options={allCountries}
-                  name="country"
-                  value={submission.country.map((c) => ({ value: c, label: c }))}
-                  onChange={(selected) =>
-                    setSubmission({ ...submission, country: selected ? selected.map((c) => c.value) : [] })
-                  }
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      backgroundColor: "#374151", // Tailwind bg-gray-700
-                      borderColor: "#4B5563",     // Tailwind gray-600
-                      color: "white",
-                    }),
-                    menu: (base) => ({
-                      ...base,
-                      backgroundColor: "#1F2937", // bg-gray-800
-                      color: "white",
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      backgroundColor: state.isSelected
-                        ? "#4B5563" // gray-600
-                        : state.isFocused
-                          ? "#6B7280" // gray-500
-                          : "#374151", // gray-700
-                      color: "white",
-                    }),
-                    multiValue: (base) => ({
-                      ...base,
-                      backgroundColor: "#4B5563",
-                      color: "white",
-                    }),
-                    multiValueLabel: (base) => ({
-                      ...base,
-                      color: "white",
-                    }),
-                  }}
-                  placeholder="Search or select countries..."
-                />
+  isMulti
+  options={allCountries}
+  name="country"
+  value={submission.country.map((c) => ({ value: c, label: c }))}
+  onChange={(selected) =>
+    setSubmission({
+      ...submission,
+      country: selected ? selected.map((c) => c.value) : [],
+    })
+  }
+  styles={{
+    control: (base, state) => ({
+      ...base,
+      backgroundColor: "#ffffff", // White background
+      borderColor: state.isFocused ? "#3B82F6" : "#D1D5DB", // blue-500 when focused, gray-300 default
+      boxShadow: state.isFocused ? "0 0 0 1px #3B82F6" : "none",
+      color: "#111827", // gray-900 text
+      "&:hover": { borderColor: "#3B82F6" },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: "#ffffff", // White dropdown
+      color: "#111827",
+      border: "1px solid #E5E7EB", // gray-200 border
+      borderRadius: "0.375rem",
+      zIndex: 20,
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected
+        ? "#3B82F6" // blue-500 for selected
+        : state.isFocused
+        ? "#EFF6FF" // blue-50 for hover
+        : "#ffffff",
+      color: state.isSelected ? "#ffffff" : "#111827",
+      cursor: "pointer",
+    }),
+    multiValue: (base) => ({
+      ...base,
+      backgroundColor: "#E0F2FE", // blue-100 tag background
+      color: "#1E3A8A", // blue-900 text
+    }),
+    multiValueLabel: (base) => ({
+      ...base,
+      color: "#1E3A8A", // blue-900 text
+    }),
+    multiValueRemove: (base) => ({
+      ...base,
+      color: "#1E3A8A",
+      ":hover": {
+        backgroundColor: "#BFDBFE", // blue-200
+        color: "#1E3A8A",
+      },
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#6B7280", // gray-500
+    }),
+    input: (base) => ({
+      ...base,
+      color: "#111827",
+    }),
+  }}
+  placeholder="Search or select countries..."
+/>
+
                 {errors.country && (
                   <p className="text-red-400 text-sm mt-1">{errors.country}</p>
                 )}
@@ -678,7 +704,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {/* Approx Volume & Method */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   Approx Volume
                 </label>
                 <input
@@ -687,20 +713,20 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   name="approxVolume"
                   onChange={handleChange}
                   placeholder="e.g. 45000 or 4M or N/A"
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3 text-gray-800 "
                 />
                 <p className="text-xs text-gray-400 mt-1">Start with digits or enter 'N/A'</p>
                 {errors.approxVolume && <p className="text-red-400 text-sm mt-1">{errors.approxVolume}</p>}
               </div>
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   Method
                 </label>
                 <select
                   value={submission.method}
                   name="method"
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3  dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3  "
                 >
                   <option value="" hidden>Select Method</option>
                   <option value="Browser Automation">Browser Automation</option>
@@ -712,7 +738,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
             {/* Login & Proxy */}
             <div className="flex gap-6 flex-wrap">
-              <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <label className="flex items-center gap-2 text-gray-700 ">
                 <input
                   type="checkbox"
                   checked={submission.userLogin}
@@ -736,14 +762,14 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {submission.userLogin && (
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Login Type
                   </label>
                   <select
                     value={submission.loginType}
                     onChange={handleChange}
                     name="loginType"
-                    className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3  dark:text-white/90"
+                    className="w-full rounded-lg border border-gray-600 p-3  "
                   >
                     <option value="" hidden>Select Login Type</option>
                     <option value="Free">Free Login</option>
@@ -774,7 +800,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {submission.proxyUsed && (
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Proxy Name
                   </label>
                   <input
@@ -782,14 +808,14 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     onChange={handleChange}
                     name="proxyName"
                     placeholder="Enter Proxy Name"
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800  "
                   />
                   {errors.proxyName && (
                     <p className="text-red-400 text-sm mt-1">{errors.proxyName}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Per Request Credit
                   </label>
                   <input
@@ -797,14 +823,14 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     name="perRequestCredit"
                     value={submission.perRequestCredit}
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800  "
                   />
                   {errors.perRequestCredit && (
                     <p className="text-red-400 text-sm mt-1">{errors.perRequestCredit}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Total Requests
                   </label>
                   <input
@@ -812,7 +838,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     value={submission.totalRequest}
                     name="totalRequest"
                     onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800"
                   />
                   {errors.totalRequest && (
                     <p className="text-red-400 text-sm mt-1">{errors.totalRequest}</p>
@@ -824,7 +850,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {/* Last Checked Date & Complexity */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   Last Checked Date
                 </label>
                 <DatePicker
@@ -838,21 +864,21 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   placeholderText="YYYY-MM-DD"
                   maxDate={new Date()}
                   name="lastCheckedDate"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800"
                 />
                 {errors.lastCheckedDate && (
                   <p className="text-red-400 text-sm mt-1">{errors.lastCheckedDate}</p>
                 )}
               </div>
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   Complexity
                 </label>
                 <select
                   name="complexity"
                   value={submission.complexity}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3  dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600 "
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -868,7 +894,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             {/* GitHub & Output */}
             <div className="grid md:grid-cols-1 gap-4">
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   GitHub Repo Link
                 </label>
                 <input
@@ -877,7 +903,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   value={submission.githubLink}
                   placeholder="Enter GitHub link"
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 "
                 />
                 {errors.githubLink && (
                   <p className="text-red-400 text-sm mt-1">{errors.githubLink}</p>
@@ -888,7 +914,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
               <div className="flex flex-col md:flex-row gap-4 items-center">
   {/* File Upload */}
   <div className="flex-1">
-    <label className="text-gray-300 mb-2 font-medium">
+    <label className=" mb-2 font-medium">
       Attach Output Document <span className="text-red-500 ml-1">*</span>
     </label>
     <input
@@ -897,7 +923,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       onChange={handleChange}
       multiple
       placeholder="Choose output file(s)"
-      className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100
+      className="w-full p-3 rounded-md  border border-gray-600 text-gray-600
                  focus:outline-none focus:ring-2 focus:ring-blue-500
                  file:mr-4 file:py-2 file:px-4 file:rounded-md
                  file:border-0 file:text-sm file:font-semibold
@@ -911,7 +937,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
   {/* URL Input */}
   <div className="flex-1">
-    <label className="mb-2 font-medium text-gray-300">
+    <label className="mb-2 font-medium ">
       Output Document URL
     </label>
     <input
@@ -920,7 +946,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       value={submission.sowUrl || ""}
       onChange={handleChange}
       placeholder="Enter Output Document URL"
-      className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100
+      className="w-full p-3 rounded-md  border border-gray-600 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
     />
    
@@ -932,7 +958,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
             {/* Remark */}
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block mb-2 text-sm font-medium text-gray-700 ">
                 Remark
               </label>
               <textarea
@@ -942,7 +968,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                   setSubmission({ ...submission, remark: e.target.value })
                 }
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90 h-32"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 h-32"
               />
             </div>
 

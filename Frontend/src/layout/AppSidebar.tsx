@@ -342,9 +342,9 @@ const AppSidebar: React.FC = () => {
                 width={150}
                 height={40}
               /> */}
-              <div className="flex flex-row ">
-                 <img src={icon} alt="" />
-              {<h1 className="text-white text-4xl pl-4">Actowiz</h1>}
+              <div className="flex flex-row">
+              <img src={icon} alt="" />
+              {<h1 className="text-[#3903a0] text-4xl pl-3">Actowiz</h1>}
               </div>
                 
               {/* <img

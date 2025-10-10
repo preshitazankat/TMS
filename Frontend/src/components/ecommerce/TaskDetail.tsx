@@ -400,6 +400,7 @@ interface Task {
   inputFile?: string;
   inputUrl?: string;
   submissions?: Record<string, Submission>;
+  reason?:string;
 }
 
 const TaskDetail: React.FC = () => {
@@ -493,10 +494,14 @@ const TaskDetail: React.FC = () => {
               <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-sm font-semibold">
                 {task.status}
               </span>
+               <p>{task.reason}</p>
               {displayedDomain && (
+                <div className="flex flex-row">
                 <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-sm font-semibold">
                   {getDomainName(displayedDomain)}
                 </span>
+               
+               </div>
               )}
             </div>
           </div>

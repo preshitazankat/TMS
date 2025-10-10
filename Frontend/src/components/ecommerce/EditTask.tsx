@@ -82,7 +82,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
     fetchUsers();
   }, []);
-  
+
   const assignedByOptions = users.filter((u) => u.role === "Sales");
   const assignedToOptions = users.filter((u) => u.role === "TL");
   const developerOptions = users.filter((u) => u.role === "Developer");
@@ -101,111 +101,141 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     return pattern.test(url);
   };
 
-   const getCookie = (name: string): string | null => {
+  const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
     return null;
   };
 
-   const token = getCookie("token");
+  const token = getCookie("token");
 
   const normalizeUserId = (user: any) => {
-  if (!user) return "";
-  if (typeof user === "string" && /^[0-9a-fA-F]{24}$/.test(user)) return user;
-  if (user._id) return user._id;
-  // Try to map from users list by name
-  const mapped = users.find((u) => u.name === user);
-  return mapped ? mapped._id : "";
-};
+    if (!user) return "";
+    if (typeof user === "string" && /^[0-9a-fA-F]{24}$/.test(user)) return user;
+    if (user._id) return user._id;
+    // Try to map from users list by name
+    const mapped = users.find((u) => u.name === user);
+    return mapped ? mapped._id : "";
+  };
 
-const normalizeDevelopers = (devs: Record<string, any>) => {
-  const normalized: Record<string, string[]> = {};
-  Object.entries(devs || {}).forEach(([domain, arr]) => {
-    normalized[domain] = (arr as any[])
-      .map((d) => {
-        if (!d) return null;
-        if (typeof d === "string" && /^[0-9a-fA-F]{24}$/.test(d)) return d;
-        if (d._id) return d._id;
-        const mapped = users.find((u) => u.name === d);
-        return mapped ? mapped._id : null;
-      })
-      .filter(Boolean) as string[];
-  });
-  return normalized;
-};
+  const normalizeDevelopers = (devs: Record<string, any>) => {
+    const normalized: Record<string, string[]> = {};
+    Object.entries(devs || {}).forEach(([domain, arr]) => {
+      normalized[domain] = (arr as any[])
+        .map((d) => {
+          if (!d) return null;
+          if (typeof d === "string" && /^[0-9a-fA-F]{24}$/.test(d)) return d;
+          if (d._id) return d._id;
+          const mapped = users.find((u) => u.name === d);
+          return mapped ? mapped._id : null;
+        })
+        .filter(Boolean) as string[];
+    });
+    return normalized;
+  };
 
-const getUserNameById = (id: string) => {
-  const user = users.find((u) => u._id === id);
-  return user ? user.name : "";
-};
+  const getUserNameById = (id: string) => {
+    const user = users.find((u) => u._id === id);
+    return user ? user.name : "";
+  };
   const validateForm = () => {
-  const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
-  if (!task.title.trim()) newErrors.title = "Project title is required";
-  if (!task.assignedBy) newErrors.assignedBy = "Assigned By is required";
-  if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
-  if (!task.description.trim()) newErrors.description = "Description is required";
-  if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
-  if (!task.targetDate) newErrors.targetDate = "Target Date is required";
-  if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
-  if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
+    if (!task.title.trim()) newErrors.title = "Project title is required";
+    if (!task.assignedBy) newErrors.assignedBy = "Assigned By is required";
+    if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
+    if (!task.description.trim()) newErrors.description = "Description is required";
+    if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
+    if (!task.targetDate) newErrors.targetDate = "Target Date is required";
+    if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
+    if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
-  if (!task.sowFile && !task.sowUrl) newErrors.sowFile = "SOW Document (file or URL) is required";
-  else if (task.sowUrl && !isValidDocumentUrl(task.sowUrl)) newErrors.sowUrl = "Invalid SOW URL";
+    if (!task.sowFile && !task.sowUrl) newErrors.sowFile = "SOW Document (file or URL) is required";
+    else if (task.sowUrl && !isValidDocumentUrl(task.sowUrl)) newErrors.sowUrl = "Invalid SOW URL";
 
-  if (!task.inputFile && !task.inputUrl) newErrors.inputFile = "Input Document (file or URL) is required";
-  else if (task.inputUrl && !isValidDocumentUrl(task.inputUrl)) newErrors.inputUrl = "Invalid Input URL";
+    if (!task.inputFile && !task.inputUrl) newErrors.inputFile = "Input Document (file or URL) is required";
+    else if (task.inputUrl && !isValidDocumentUrl(task.inputUrl)) newErrors.inputUrl = "Invalid Input URL";
 
-  // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
-  // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
+    // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
+    // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
 
-  if (!task.domain || task.domain.length === 0) newErrors.domain = "At least one Platform is required";
+    if (!task.domain || task.domain.length === 0) newErrors.domain = "At least one Platform is required";
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
 
 
-  useEffect(() => {
-  if (!taskData && id) {
-    fetch(`${apiUrl}/tasks/${id}`, {
-       headers: { "Content-Type": "application/json" },
-  credentials: "include", 
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // Normalize assignedBy / assignedTo / developers
-        const normalizedTask: Task = {
-          ...data,
-          assignedBy: normalizeUserId(data.assignedBy),
-          assignedTo: normalizeUserId(data.assignedTo),
-          developers: normalizeDevelopers(data.developers),
+  // useEffect(() => {
+  //   if (!taskData && id) {
+  //     fetch(`${apiUrl}/tasks/${id}`, {
+  //       headers: { "Content-Type": "application/json" },
+  //       credentials: "include",
+  //     })
+  //       .then((res) => res.json())
+  //       .then((data) => {
+  //         // Normalize assignedBy / assignedTo / developers
+  //         const normalizedTask: Task = {
+  //           ...data,
+  //           assignedBy: normalizeUserId(data.assignedBy),
+  //           assignedTo: normalizeUserId(data.assignedTo),
+  //           developers: normalizeDevelopers(data.developers),
 
-          domain: data.domain || [],
-          outputFile: Object.values(data.submissions || {})
-            .map((sub: any) => sub.files)
-            .filter(Boolean),
-          outputUrl: data.outputUrl || "",
-        };
-        setTask(normalizedTask);
-      })
-      .catch(console.error);
-  } else if (taskData) {
-    const normalizedTask: Task = {
-      ...taskData,
-      assignedBy: normalizeUserId(taskData.assignedBy),
-      assignedTo: normalizeUserId(taskData.assignedTo),
-      developers: normalizeDevelopers(taskData.developers),
-    };
-    setTask(normalizedTask);
-  }
-}, [taskData, id, users]); 
+  //           domains: (data.domains || []).map((d: any) => ({ name: d.name, status: d.status })),
+  //           outputFile: Object.values(data.submissions || {})
+  //             .map((sub: any) => sub.files)
+  //             .filter(Boolean),
+  //           outputUrl: data.outputUrl || "",
+  //         };
+  //         setTask(normalizedTask);
+  //       })
+  //       .catch(console.error);
+  //   } else if (taskData) {
+  //     const normalizedTask: Task = {
+  //       ...taskData,
+  //       assignedBy: normalizeUserId(taskData.assignedBy),
+  //       assignedTo: normalizeUserId(taskData.assignedTo),
+  //       developers: normalizeDevelopers(taskData.developers),
+  //     };
+  //     setTask(normalizedTask);
+  //   }
+  // }, [taskData, id, users]);
 
 
   // --------------------------- HANDLERS -----------------------------
 
+  useEffect(() => {
+    if (!taskData && id) {
+      fetch(`${apiUrl}/tasks/${id}`, {
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const normalizedTask: Task = {
+            ...data,
+            assignedBy: normalizeUserId(data.assignedBy),
+            assignedTo: normalizeUserId(data.assignedTo),
+            developers: normalizeDevelopers(data.developers),
+            domain: (data.domains || []).map((d: any) => ({ name: d.name, status: d.status })),
+            outputFile: data.outputFile || null,
+            outputUrl: data.outputUrl || "",
+          };
+          setTask(normalizedTask);
+        })
+        .catch(console.error);
+    } else if (taskData) {
+      const normalizedTask: Task = {
+        ...taskData,
+        assignedBy: normalizeUserId(taskData.assignedBy),
+        assignedTo: normalizeUserId(taskData.assignedTo),
+        developers: normalizeDevelopers(taskData.developers),
+      };
+      setTask(normalizedTask);
+    }
+  }, [taskData, id, users]);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
 
@@ -248,18 +278,22 @@ const getUserNameById = (id: string) => {
       return;
     }
 
-    if (!task.domain.includes(trimmed)) {
-      setTask((prev) => ({ ...prev, domain: [...prev.domain, trimmed] }));
+    if (!task.domain.some(d => d.name === trimmed)) {
+      setTask(prev => ({
+        ...prev,
+        domains: [...prev.domain, { name: trimmed, status: "pending" }]
+      }));
     }
+
 
     setDomainInput("");
   };
 
   const handleDomainRemove = (domain: string) => {
-    const updatedDomains = task.domain.filter((d) => d !== domain);
+    const updatedDomains = task.domains.filter(d => d.name !== domain);
     const updatedDevelopers = { ...task.developers };
     delete updatedDevelopers[domain];
-    setTask((prev) => ({ ...prev, domain: updatedDomains, developers: updatedDevelopers }));
+    setTask(prev => ({ ...prev, domains: updatedDomains, developers: updatedDevelopers }));
   };
 
   const handleDeveloperAdd = (domain: string) => {
@@ -308,8 +342,8 @@ const getUserNameById = (id: string) => {
 
       const res = await fetch(`${apiUrl}/tasks/${id}`, {
         method: "PUT",
-  body: formData,
-  credentials: "include",
+        body: formData,
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -345,12 +379,12 @@ const getUserNameById = (id: string) => {
       <div
         onDrop={(e) => { if (name) handleDrop(e, name as keyof Task); }}
         onDragOver={handleDragOver}
-        className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-500 transition bg-gray-700"
+        className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-500 transition text-gray-700"
       >
         {fileName ? (
-          <span className="text-gray-100">{fileName}</span>
+          <span className="text-gray-700">{fileName}</span>
         ) : (
-          <span className="text-gray-400">Drag & Drop {label} here or click to upload</span>
+          <span className="text-gray-700">Drag & Drop {label} here or click to upload</span>
         )}
         <input
           type="file"
@@ -389,7 +423,7 @@ const getUserNameById = (id: string) => {
                 value={task.title}
                 onChange={handleChange}
                 placeholder="Enter project title"
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-gray-100 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
+                className="w-full rounded-lg border border-gray-600  p-3  dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90"
               />
               {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
             </div>
@@ -404,7 +438,7 @@ const getUserNameById = (id: string) => {
                   name="assignedBy"
                   value={task.assignedBy}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3 dark:text-white/90"
                 >
                   <option value="" hidden>Select Assignee</option>
                   {assignedByOptions.map((u) => (
@@ -424,7 +458,7 @@ const getUserNameById = (id: string) => {
                   name="assignedTo"
                   value={task.assignedTo}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3 dark:text-white/90"
                 >
                   <option value="" hidden>Select Assignee</option>
                   {assignedToOptions.map((u) => (
@@ -449,7 +483,7 @@ const getUserNameById = (id: string) => {
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
                   placeholder="https://www.example.com"
-                  className="flex-1 rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                  className="flex-1 rounded-lg border border-gray-600  p-3 dark:text-white/90"
                 />
                 <button
                   type="button"
@@ -462,16 +496,16 @@ const getUserNameById = (id: string) => {
 
               {errors.domain && <p className="text-red-500">{errors.domain}</p>}
 
-              {(task.domain || []).map((domain) => (
+              {task.domain.map((d) =>
                 <div
-                  key={domain}
+                  key={d.name}
                   className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">{domain}</span>
+                    <span className="font-semibold">{d.name}</span>
                     <button
                       type="button"
-                      onClick={() => handleDomainRemove(domain)}
+                      onClick={() => handleDomainRemove(d.name)}
                       className="text-red-500 hover:text-red-600"
                     >
                       ❌
@@ -480,54 +514,54 @@ const getUserNameById = (id: string) => {
 
                   <div className="flex gap-3 items-end flex-wrap">
                     <select
-                      value={developerInput[domain] || ""}
+                      value={developerInput[d.name] || ""}
                       onChange={(e) =>
                         setDeveloperInput((prev) => ({
                           ...prev,
-                          [domain]: e.target.value,
+                          [d.name]: e.target.value,
                         }))
                       }
-                      className="flex-1 p-3 rounded-lg border bg-gray-700 border-gray-300 dark:border-gray-600 dark:text-white/90"
+                      className="flex-1 p-3 rounded-lg border  border-gray-300 dark:border-gray-600 dark:text-white/90"
                     >
                       <option value="" hidden>Select Developer</option>
-                      {developerOptions.map((u) => (
-                        <option key={u._id} value={u._id}>
-                          {u.name}
-                        </option>
-                      ))}
+                       {developerOptions.map(u => (
+          <option key={u._id} value={u._id}>{u.name}</option>
+        ))}
                     </select>
                     <button
                       type="button"
-                      onClick={() => handleDeveloperAdd(domain)}
+                      onClick={() => handleDeveloperAdd(d.name)}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                     >
                       Add Dev
                     </button>
                   </div>
 
-                 <ul className="flex flex-wrap gap-2 mt-2">
-  {(task.developers[domain] || []).map((devId) => {
-    const devName = users.find((u) => u._id === devId)?.name || devId; // fallback to ID
-    return (
-      <li
-        key={devId}
-        className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-lg flex items-center gap-2 dark:text-white/90"
-      >
-        {devName}
-        <button
-          type="button"
-          onClick={() => handleDeveloperRemove(domain, devId)}
-          className="text-red-500 hover:text-red-600"
-        >
-          ❌
-        </button>
-      </li>
-    );
-  })}
-</ul>
+                  <ul className="flex flex-wrap gap-2 mt-2">
+                    {(task.developers[d.name] || []).map((devId) => {
+                      const devName = users.find((u) => u._id === devId)?.name || devId; // fallback to ID
+                      return (
+                        <li
+                          key={devId}
+                          className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-lg flex items-center gap-2 dark:text-white/90"
+                        >
+                          {devName}
+                          <button
+                            type="button"
+                            onClick={() => handleDeveloperRemove(d.name, devId)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            ❌
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
 
                 </div>
-              ))}
+              )}
+
+
             </div>
 
             {/* Description */}
@@ -541,7 +575,7 @@ const getUserNameById = (id: string) => {
                 onChange={handleChange}
                 rows={4}
                 placeholder="Write task description..."
-                className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                className="w-full rounded-lg border border-gray-600  p-3 dark:text-white/90"
               />
               {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
             </div>
@@ -567,7 +601,7 @@ const getUserNameById = (id: string) => {
                   name="typeOfDelivery"
                   value={task.typeOfDelivery}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3"
                 >
                   <option value="" hidden>Select Type</option>
                   {DeliveryTypes.map((t) => (
@@ -577,14 +611,14 @@ const getUserNameById = (id: string) => {
                 {errors.typeOfDelivery && <p className="text-red-500 text-sm mt-1">{errors.typeOfDelivery}</p>}
               </div>
               <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block mb-2 text-sm font-medium text-gray-700 ">
                   Type of Platform
                 </label>
                 <select
                   name="typeOfPlatform"
                   value={task.typeOfPlatform}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 dark:text-white/90"
+                  className="w-full rounded-lg border border-gray-600  p-3"
                 >
                   <option value="" hidden>Select Type</option>
                   {PlatformTypes.map((t) => (
@@ -604,26 +638,26 @@ const getUserNameById = (id: string) => {
             {/* SOW File / URL */}
             <div className="flex flex-col md:flex-row gap-4 w-full ">
               <div className="flex-1 ">
-                <label className="block text-gray-300 font-medium mb-2">SOW Document File</label>
+                <label className="block  font-medium mb-2">SOW Document File</label>
                 {renderFileDropArea(task.sowFile, "sowFile", "SOW File")}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
-                <label className="block text-gray-300 font-medium mb-2">SOW Document URL</label>
-                <input type="text" name="sowUrl" value={task.sowUrl || ""} onChange={handleChange} placeholder="Enter SOW Document URL" className="w-full p-3 h-18 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="block  font-medium mb-2">SOW Document URL</label>
+                <input type="text" name="sowUrl" value={task.sowUrl || ""} onChange={handleChange} placeholder="Enter SOW Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
             {/* Input File / URL */}
             <div className="flex flex-col md:flex-row gap-4 w-full ">
               <div className="flex-1">
-                <label className="block text-gray-300 font-medium mb-2">Input Document File</label>
+                <label className="block  font-medium mb-2">Input Document File</label>
                 {renderFileDropArea(task.inputFile, "inputFile", "Input File")}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
-                <label className="block text-gray-300 font-medium mb-2">Input Document URL</label>
-                <input type="text" name="inputUrl" value={task.inputUrl || ""} onChange={handleChange} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="block  font-medium mb-2">Input Document URL</label>
+                <input type="text" name="inputUrl" value={task.inputUrl || ""} onChange={handleChange} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
@@ -631,7 +665,7 @@ const getUserNameById = (id: string) => {
             <div className="flex flex-col md:flex-row gap-4 w-full">
               {/* File Section */}
               <div className="flex-1">
-                <label className="block text-gray-300 font-medium mb-2">
+                <label className="block  font-medium mb-2">
                   Output Document File
                 </label>
 
@@ -658,7 +692,7 @@ const getUserNameById = (id: string) => {
 
               {/* URL Section */}
               <div className="flex-1">
-                <label className="block text-gray-300 font-medium mb-2">
+                <label className="block  font-medium mb-2">
                   Output Document URL
                 </label>
 
@@ -683,7 +717,7 @@ const getUserNameById = (id: string) => {
                   value={task.outputUrl || ""}
                   onChange={handleChange}
                   placeholder="Enter Output Document URL"
-                  className="w-full p-3 rounded-md bg-gray-700 border border-gray-600 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
+                  className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
                 />
               </div>
             </div>

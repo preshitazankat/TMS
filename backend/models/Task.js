@@ -1,43 +1,42 @@
-// models/Task.js
 import mongoose from "mongoose";
+
+const domainSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // e.g., "web", "app", "both"
+  status: {
+    type: String,
+    enum: ["pending", "in-progress", "delayed", "submitted", "in-R&D"],
+    default: "pending",
+  },
+  completeDate: { type: Date },
+  remarks: { type: String },
+  submission: { type: Object, default: {} },
+  developers: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    default: [],
+  }, // domain-specific submission
+});
 
 const taskSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     projectCode: { type: String },
-    assignedBy: {  type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    assignedTo: {  type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     description: { type: String, required: true },
     taskAssignedDate: { type: Date, required: true },
     targetDate: { type: Date, required: true },
     completeDate: { type: Date },
-    sempleFile:{type:Boolean,default:false},
-    typeOfDelivery:{type:String,enum:["api","data as a service"]},
-    typeOfPlatform:{type:String,enum:["web","app","both"]},
-    domain: [{ type: String }],
-   
-    developers: {
-  type: Map,
-  of: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  default: {},
-},
+    typeOfDelivery: { type: String, enum: ["api", "data as a service"] },
+    typeOfPlatform: { type: String, enum: ["web", "app", "both"] },
 
+    
 
-    // priority: { type: String, enum: ["High", "Medium", "Low",], default: "Medium" },
-    status: {
-      type: String,
-      enum: ["pending", "in-progress", "delayed", "submitted"],
-      default: "pending",
-    },
+    // NEW: domain-wise array
+    domains: { type: [domainSchema], default: [] },
 
-    // root-level older-style submission fields (kept for backward compatibility)
-    platform: { type: String },
+    platform: { type: String }, // backward compatibility
     userLogin: { type: Boolean, default: false },
-    loginType: {
-      type: String,
-      enum: ["Free login", "Purchased login"],
-      default: null, // or "Free login"
-    },
+    loginType: { type: String, enum: ["Free login", "Purchased login"], default: null },
     credentials: { type: String },
 
     country: { type: String },
@@ -52,22 +51,15 @@ const taskSchema = new mongoose.Schema(
     complexity: { type: String, enum: ["Low", "Medium", "High", "Very High"] },
     githubLink: { type: String },
 
-    // SOW / Input files & URLs at task level
     sowFile: { type: String },
     sowUrl: { type: String },
     inputFile: { type: String },
     inputUrl: { type: String },
-
-
     outputFile: { type: String },
     outputUrl: { type: String },
 
     submittedAt: { type: Date },
     remarks: { type: String },
-
-    // NEW: per-domain submissions map
-    // Map key = domainName, value = submission object (mixed)
-    submissions: { type: Map, of: Object, default: {} },
   },
   { timestamps: true }
 );

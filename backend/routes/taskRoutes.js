@@ -8,12 +8,15 @@ import { authorize, developerOnly} from "../middleware/Autho.js";
 import {
   createTask,
   getTask,
-  getStats,
+  //getStats,
   updateTask,
   submitTask,
-  getSingleTask
+  getSingleTask,
+  updateTaskDomainStatus,
+ getDevelopersTaskStatus,
+ getDomainStats
 } from "../controllers/taskController.js";
-
+   
 const router = express.Router();
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -29,26 +32,37 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/tasks", authorize(['Admin','Sales']), upload.fields([
+router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
   { name: "sowFile", maxCount: 1 },
   { name: "inputFile", maxCount: 1 },
 ]), createTask);
 
-router.put("/tasks/:id", authorize(['Admin','Sales','TL']), upload.fields([
+router.put("/tasks/:id", authorize(['Admin','Sales','TL','Manager']), upload.fields([
   { name: "sowFile", maxCount: 1 },
   { name: "inputFile", maxCount: 1 },
 ]), updateTask);
 
 
-router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer']), upload.fields([
+router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer','Manager']), upload.fields([
   { name: "sowFile", maxCount: 1 },
   { name: "inputFile", maxCount: 1 },
   { name: "files", maxCount: 20 },
 ]), submitTask);
 
-router.get("/tasks/stats", authorize(['Admin','Sales','TL','Developer']), getStats);
-router.get("/tasks", authorize(['Admin','Sales','TL','Developer']), developerOnly, getTask);
-router.get("/tasks/:id", authorize(['Admin','Sales','TL','Developer']), getSingleTask);
+router.get("/tasks/stats", authorize(['Admin','Sales','TL','Developer','Manager']), getDomainStats);
+router.get("/tasks", authorize(['Admin','Sales','TL','Developer','Manager']), developerOnly, getTask);
+router.get("/tasks/:id", authorize(['Admin','Sales','TL','Developer','Manager']), getSingleTask);
+// TL and Manager can update domain status
+router.put(
+  "/tasks/:id/domain-status",
+  authorize(['TL','Manager']),
+  updateTaskDomainStatus
+);
+
+
+router.get("/tasks/developers", authorize(['Manager']), getDevelopersTaskStatus);
+
+
 export default router;
 
 

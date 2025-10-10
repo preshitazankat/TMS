@@ -11,6 +11,7 @@ interface DecodedToken {
 }
 
 interface User {
+  id: any;
   name: string;
   email: string;
   role: string;

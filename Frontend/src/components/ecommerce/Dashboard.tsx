@@ -1,102 +1,14 @@
-// // src/pages/StatsPage.tsx
-// import React, { useEffect, useState, } from "react";
-// import { useNavigate } from "react-router";
-
-// interface Stats {
-//   total: number;
-//   completed: number;
-//   pending: number; 
-//   delayed: number;
-//   inProgress: number;
-// } 
-
-// const Dashboard: React.FC = () => {
-//   const [stats, setStats] = useState<Stats>({
-//     total: 0,
-//     completed: 0,
-//     pending: 0,
-//     delayed: 0,
-//     inProgress: 0,
-//   });
-//   const navigate=useNavigate()
-//   const apiUrl = import.meta.env.VITE_API_URL;
-
-//   const getCookie = (name: string): string | null => {
-//   const value = `; ${document.cookie}`;
-//   const parts = value.split(`; ${name}=`);
-//   if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
-//   return null;
-// };
-
-
-//   const fetchStats = async () => {
-//     try {
-//       const token = getCookie("token");
-//       const res = await fetch(`${apiUrl}/tasks/stats`,{
-//         method: "GET",
-//       headers: token ? { Authorization: `Bearer ${token}` } : {},
-//       credentials: "include",
-//       });
-//       if (!res.ok) throw new Error("Failed to fetch stats");
-//       const data = await res.json();
-//       console.log("Data",data);
-      
-//       setStats(data);
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchStats();
-//   }, []);
-
-//   // const handleLogout = () => {
-//   //   localStorage.removeItem("token");
-//   //   navigate("/login");
-//   // };
-
-//   const cards = [
-//     { label: "Total Tasks", value: stats.total, style: "text-2xl font-bold text-blue-400" },
-//     { label: "Pending Tasks", value: stats.pending, style: "text-2xl font-bold text-yellow-400" },
-//     { label: "In-Progress Tasks", value: stats.inProgress, style: "text-2xl font-bold text-purple-400" },
-//     { label: "Delayed Tasks", value: stats.delayed, style: "text-2xl font-bold text-red-400" },
-//     { label: "Completed Tasks", value: stats.completed, style: "text-2xl font-bold text-green-400" },
-//   ];
-
-//   return (
-//     <div className="min-h-screen bg-gray-900 p-6">
-//      <div className="flex justify-end mb-6">
-//         {/* <button
-//           onClick={handleLogout}
-//           className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition"
-//         >
-//           Logout
-//         </button> */}
-//       </div>
-
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-//         {cards.map((card, idx) => (
-//           <div
-//             key={idx}
-//             className="bg-gray-800 rounded-lg p-4 text-center shadow hover:shadow-lg transition"
-//           >
-//             <h3 className="text-lg font-medium text-gray-200">{card.label}</h3>
-//             <p className={card.style || "text-2xl font-bold text-gray-100"}>
-//               {card.value}
-//             </p>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
-
-// src/pages/StatsPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+
+interface DomainStats {
+  total: number;
+  pending: number;
+  "in-progress": number;
+  delayed: number;
+  "in-R&D": number;
+  submitted: number;
+}
 
 interface Stats {
   total: number;
@@ -104,16 +16,29 @@ interface Stats {
   pending: number;
   delayed: number;
   inProgress: number;
+  inRD: number;
+}
+
+interface DeveloperTask {
+  name: string;
+  assigned: number;
+  completed: number;
+  inProgress: number;
+  inRD: number;
 }
 
 const Dashboard: React.FC = () => {
+  const [domainStats, setDomainStats] = useState<Record<string, DomainStats>>({});
   const [stats, setStats] = useState<Stats>({
     total: 0,
     completed: 0,
     pending: 0,
     delayed: 0,
     inProgress: 0,
+    inRD: 0,
   });
+  const [developers, setDevelopers] = useState<DeveloperTask[]>([]);
+  const [userRole, setUserRole] = useState<string>("");
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -124,58 +49,156 @@ const Dashboard: React.FC = () => {
     return null;
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (token: string) => {
     try {
-      const token = getCookie("token");
       const res = await fetch(`${apiUrl}/tasks/stats`, {
         method: "GET",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch stats");
-      const data = await res.json();
-      console.log("Data", data);
-      setStats(data);
+      const data: Record<string, DomainStats> = await res.json();
+
+      setDomainStats(data);
+
+      // Compute totals
+      let total = 0,
+        pending = 0,
+        inProgress = 0,
+        delayed = 0,
+        inRD = 0,
+        completed = 0;
+
+      Object.values(data).forEach((d) => {
+        total += d.total || 0;
+        pending += d.pending || 0;
+        inProgress += d["in-progress"] || 0;
+        delayed += d.delayed || 0;
+        inRD += d["in-R&D"] || 0;
+        completed += d.submitted || 0;
+      });
+
+      setStats({ total, pending, inProgress, delayed, inRD, completed });
     } catch (err) {
-      console.error(err);
+      console.error("Stats fetch error:", err);
+    }
+  };
+
+  const fetchDevelopers = async (token: string) => {
+    try {
+      const res = await fetch(`${apiUrl}/tasks/developers`, {
+        method: "GET",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch developers");
+      const data: DeveloperTask[] = await res.json();
+      setDevelopers(data);
+    } catch (err) {
+      console.error("Developer fetch error:", err);
     }
   };
 
   useEffect(() => {
-    fetchStats();
+    const token = getCookie("token");
+    if (!token) return navigate("/login");
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setUserRole(payload.role);
+      fetchStats(token);
+      if (payload.role === "Manager") fetchDevelopers(token);
+    } catch (err) {
+      console.error("Invalid token", err);
+      navigate("/login");
+    }
   }, []);
 
   const cards = [
-    { label: "Total Tasks", value: stats.total, style: "text-2xl font-bold text-blue-400" },
-    { label: "Pending Tasks", value: stats.pending, style: "text-2xl font-bold text-yellow-400" },
-    { label: "In-Progress Tasks", value: stats.inProgress, style: "text-2xl font-bold text-purple-400" },
-    { label: "Delayed Tasks", value: stats.delayed, style: "text-2xl font-bold text-red-400" },
-    { label: "Completed Tasks", value: stats.completed, style: "text-2xl font-bold text-green-400" },
+    { label: "Total Tasks", value: stats.total, bgColor: "bg-blue-500" },
+    { label: "Pending Tasks", value: stats.pending, bgColor: "bg-yellow-500" },
+    { label: "In-Progress Tasks", value: stats.inProgress, bgColor: "bg-purple-500" },
+    { label: "Delayed Tasks", value: stats.delayed, bgColor: "bg-red-500" },
+    { label: "Completed Tasks", value: stats.completed, bgColor: "bg-green-500" },
+    { label: "In-R&D", value: stats.inRD, bgColor: "bg-orange-500" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-end mb-6">
-        {/* Optional Logout Button */}
-        {/* <button
-          onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition"
-        >
-          Logout
-        </button> */}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         {cards.map((card, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-lg p-4 text-center shadow hover:shadow-lg transition"
+            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg transition text-white`}
           >
-            <h3 className="text-lg font-medium text-gray-800">{card.label}</h3>
-            <p className={card.style || "text-2xl font-bold text-gray-900"}>{card.value}</p>
+            <h3 className="text-lg font-medium">{card.label}</h3>
+            <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}
       </div>
+
+      {/* Domain Table */}
+      {Object.keys(domainStats).length > 0 && (
+        <div className="overflow-x-auto bg-white rounded-lg shadow p-4 mb-10">
+          <h2 className="text-xl font-semibold mb-4">Domain-Wise Stats</h2>
+          <table className="w-full border-collapse">
+            <thead className="bg-gray-200">
+              <tr>
+                <th className="border px-4 py-2">Domain</th>
+                <th className="border px-4 py-2">Total</th>
+                <th className="border px-4 py-2">Pending</th>
+                <th className="border px-4 py-2">In Progress</th>
+                <th className="border px-4 py-2">Delayed</th>
+                <th className="border px-4 py-2">In R&D</th>
+                <th className="border px-4 py-2">Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(domainStats).map(([domain, d]) => (
+                <tr key={domain} className="hover:bg-gray-50">
+                  <td className="border px-4 py-2 font-semibold">{domain}</td>
+                  <td className="border px-4 py-2">{d.total}</td>
+                  <td className="border px-4 py-2">{d.pending}</td>
+                  <td className="border px-4 py-2">{d["in-progress"]}</td>
+                  <td className="border px-4 py-2">{d.delayed}</td>
+                  <td className="border px-4 py-2">{d["in-R&D"]}</td>
+                  <td className="border px-4 py-2">{d.submitted}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Developer Table (Manager only) */}
+      {userRole === "Manager" && developers.length > 0 && (
+        <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
+          <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
+          <table className="w-full border-collapse">
+            <thead className="bg-yellow-300">
+              <tr>
+                <th className="border px-4 py-2">Name</th>
+                <th className="border px-4 py-2">Assigned</th>
+                <th className="border px-4 py-2">Completed</th>
+                <th className="border px-4 py-2">In Progress</th>
+                <th className="border px-4 py-2">In R&D</th>
+              </tr>
+            </thead>
+            <tbody>
+              {developers.map((dev, idx) => (
+                <tr key={idx} className="hover:bg-gray-100">
+                  <td className="border px-4 py-2">{dev.name}</td>
+                  <td className="border px-4 py-2">{dev.assigned}</td>
+                  <td className="border px-4 py-2">{dev.completed}</td>
+                  <td className="border px-4 py-2">{dev.inProgress}</td>
+                  <td className="border px-4 py-2">{dev.inRD}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

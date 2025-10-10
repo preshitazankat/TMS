@@ -6,7 +6,7 @@ interface UserForm {
   password: string;
   department: string;
   designation:string;
-  role: "Admin" | "Sales" | "TL" | "Developer";
+  role: "Admin" | "Sales" | "TL" | "Developer" |"Manager";
 }
 
 interface CreateUserModalProps {
@@ -67,83 +67,94 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Create New User</h2>
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          <input
-            name="name"
-            placeholder="Name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-            required
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-            required
-          />
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-            required
-          />
-          <input
-            name="department"
-            placeholder="Department"
-            value={form.department}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-          <input
-            name="designation"
-            placeholder="Designation"
-            value={form.designation}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-          <select
-  name="role"
-  value={form.role}
-  onChange={handleChange}
-  className="w-full border p-2 rounded"
-  required
->
-  <option value="Admin">Admin</option>
-  <option value="Sales">Sales</option>
-  <option value="TL">TL</option>
-  <option value="Developer">Developer</option>
-</select>
+ return (
+  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-30">
+    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">
+        Create New User
+      </h2>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Create
-            </button>
-          </div>
-        </form>
-      </div>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <input
+          name="name"
+          placeholder="Full Name"
+          value={form.name}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+          required
+        />
+
+        <input
+          name="email"
+          type="email"
+          placeholder="Email Address"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+          required
+        />
+
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+          required
+        />
+
+        <input
+          name="department"
+          placeholder="Department"
+          value={form.department}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+        />
+
+        <input
+          name="designation"
+          placeholder="Designation"
+          value={form.designation}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+        />
+
+        <select
+          name="role"
+          value={form.role}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+          required
+        >
+          <option value="" hidden>Select Role</option>
+          <option value="Admin">Admin</option>
+          <option value="Sales">Sales</option>
+          <option value="TL">Team Lead</option>
+           <option value="Manager">Manager</option>
+          <option value="Developer">Developer</option>
+        </select>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition font-medium"
+          >
+            Create
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default CreateUserModal;
