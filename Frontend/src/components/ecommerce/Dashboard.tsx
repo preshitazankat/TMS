@@ -21,7 +21,7 @@ interface Stats {
 
 interface DeveloperTask {
   name: string;
-  assigned: number;
+  total: number;
   completed: number;
   inProgress: number;
   inRD: number;
@@ -38,6 +38,7 @@ const Dashboard: React.FC = () => {
     inRD: 0,
   });
   const [developers, setDevelopers] = useState<DeveloperTask[]>([]);
+  console.log("nkodvm", developers)
   const [userRole, setUserRole] = useState<string>("");
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -84,6 +85,8 @@ const Dashboard: React.FC = () => {
     }
   };
 
+
+
   const fetchDevelopers = async (token: string) => {
     try {
       const res = await fetch(`${apiUrl}/tasks/developers`, {
@@ -93,7 +96,9 @@ const Dashboard: React.FC = () => {
       });
       if (!res.ok) throw new Error("Failed to fetch developers");
       const data: DeveloperTask[] = await res.json();
+      console.log("Data", data);
       setDevelopers(data);
+
     } catch (err) {
       console.error("Developer fetch error:", err);
     }
@@ -107,12 +112,14 @@ const Dashboard: React.FC = () => {
       const payload = JSON.parse(atob(token.split(".")[1]));
       setUserRole(payload.role);
       fetchStats(token);
-      if (payload.role === "Manager") fetchDevelopers(token);
+      fetchDevelopers(token);
+      // if (payload.role === "Manager") fetchDevelopers(token);
     } catch (err) {
       console.error("Invalid token", err);
       navigate("/login");
     }
   }, []);
+  
 
   const cards = [
     { label: "Total Tasks", value: stats.total, bgColor: "bg-blue-500" },
@@ -138,67 +145,53 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Domain Table */}
-      {Object.keys(domainStats).length > 0 && (
-        <div className="overflow-x-auto bg-white rounded-lg shadow p-4 mb-10">
-          <h2 className="text-xl font-semibold mb-4">Domain-Wise Stats</h2>
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="border px-4 py-2">Domain</th>
-                <th className="border px-4 py-2">Total</th>
-                <th className="border px-4 py-2">Pending</th>
-                <th className="border px-4 py-2">In Progress</th>
-                <th className="border px-4 py-2">Delayed</th>
-                <th className="border px-4 py-2">In R&D</th>
-                <th className="border px-4 py-2">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(domainStats).map(([domain, d]) => (
-                <tr key={domain} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2 font-semibold">{domain}</td>
-                  <td className="border px-4 py-2">{d.total}</td>
-                  <td className="border px-4 py-2">{d.pending}</td>
-                  <td className="border px-4 py-2">{d["in-progress"]}</td>
-                  <td className="border px-4 py-2">{d.delayed}</td>
-                  <td className="border px-4 py-2">{d["in-R&D"]}</td>
-                  <td className="border px-4 py-2">{d.submitted}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+     
 
       {/* Developer Table (Manager only) */}
       {userRole === "Manager" && developers.length > 0 && (
-        <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
-          <table className="w-full border-collapse">
-            <thead className="bg-yellow-300">
-              <tr>
-                <th className="border px-4 py-2">Name</th>
-                <th className="border px-4 py-2">Assigned</th>
-                <th className="border px-4 py-2">Completed</th>
-                <th className="border px-4 py-2">In Progress</th>
-                <th className="border px-4 py-2">In R&D</th>
+      <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
+        <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
+        <table className="w-full border-collapse">
+          <thead className="bg-yellow-300">
+            <tr>
+              <th className="border px-4 py-2">Name</th>
+              <th className="border px-4 py-2">Assigned</th>
+              <th className="border px-4 py-2">Completed</th>
+              <th className="border px-4 py-2">In Progress</th>
+              <th className="border px-4 py-2">In R&D</th>
+            </tr>
+          </thead>
+          <tbody>
+            {developers.map((dev, idx) => (
+              <tr key={idx} className="hover:bg-gray-100 text-center">
+                <td className="border px-4 py-2">{dev.name}</td>
+                <td className="border px-4 py-2">{dev.total}</td>
+                <td className="border px-4 py-2">{dev.completed}</td>
+                <td className="border px-4 py-2">{dev.inProgress}</td>
+                <td className="border px-4 py-2">{dev.inRD}</td>
               </tr>
-            </thead>
-            <tbody>
-              {developers.map((dev, idx) => (
-                <tr key={idx} className="hover:bg-gray-100">
-                  <td className="border px-4 py-2">{dev.name}</td>
-                  <td className="border px-4 py-2">{dev.assigned}</td>
-                  <td className="border px-4 py-2">{dev.completed}</td>
-                  <td className="border px-4 py-2">{dev.inProgress}</td>
-                  <td className="border px-4 py-2">{dev.inRD}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+            <tr className="bg-gray-200 font-bold text-center">
+          <td className="border px-4 py-2">Total</td>
+          <td className="border px-4 py-2">
+            {developers.reduce((sum, dev) => sum + dev.total, 0)}
+          </td>
+          <td className="border px-4 py-2">
+            {developers.reduce((sum, dev) => sum + dev.completed, 0)}
+          </td>
+          <td className="border px-4 py-2">
+            {developers.reduce((sum, dev) => sum + dev.inProgress, 0)}
+          </td>
+          <td className="border px-4 py-2">
+            {developers.reduce((sum, dev) => sum + dev.inRD, 0)}
+          </td>
+        </tr>
+          </tbody>
+        </table>
+      </div>
+       )} 
+       
+      
     </div>
   );
 };

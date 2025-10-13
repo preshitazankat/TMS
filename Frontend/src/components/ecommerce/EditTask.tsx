@@ -28,6 +28,17 @@ interface Task {
   outputUrl: string;
 }
 
+interface Domain {
+  name: string;
+  status: string;
+  developers?: string[];
+  submission?: {
+    files?: string[];
+    outputUrl?: string | null;
+  };
+}
+
+
 
 
 const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
@@ -207,6 +218,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   // --------------------------- HANDLERS -----------------------------
 
   useEffect(() => {
+    if (!users.length || !id) return;
     if (!taskData && id) {
       fetch(`${apiUrl}/tasks/${id}`, {
         headers: { "Content-Type": "application/json" },
@@ -219,9 +231,18 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
             assignedBy: normalizeUserId(data.assignedBy),
             assignedTo: normalizeUserId(data.assignedTo),
             developers: normalizeDevelopers(data.developers),
-            domain: (data.domains || []).map((d: any) => ({ name: d.name, status: d.status })),
-            outputFile: data.outputFile || null,
-            outputUrl: data.outputUrl || "",
+            domain: (data.domains || []).map((d: any) => ({
+              name: d.name,
+              status: d.status,
+              submission: {
+            files: d.submission?.files || [],
+            outputUrl: d.submission?.outputUrl || "",
+          },
+            })),
+
+            outputFile:
+          data.domains?.[0]?.submission?.files?.[0] || null, // ✅ use first submission file
+        outputUrl: data.domains?.[0]?.submission?.outputUrl || "",
           };
           setTask(normalizedTask);
         })
@@ -236,6 +257,52 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       setTask(normalizedTask);
     }
   }, [taskData, id, users]);
+  // ✅ Fetch task only after users are loaded so developer names can be resolved
+  // useEffect(() => {
+  //   if (!id || !users.length) return;
+
+  //   const fetchTask = async () => {
+  //     try {
+  //       const res = await fetch(`${apiUrl}/tasks/${id}`, {
+  //         headers: { "Content-Type": "application/json" },
+  //         credentials: "include",
+  //       });
+  //       const data = await res.json();
+
+  //       // Map developer IDs → names immediately
+  //       const developers = {};
+  //       (data.domains || []).forEach((d: any) => {
+  //         developers[d.name] = (d.developers || []).map((devId: string) => {
+  //           const user = users.find((u) => String(u._id) === String(devId));
+  //           return user ? user.name : devId; // fallback to ID
+  //         });
+  //       });
+
+  //       const normalizedTask: Task = {
+  //         ...data,
+  //         assignedBy: normalizeUserId(data.assignedBy),
+  //         assignedTo: normalizeUserId(data.assignedTo),
+  //         developers,
+  //         domain: (data.domains || []).map((d: any) => ({
+  //             name: d.name,
+  //             status: d.status,
+  //             submission: d.submission || { files: [], outputUrl: "" }
+  //           })),
+  //         outputFile: data.outputFile || null,
+  //         outputUrl: data.outputUrl || "",
+  //       };
+
+  //       setTask(normalizedTask);
+  //     } catch (error) {
+  //       console.error("Error loading task:", error);
+  //     }
+  //   };
+
+  //   fetchTask();
+  // }, [id, users]);
+
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
 
@@ -257,6 +324,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       setTask((prev) => ({ ...prev, [name]: value }));
     }
   };
+
+
+
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof Task) => {
     e.preventDefault();
@@ -300,6 +370,16 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     const selectedDev = developerInput[domain];
     if (!selectedDev) return;
 
+    // 🛑 Check if the developer is already assigned anywhere
+    const alreadyAssigned = Object.values(task.developers || {}).some((devs) =>
+      devs.includes(selectedDev)
+    );
+
+    if (alreadyAssigned) {
+      alert("❌ This developer is already assigned to another domain!");
+      return;
+    }
+
     const devList = task.developers[domain] || [];
     if (!devList.includes(selectedDev)) {
       setTask((prev) => ({
@@ -307,8 +387,10 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         developers: { ...prev.developers, [domain]: [...devList, selectedDev] },
       }));
     }
+
     setDeveloperInput((prev) => ({ ...prev, [domain]: "" }));
   };
+
 
   const handleDeveloperRemove = (domain: string, dev: string) => {
     setTask((prev) => ({
@@ -324,14 +406,28 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     try {
       const formData = new FormData();
 
+      // Convert developer names → IDs before sending
+      const developersForBackend = Object.fromEntries(
+        Object.entries(task.developers).map(([domain, devs]) => [
+          domain,
+          devs.map((d) => {
+            const found = users.find((u) => u.name === d || u._id === d);
+            return found ? found._id : d;
+          }),
+        ])
+      );
+
       Object.entries(task).forEach(([key, value]) => {
         if (value === null || value === undefined || value === "") return;
-        if (key === "developers" || key === "domain") {
-          formData.append(key, JSON.stringify(value));
+        if (key === "developers") {
+          formData.append("developers", JSON.stringify(developersForBackend));
+        } else if (key === "domain") {
+          formData.append("domain", JSON.stringify(value));
         } else {
           formData.append(key, value as any);
         }
       });
+
 
       if (task.taskAssignedDate)
         formData.set("taskAssignedDate", format(new Date(task.taskAssignedDate), "yyyy-MM-dd"));
@@ -524,9 +620,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                       className="flex-1 p-3 rounded-lg border  border-gray-300 dark:border-gray-600 dark:text-white/90"
                     >
                       <option value="" hidden>Select Developer</option>
-                       {developerOptions.map(u => (
-          <option key={u._id} value={u._id}>{u.name}</option>
-        ))}
+                      {developerOptions.map(u => (
+                        <option key={u._id} value={u._id}>{u.name}</option>
+                      ))}
                     </select>
                     <button
                       type="button"
@@ -538,17 +634,18 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   </div>
 
                   <ul className="flex flex-wrap gap-2 mt-2">
-                    {(task.developers[d.name] || []).map((devId) => {
-                      const devName = users.find((u) => u._id === devId)?.name || devId; // fallback to ID
+                    {(task.developers[d.name] || []).map((dev) => {
+                      // resolve developer name
+                      const devName =
+                        typeof dev === "string"
+                          ? users.find((u) => u._id === dev)?.name || dev
+                          : dev.name; // if already object
                       return (
-                        <li
-                          key={devId}
-                          className="bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-lg flex items-center gap-2 dark:text-white/90"
-                        >
+                        <li key={typeof dev === "string" ? dev : dev._id} className="bg-gray-200 ...">
                           {devName}
                           <button
                             type="button"
-                            onClick={() => handleDeveloperRemove(d.name, devId)}
+                            onClick={() => handleDeveloperRemove(d.name, typeof dev === "string" ? dev : dev._id)}
                             className="text-red-500 hover:text-red-600"
                           >
                             ❌
@@ -557,6 +654,10 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                       );
                     })}
                   </ul>
+
+
+
+
 
                 </div>
               )}

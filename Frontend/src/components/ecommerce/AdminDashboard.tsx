@@ -43,6 +43,7 @@ const AdminDashboard: React.FC = () => {
       (u) =>
         u.name.toLowerCase().includes(searchText.toLowerCase()) ||
         u.email.toLowerCase().includes(searchText.toLowerCase()) ||
+        u.designation?.toLocaleLowerCase().includes(searchText.toLowerCase())||
         (u.department?.toLowerCase().includes(searchText.toLowerCase()) ?? false) ||
         (u.role?.toLowerCase().includes(searchText.toLowerCase()) ?? false)
     );

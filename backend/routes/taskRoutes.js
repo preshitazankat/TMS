@@ -13,7 +13,7 @@ import {
   submitTask,
   getSingleTask,
   updateTaskDomainStatus,
- getDevelopersTaskStatus,
+ getDevelopersDomainStatus,
  getDomainStats
 } from "../controllers/taskController.js";
    
@@ -37,6 +37,11 @@ router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
   { name: "inputFile", maxCount: 1 },
 ]), createTask);
 
+router.put(
+  "/tasks/domain-status",
+  authorize(['TL','Manager','Admin']),
+  updateTaskDomainStatus
+); 
 router.put("/tasks/:id", authorize(['Admin','Sales','TL','Manager']), upload.fields([
   { name: "sowFile", maxCount: 1 },
   { name: "inputFile", maxCount: 1 },
@@ -48,19 +53,15 @@ router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer','Manager'])
   { name: "inputFile", maxCount: 1 },
   { name: "files", maxCount: 20 },
 ]), submitTask);
-
+router.get("/tasks/developers", authorize(['Manager']), getDevelopersDomainStatus);
 router.get("/tasks/stats", authorize(['Admin','Sales','TL','Developer','Manager']), getDomainStats);
 router.get("/tasks", authorize(['Admin','Sales','TL','Developer','Manager']), developerOnly, getTask);
 router.get("/tasks/:id", authorize(['Admin','Sales','TL','Developer','Manager']), getSingleTask);
 // TL and Manager can update domain status
-router.put(
-  "/tasks/:id/domain-status",
-  authorize(['TL','Manager']),
-  updateTaskDomainStatus
-);
 
 
-router.get("/tasks/developers", authorize(['Manager']), getDevelopersTaskStatus);
+
+router.get("/tasks/developers", authorize(['Manager',]), getDevelopersDomainStatus);
 
 
 export default router;

@@ -363,7 +363,7 @@ const AppSidebar: React.FC = () => {
             //   width={32}
             //   height={32}
             // />
-            <h1 className="text-white text-2xl">A</h1>
+            <img src={icon} alt="" />
           )}
         </Link>
       </div>
