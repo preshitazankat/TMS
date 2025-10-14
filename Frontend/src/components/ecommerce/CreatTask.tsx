@@ -83,7 +83,7 @@ const CreateTaskUI: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const DeliveryTypes = ["API", "Data as a Service"];
+  const DeliveryTypes = ["API", "Data as a Service","Both"];
   const PlatformTypes = ["Web", "App", "Both"];
 
   const isValidDocumentUrl = (url: string) => {
@@ -193,7 +193,7 @@ const CreateTaskUI: React.FC = () => {
       }
 
       alert("✅ Task created successfully!");
-      navigate("/");
+      navigate("/tasks");
     } catch (err) {
       console.error(err);
       setErrors({ form: "Unexpected error creating task" });
@@ -208,8 +208,32 @@ const CreateTaskUI: React.FC = () => {
       onDragOver={handleDragOver}
       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
     >
-      {file ? file.name : `Drag & Drop ${label} here or click to upload`}
-      <input type="file" name={name} onChange={handleChange} className="absolute w-full h-full opacity-0 cursor-pointer" />
+      {file ? (
+      <div className="flex items-center gap-2">
+        <span>{file.name}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTask({ ...task, [name]: null });
+          }}
+          className="text-red-500 hover:text-red-700 font-bold"
+          title="Remove file"
+        >
+          ❌
+        </button>
+      </div>
+    ) : (
+      `Drag & Drop ${label} here or click to upload`
+    )}
+      {!file && (
+      <input
+        type="file"
+        name={name}
+        onChange={handleChange}
+        className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
+      />
+    )}
     </div>
   );
 
@@ -224,7 +248,7 @@ const CreateTaskUI: React.FC = () => {
       />
       <div className="min-h-screen w-full bg-white flex justify-center py-10 px-4">
         <div className="w-full max-w-6xl bg-gray-100 p-8 rounded-lg shadow-lg">
-          <h1 className="text-3xl font-semibold text-center text-blue-600 mb-8">Create New Task</h1>
+          <h1 className="text-3xl font-semibold text-center text-[#3903a0] mb-8">Create New Task</h1>
           {errors.form && <p className="text-red-500 text-center mb-4">{errors.form}</p>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
@@ -299,7 +323,7 @@ const CreateTaskUI: React.FC = () => {
               <label className="flex items-center gap-2 text-gray-900">
                 <input type="checkbox" name="sempleFile" checked={task.sempleFile}
                   onChange={(e) => setTask({ ...task, sempleFile: e.target.checked })} className="h-4 w-4" />
-                Sample File?
+                Sample File Required?
               </label>
             </div>
 

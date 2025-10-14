@@ -66,6 +66,7 @@ interface DomainStats {
 const TaskPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchText);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -207,7 +208,7 @@ const TaskPage: React.FC = () => {
         : "";
 
       const queryParams = new URLSearchParams({
-        search: searchText.trim(),
+        search: debouncedSearch.trim(),
         status: statusParam,
         page: page.toString(),
         limit: limit.toString(),
@@ -234,8 +235,17 @@ const TaskPage: React.FC = () => {
   };
 
   useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedSearch(searchText);
+  }, 1000); // wait 500ms after last keystroke
+
+  return () => clearTimeout(handler);
+}, [searchText]);
+
+
+  useEffect(() => {
     fetchTasks();
-  }, [searchText, statusFilter, page]);
+  }, [debouncedSearch, statusFilter, page]);
 
 
 
@@ -271,7 +281,7 @@ const TaskPage: React.FC = () => {
 
   const getStatusClass = (status?: string) => {
     if (!status) return "bg-gray-100 text-gray-800"; // fallback for undefined
-    switch (status.toLowerCase()) {
+    switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "in-progress":
@@ -286,7 +296,7 @@ const TaskPage: React.FC = () => {
       case "in-rd":
         return "bg-orange-100 text-orange-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-orange-100 text-orange-800";
     }
   };
 
@@ -296,6 +306,15 @@ const TaskPage: React.FC = () => {
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? "-" : format(d, "yyyy-MM-dd");
   };
+
+  const formatStatus = (status?: string) => {
+  if (!status) return "-";
+  return status
+    .split(/[-\s]/) // split by hyphen or space
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join("-"); // join with hyphen
+};
+
 
   // --- Updated handleStatusUpdate (use currentDomain/currentTask internally) ---
   const handleStatusUpdate = async () => {
@@ -368,7 +387,7 @@ const TaskPage: React.FC = () => {
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}
-      </div>
+      </div> 
 
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -408,7 +427,7 @@ const TaskPage: React.FC = () => {
             <thead className="bg-gray-200">
               <tr>
                 {[
-                  "Sr",
+                  "No.",
                   "Project Code",
                   "Project",
                   "Assigned By",
@@ -488,11 +507,12 @@ const TaskPage: React.FC = () => {
                       }
                     >
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.domainStatus)}`}
-                        title={role === "TL" || role === "Manager" ? "Click to change status" : ""}
-                      >
-                        {row.domainStatus || "-"}
-                      </span>
+  className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.domainStatus)}`}
+  title={role === "TL" || role === "Manager" ? "Click to change status" : ""}
+>
+  {formatStatus(row.domainStatus)}
+</span>
+
                     </td>
                     <td className="px-4 py-3 border-b border-gray-300">
                       <div className="flex gap-4 items-center">

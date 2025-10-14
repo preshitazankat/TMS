@@ -458,7 +458,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       // Append each field properly
       formData.append("platform", submission.platform || "");
       formData.append("domain", submission.domain || "");
-      formData.append("country", JSON.stringify(submission.country)); // convert array to JSON string
+      submission.country.forEach((c) => formData.append("country[]", c)); // convert array to JSON string
 
       formData.append("approxVolume", submission.approxVolume || "");
       formData.append("method", submission.method || "");
@@ -569,10 +569,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
   />
       <div className="min-h-screen w-full   flex justify-center py-10 px-4">
         <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
-          <h3 className="mb-6 text-xl font-semibold text-gray-800 dark:text-white/90">
-            Submit Task
-          </h3>
-          <h2 className="text-3xl text-center text-blue-400 font-semibold mb-8">
+          
+          <h2 className="text-3xl text-center text-[#3903a0] font-semibold mb-8">
             {/* Project codes */}
             {Array.isArray(taskDetails?.projectCode)
               ? `[${taskDetails.projectCode.join(", ")}]`
@@ -833,7 +831,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                       Select Login Type
                     </option>
                     <option value="Free">Free Login</option>
-                    <option value="Purchased login">Purchased Login</option>
+                    <option value="Padi login">Padi Login</option>
                   </select>
                   {errors.loginType && (
                     <p className="text-red-400 text-sm mt-1">
@@ -1030,7 +1028,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   <input
                     type="text"
                     name="sowUrl"
-                    value={submission.sowUrl || ""}
+                    value={submission.
+outputUrl || ""}
                     onChange={handleChange}
                     placeholder="Enter Output Document URL"
                     className="w-full p-3 rounded-md  border border-gray-600 

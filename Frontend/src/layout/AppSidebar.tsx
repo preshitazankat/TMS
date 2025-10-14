@@ -20,6 +20,9 @@ import {
    Cells
 
 } from "../icons";
+
+import { FiUsers, FiCheckSquare,FiGrid, FiHome } from "react-icons/fi"; // Users and Task icons
+
 import { useSidebar } from "../context/SidebarContext";
 // import SidebarWidget from "./SidebarWidget";
 
@@ -32,19 +35,19 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    icon: <BoxCubeIcon />,
+    icon:  <FiGrid className="w-6 h-6" />,
     name: "dashboard",
     path: "/",
   },
 
   {
-    icon: <UserCircleIcon />,
+    icon: <FiCheckSquare className="w-6 h-6" />,
     name: "Task",
     path: "/tasks",
   },
 
   {
-    icon: <UserCircleIcon />,
+    icon:  <FiUsers className="w-6 h-6" />,
     name: "User",
     path: "/admin"
 

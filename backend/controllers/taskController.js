@@ -279,7 +279,7 @@ export const submitTask = async (req, res) => {
 
     const submissionData = {
       platform: body.platform,
-      typeOfDelivery: normalizeEnum(body.typeOfDelivery, ["api", "data as a service"]),
+      typeOfDelivery: normalizeEnum(body.typeOfDelivery, ["api", "data as a service","both"]),
       typeOfPlatform: normalizeEnum(body.typeOfPlatform, ["web", "app", "both"]),
       complexity: normalizeEnum(body.complexity, ["Low", "Medium", "High", "Very High"]),
       userLogin: body.userLogin === true || body.userLogin === "true",

@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { FileText, Users, Calendar, Folder, ArrowLeft } from "lucide-react";
@@ -402,7 +401,7 @@ const FileBlock: React.FC<FileBlockProps> = ({ label, file, url, buildFileUrl })
     )}
     {url && (
       <a href={url} className="text-blue-600 underline block" target="_blank" rel="noreferrer">
-        View File
+        View URL
       </a>
     )}
     {!file && !url && <p className="text-gray-500">-</p>}

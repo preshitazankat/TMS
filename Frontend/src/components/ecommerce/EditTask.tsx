@@ -408,8 +408,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       }
 
        toast.success("✅ Task updated successfully!");
-    setTimeout(() => navigate("/"), 1500); 
-      navigate("/");
+       setTimeout(() => navigate("/tasks"), 1500); 
+      navigate("/tasks");
     } catch (err) {
       console.error(err);
       toast.error("❌ Error updating task!");
@@ -481,7 +481,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
 
 
-          <h1 className="text-3xl font-semibold text-center text-blue-400 mb-8">{task.projectCode ? `[${task.projectCode}] ${task.title}` : "Edit Task"}</h1>
+          <h1 className="text-3xl font-semibold text-center text-[#3903a0] mb-8">{task.projectCode ? `[${task.projectCode}] ${task.title}` : "Edit Task"}</h1>
           {errors.form && <p className="text-red-500 text-center mb-4">{errors.form}</p>}
           <form onSubmit={handleSubmit} className="space-y-6 w-full">
             {/* Title */}

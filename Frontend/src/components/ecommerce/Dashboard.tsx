@@ -25,6 +25,7 @@ interface DeveloperTask {
   completed: number;
   inProgress: number;
   inRD: number;
+  delayed:number;
 }
 
 const Dashboard: React.FC = () => {
@@ -42,6 +43,8 @@ const Dashboard: React.FC = () => {
   const [userRole, setUserRole] = useState<string>("");
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const [sortBy, setSortBy] = useState<keyof DeveloperTask | "total" | "completed" | "inProgress" | "inRD" | "delayed" | "assigned" | "none">("none");
+const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
@@ -104,7 +107,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
+  useEffect(()=>{
     const token = getCookie("token");
     if (!token) return navigate("/login");
 
@@ -130,6 +133,13 @@ const Dashboard: React.FC = () => {
     { label: "In-R&D", value: stats.inRD, bgColor: "bg-orange-500" },
   ];
 
+  const sortedDevelopers = [...developers].sort((a, b) => {
+  if (sortBy === "none") return 0;
+  const aValue = (a as any)[sortBy] || 0;
+  const bValue = (b as any)[sortBy] || 0;
+  return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+});
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {/* Cards */}
@@ -153,25 +163,43 @@ const Dashboard: React.FC = () => {
         <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
         <table className="w-full border-collapse">
           <thead className="bg-yellow-300">
-            <tr>
-              <th className="border px-4 py-2">Name</th>
-              <th className="border px-4 py-2">Assigned</th>
-              <th className="border px-4 py-2">Completed</th>
-              <th className="border px-4 py-2">In Progress</th>
-              <th className="border px-4 py-2">In R&D</th>
-            </tr>
-          </thead>
+  <tr>
+    <th className="border px-4 py-2">No.</th>
+    <th className="border px-4 py-2">Name</th>
+    {["total", "completed", "inProgress", "inRD", "delayed"].map((col) => (
+      <th
+        key={col}
+        className="border px-4 py-2 cursor-pointer"
+        onClick={() => {
+          if (sortBy === col) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+          } else {
+            setSortBy(col as keyof DeveloperTask);
+            setSortOrder("desc");
+          }
+        }}
+      >
+        {col === "total" ? "Assigned" : col === "inProgress" ? "In Progress" : col === "inRD" ? "In R&D" : col.charAt(0).toUpperCase() + col.slice(1)}
+        {sortBy === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
+      </th>
+    ))}
+  </tr>
+</thead>
+
           <tbody>
-            {developers.map((dev, idx) => (
-              <tr key={idx} className="hover:bg-gray-100 text-center">
-                <td className="border px-4 py-2">{dev.name}</td>
-                <td className="border px-4 py-2">{dev.total}</td>
-                <td className="border px-4 py-2">{dev.completed}</td>
-                <td className="border px-4 py-2">{dev.inProgress}</td>
-                <td className="border px-4 py-2">{dev.inRD}</td>
-              </tr>
-            ))}
-            <tr className="bg-gray-200 font-bold text-center">
+            {sortedDevelopers.map((dev, idx) => (
+      <tr key={idx} className="hover:bg-gray-100 text-center">
+      <td className="border px-4 py-2">{idx + 1}</td> {/* Auto number */}
+      <td className="border px-4 py-2">{dev.name}</td>
+      <td className="border px-4 py-2">{dev.total}</td>
+      <td className="border px-4 py-2">{dev.completed}</td>
+      <td className="border px-4 py-2">{dev.inProgress}</td>
+      <td className="border px-4 py-2">{dev.inRD}</td>
+      <td className="border px-4 py-2">{dev.delayed}</td>
+    </tr>
+  ))}
+          <tr className="bg-gray-200 font-bold text-center">
+          <td className="border px-4 py-2"></td>
           <td className="border px-4 py-2">Total</td>
           <td className="border px-4 py-2">
             {developers.reduce((sum, dev) => sum + dev.total, 0)}
@@ -184,6 +212,9 @@ const Dashboard: React.FC = () => {
           </td>
           <td className="border px-4 py-2">
             {developers.reduce((sum, dev) => sum + dev.inRD, 0)}
+          </td>
+          <td className="border px-4 py-2">
+            {developers.reduce((sum, dev) => sum + dev.delayed, 0)}
           </td>
         </tr>
           </tbody>

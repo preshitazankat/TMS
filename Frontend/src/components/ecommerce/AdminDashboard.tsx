@@ -50,7 +50,7 @@ const AdminDashboard: React.FC = () => {
   }, [users, searchText]);
 
   const handleEditClick = (user: User) => {
-    setSelectedUser(user);
+    setSelectedUser(user); 
     setEditOpen(true);
   };
 

@@ -38,7 +38,7 @@ const taskSchema = new mongoose.Schema(
     taskAssignedDate: { type: Date, required: true },
     targetDate: { type: Date, required: true },
     completeDate: { type: Date },
-    typeOfDelivery: { type: String, enum: ["api", "data as a service"] },
+    typeOfDelivery: { type: String, enum: ["api", "data as a service","both"] },
     typeOfPlatform: { type: String, enum: ["web", "app", "both"] },
 
     
@@ -48,7 +48,7 @@ const taskSchema = new mongoose.Schema(
 
     platform: { type: String }, // backward compatibility
     userLogin: { type: Boolean, default: false },
-    loginType: { type: String, enum: ["Free login", "Purchased login"], default: null },
+    loginType: { type: String, enum: ["Free login", "Paid login"], default: null },
     credentials: { type: String },
 
     country: { type: String },
