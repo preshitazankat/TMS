@@ -7,6 +7,8 @@ import CreatableSelect from "react-select/creatable";
 import { format } from "date-fns";
 import { options } from "@fullcalendar/core/preact.js";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface SubmitTaskProps {
   taskData?: any;
@@ -61,195 +63,195 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     { value: "Antigua and Barbuda", label: "Antigua and Barbuda" },
     { value: "Argentina", label: "Argentina" },
     { value: "Armenia", label: "Armenia" },
-  //   { value: "Australia", label: "Australia" },
-  //   { value: "Austria", label: "Austria" },
-  //   { value: "Azerbaijan", label: "Azerbaijan" },
-  //   { value: "Bahamas", label: "Bahamas" },
-  //   { value: "Bahrain", label: "Bahrain" },
-  //   { value: "Bangladesh", label: "Bangladesh" },
-  //   { value: "Barbados", label: "Barbados" },
-  //   { value: "Belarus", label: "Belarus" },
-  //   { value: "Belgium", label: "Belgium" },
-  //   { value: "Belize", label: "Belize" },
-  //   { value: "Benin", label: "Benin" },
-  //   { value: "Bhutan", label: "Bhutan" },
-  //   { value: "Bolivia", label: "Bolivia" },
-  //   { value: "Bosnia and Herzegovina", label: "Bosnia and Herzegovina" },
-  //   { value: "Botswana", label: "Botswana" },
-  //   { value: "Brazil", label: "Brazil" },
-  //   { value: "Brunei", label: "Brunei" },
-  //   { value: "Bulgaria", label: "Bulgaria" },
-  //   { value: "Burkina Faso", label: "Burkina Faso" },
-  //   { value: "Burundi", label: "Burundi" },
-  //   { value: "Cabo Verde", label: "Cabo Verde" },
-  //   { value: "Cambodia", label: "Cambodia" },
-  //   { value: "Cameroon", label: "Cameroon" },
-  //   { value: "Canada", label: "Canada" },
-  //   { value: "Central African Republic", label: "Central African Republic" },
-  //   { value: "Chad", label: "Chad" },
-  //   { value: "Chile", label: "Chile" },
-  //   { value: "China", label: "China" },
-  //   { value: "Colombia", label: "Colombia" },
-  //   { value: "Comoros", label: "Comoros" },
-  //   { value: "Congo", label: "Congo" },
-  //   { value: "Costa Rica", label: "Costa Rica" },
-  //   { value: "Croatia", label: "Croatia" },
-  //   { value: "Cuba", label: "Cuba" },
-  //   { value: "Cyprus", label: "Cyprus" },
-  //   { value: "Czechia", label: "Czechia" },
-  //   { value: "Denmark", label: "Denmark" },
-  //   { value: "Djibouti", label: "Djibouti" },
-  //   { value: "Dominica", label: "Dominica" },
-  //   { value: "Dominican Republic", label: "Dominican Republic" },
-  //   { value: "Ecuador", label: "Ecuador" },
-  //   { value: "Egypt", label: "Egypt" },
-  //   { value: "El Salvador", label: "El Salvador" },
-  //   { value: "Equatorial Guinea", label: "Equatorial Guinea" },
-  //   { value: "Eritrea", label: "Eritrea" },
-  //   { value: "Estonia", label: "Estonia" },
-  //   { value: "Eswatini", label: "Eswatini" },
-  //   { value: "Ethiopia", label: "Ethiopia" },
-  //   { value: "Fiji", label: "Fiji" },
-  //   { value: "Finland", label: "Finland" },
-  //   { value: "France", label: "France" },
-  //   { value: "Gabon", label: "Gabon" },
-  //   { value: "Gambia", label: "Gambia" },
-  //   { value: "Georgia", label: "Georgia" },
-  //   { value: "Germany", label: "Germany" },
-  //   { value: "Ghana", label: "Ghana" },
-  //   { value: "Greece", label: "Greece" },
-  //   { value: "Grenada", label: "Grenada" },
-  //   { value: "Guatemala", label: "Guatemala" },
-  //   { value: "Guinea", label: "Guinea" },
-  //   { value: "Guinea-Bissau", label: "Guinea-Bissau" },
-  //   { value: "Guyana", label: "Guyana" },
-  //   { value: "Haiti", label: "Haiti" },
-  //   { value: "Honduras", label: "Honduras" },
-  //   { value: "Hungary", label: "Hungary" },
-  //   { value: "Iceland", label: "Iceland" },
-  //   { value: "India", label: "India" },
-  //   { value: "Indonesia", label: "Indonesia" },
-  //   { value: "Iran", label: "Iran" },
-  //   { value: "Iraq", label: "Iraq" },
-  //   { value: "Ireland", label: "Ireland" },
-  //   { value: "Israel", label: "Israel" },
-  //   { value: "Italy", label: "Italy" },
-  //   { value: "Jamaica", label: "Jamaica" },
-  //   { value: "Japan", label: "Japan" },
-  //   { value: "Jordan", label: "Jordan" },
-  //   { value: "Kazakhstan", label: "Kazakhstan" },
-  //   { value: "Kenya", label: "Kenya" },
-  //   { value: "Kiribati", label: "Kiribati" },
-  //   { value: "Kuwait", label: "Kuwait" },
-  //   { value: "Kyrgyzstan", label: "Kyrgyzstan" },
-  //   { value: "Laos", label: "Laos" },
-  //   { value: "Latvia", label: "Latvia" },
-  //   { value: "Lebanon", label: "Lebanon" },
-  //   { value: "Lesotho", label: "Lesotho" },
-  //   { value: "Liberia", label: "Liberia" },
-  //   { value: "Libya", label: "Libya" },
-  //   { value: "Liechtenstein", label: "Liechtenstein" },
-  //   { value: "Lithuania", label: "Lithuania" },
-  //   { value: "Luxembourg", label: "Luxembourg" },
-  //   { value: "Madagascar", label: "Madagascar" },
-  //   { value: "Malawi", label: "Malawi" },
-  //   { value: "Malaysia", label: "Malaysia" },
-  //   { value: "Maldives", label: "Maldives" },
-  //   { value: "Mali", label: "Mali" },
-  //   { value: "Malta", label: "Malta" },
-  //   { value: "Marshall Islands", label: "Marshall Islands" },
-  //   { value: "Mauritania", label: "Mauritania" },
-  //   { value: "Mauritius", label: "Mauritius" },
-  //   { value: "Mexico", label: "Mexico" },
-  //   { value: "Micronesia", label: "Micronesia" },
-  //   { value: "Moldova", label: "Moldova" },
-  //   { value: "Monaco", label: "Monaco" },
-  //   { value: "Mongolia", label: "Mongolia" },
-  //   { value: "Montenegro", label: "Montenegro" },
-  //   { value: "Morocco", label: "Morocco" },
-  //   { value: "Mozambique", label: "Mozambique" },
-  //   { value: "Myanmar", label: "Myanmar" },
-  //   { value: "Namibia", label: "Namibia" },
-  //   { value: "Nauru", label: "Nauru" },
-  //   { value: "Nepal", label: "Nepal" },
-  //   { value: "Netherlands", label: "Netherlands" },
-  //   { value: "New Zealand", label: "New Zealand" },
-  //   { value: "Nicaragua", label: "Nicaragua" },
-  //   { value: "Niger", label: "Niger" },
-  //   { value: "Nigeria", label: "Nigeria" },
-  //   { value: "North Korea", label: "North Korea" },
-  //   { value: "North Macedonia", label: "North Macedonia" },
-  //   { value: "Norway", label: "Norway" },
-  //   { value: "Oman", label: "Oman" },
-  //   { value: "Pakistan", label: "Pakistan" },
-  //   { value: "Palau", label: "Palau" },
-  //   { value: "Palestine", label: "Palestine" },
-  //   { value: "Panama", label: "Panama" },
-  //   { value: "Papua New Guinea", label: "Papua New Guinea" },
-  //   { value: "Paraguay", label: "Paraguay" },
-  //   { value: "Peru", label: "Peru" },
-  //   { value: "Philippines", label: "Philippines" },
-  //   { value: "Poland", label: "Poland" },
-  //   { value: "Portugal", label: "Portugal" },
-  //   { value: "Qatar", label: "Qatar" },
-  //   { value: "Romania", label: "Romania" },
-  //   { value: "Russia", label: "Russia" },
-  //   { value: "Rwanda", label: "Rwanda" },
-  //   { value: "Saint Kitts and Nevis", label: "Saint Kitts and Nevis" },
-  //   { value: "Saint Lucia", label: "Saint Lucia" },
-  //   {
-  //     value: "Saint Vincent and the Grenadines",
-  //     label: "Saint Vincent and the Grenadines",
-  //   },
-  //   { value: "Samoa", label: "Samoa" },
-  //   { value: "San Marino", label: "San Marino" },
-  //   { value: "Sao Tome and Principe", label: "Sao Tome and Principe" },
-  //   { value: "Saudi Arabia", label: "Saudi Arabia" },
-  //   { value: "Senegal", label: "Senegal" },
-  //   { value: "Serbia", label: "Serbia" },
-  //   { value: "Seychelles", label: "Seychelles" },
-  //   { value: "Sierra Leone", label: "Sierra Leone" },
-  //   { value: "Singapore", label: "Singapore" },
-  //   { value: "Slovakia", label: "Slovakia" },
-  //   { value: "Slovenia", label: "Slovenia" },
-  //   { value: "Solomon Islands", label: "Solomon Islands" },
-  //   { value: "Somalia", label: "Somalia" },
-  //   { value: "South Africa", label: "South Africa" },
-  //   { value: "South Korea", label: "South Korea" },
-  //   { value: "South Sudan", label: "South Sudan" },
-  //   { value: "Spain", label: "Spain" },
-  //   { value: "Sri Lanka", label: "Sri Lanka" },
-  //   { value: "Sudan", label: "Sudan" },
-  //   { value: "Suriname", label: "Suriname" },
-  //   { value: "Sweden", label: "Sweden" },
-  //   { value: "Switzerland", label: "Switzerland" },
-  //   { value: "Syria", label: "Syria" },
-  //   { value: "Taiwan", label: "Taiwan" },
-  //   { value: "Tajikistan", label: "Tajikistan" },
-  //   { value: "Tanzania", label: "Tanzania" },
-  //   { value: "Thailand", label: "Thailand" },
-  //   { value: "Timor-Leste", label: "Timor-Leste" },
-  //   { value: "Togo", label: "Togo" },
-  //   { value: "Tonga", label: "Tonga" },
-  //   { value: "Trinidad and Tobago", label: "Trinidad and Tobago" },
-  //   { value: "Tunisia", label: "Tunisia" },
-  //   { value: "Turkey", label: "Turkey" },
-  //   { value: "Turkmenistan", label: "Turkmenistan" },
-  //   { value: "Tuvalu", label: "Tuvalu" },
-  //   { value: "Uganda", label: "Uganda" },
-  //   { value: "Ukraine", label: "Ukraine" },
-  //   { value: "United Arab Emirates", label: "United Arab Emirates" },
-  //   { value: "United Kingdom", label: "United Kingdom" },
-  //   { value: "United States", label: "United States" },
-  //   { value: "Uruguay", label: "Uruguay" },
-  //   { value: "Uzbekistan", label: "Uzbekistan" },
-  //   { value: "Vanuatu", label: "Vanuatu" },
-  //   { value: "Vatican City", label: "Vatican City" },
-  //   { value: "Venezuela", label: "Venezuela" },
-  //   { value: "Vietnam", label: "Vietnam" },
-  //   { value: "Yemen", label: "Yemen" },
-  //   { value: "Zambia", label: "Zambia" },
-  //   { value: "Zimbabwe", label: "Zimbabwe" },
+    { value: "Australia", label: "Australia" },
+    { value: "Austria", label: "Austria" },
+    { value: "Azerbaijan", label: "Azerbaijan" },
+    { value: "Bahamas", label: "Bahamas" },
+    { value: "Bahrain", label: "Bahrain" },
+    { value: "Bangladesh", label: "Bangladesh" },
+    { value: "Barbados", label: "Barbados" },
+    { value: "Belarus", label: "Belarus" },
+    { value: "Belgium", label: "Belgium" },
+    { value: "Belize", label: "Belize" },
+    { value: "Benin", label: "Benin" },
+    { value: "Bhutan", label: "Bhutan" },
+    { value: "Bolivia", label: "Bolivia" },
+    { value: "Bosnia and Herzegovina", label: "Bosnia and Herzegovina" },
+    { value: "Botswana", label: "Botswana" },
+    { value: "Brazil", label: "Brazil" },
+    { value: "Brunei", label: "Brunei" },
+    { value: "Bulgaria", label: "Bulgaria" },
+    { value: "Burkina Faso", label: "Burkina Faso" },
+    { value: "Burundi", label: "Burundi" },
+    { value: "Cabo Verde", label: "Cabo Verde" },
+    { value: "Cambodia", label: "Cambodia" },
+    { value: "Cameroon", label: "Cameroon" },
+    { value: "Canada", label: "Canada" },
+    { value: "Central African Republic", label: "Central African Republic" },
+    { value: "Chad", label: "Chad" },
+    { value: "Chile", label: "Chile" },
+    { value: "China", label: "China" },
+    { value: "Colombia", label: "Colombia" },
+    { value: "Comoros", label: "Comoros" },
+    { value: "Congo", label: "Congo" },
+    { value: "Costa Rica", label: "Costa Rica" },
+    { value: "Croatia", label: "Croatia" },
+    { value: "Cuba", label: "Cuba" },
+    { value: "Cyprus", label: "Cyprus" },
+    { value: "Czechia", label: "Czechia" },
+    { value: "Denmark", label: "Denmark" },
+    { value: "Djibouti", label: "Djibouti" },
+    { value: "Dominica", label: "Dominica" },
+    { value: "Dominican Republic", label: "Dominican Republic" },
+    { value: "Ecuador", label: "Ecuador" },
+    { value: "Egypt", label: "Egypt" },
+    { value: "El Salvador", label: "El Salvador" },
+    { value: "Equatorial Guinea", label: "Equatorial Guinea" },
+    { value: "Eritrea", label: "Eritrea" },
+    { value: "Estonia", label: "Estonia" },
+    { value: "Eswatini", label: "Eswatini" },
+    { value: "Ethiopia", label: "Ethiopia" },
+    { value: "Fiji", label: "Fiji" },
+    { value: "Finland", label: "Finland" },
+    { value: "France", label: "France" },
+    { value: "Gabon", label: "Gabon" },
+    { value: "Gambia", label: "Gambia" },
+    { value: "Georgia", label: "Georgia" },
+    { value: "Germany", label: "Germany" },
+    { value: "Ghana", label: "Ghana" },
+    { value: "Greece", label: "Greece" },
+    { value: "Grenada", label: "Grenada" },
+    { value: "Guatemala", label: "Guatemala" },
+    { value: "Guinea", label: "Guinea" },
+    { value: "Guinea-Bissau", label: "Guinea-Bissau" },
+    { value: "Guyana", label: "Guyana" },
+    { value: "Haiti", label: "Haiti" },
+    { value: "Honduras", label: "Honduras" },
+    { value: "Hungary", label: "Hungary" },
+    { value: "Iceland", label: "Iceland" },
+    { value: "India", label: "India" },
+    { value: "Indonesia", label: "Indonesia" },
+    { value: "Iran", label: "Iran" },
+    { value: "Iraq", label: "Iraq" },
+    { value: "Ireland", label: "Ireland" },
+    { value: "Israel", label: "Israel" },
+    { value: "Italy", label: "Italy" },
+    { value: "Jamaica", label: "Jamaica" },
+    { value: "Japan", label: "Japan" },
+    { value: "Jordan", label: "Jordan" },
+    { value: "Kazakhstan", label: "Kazakhstan" },
+    { value: "Kenya", label: "Kenya" },
+    { value: "Kiribati", label: "Kiribati" },
+    { value: "Kuwait", label: "Kuwait" },
+    { value: "Kyrgyzstan", label: "Kyrgyzstan" },
+    { value: "Laos", label: "Laos" },
+    { value: "Latvia", label: "Latvia" },
+    { value: "Lebanon", label: "Lebanon" },
+    { value: "Lesotho", label: "Lesotho" },
+    { value: "Liberia", label: "Liberia" },
+    { value: "Libya", label: "Libya" },
+    { value: "Liechtenstein", label: "Liechtenstein" },
+    { value: "Lithuania", label: "Lithuania" },
+    { value: "Luxembourg", label: "Luxembourg" },
+    { value: "Madagascar", label: "Madagascar" },
+    { value: "Malawi", label: "Malawi" },
+    { value: "Malaysia", label: "Malaysia" },
+    { value: "Maldives", label: "Maldives" },
+    { value: "Mali", label: "Mali" },
+    { value: "Malta", label: "Malta" },
+    { value: "Marshall Islands", label: "Marshall Islands" },
+    { value: "Mauritania", label: "Mauritania" },
+    { value: "Mauritius", label: "Mauritius" },
+    { value: "Mexico", label: "Mexico" },
+    { value: "Micronesia", label: "Micronesia" },
+    { value: "Moldova", label: "Moldova" },
+    { value: "Monaco", label: "Monaco" },
+    { value: "Mongolia", label: "Mongolia" },
+    { value: "Montenegro", label: "Montenegro" },
+    { value: "Morocco", label: "Morocco" },
+    { value: "Mozambique", label: "Mozambique" },
+    { value: "Myanmar", label: "Myanmar" },
+    { value: "Namibia", label: "Namibia" },
+    { value: "Nauru", label: "Nauru" },
+    { value: "Nepal", label: "Nepal" },
+    { value: "Netherlands", label: "Netherlands" },
+    { value: "New Zealand", label: "New Zealand" },
+    { value: "Nicaragua", label: "Nicaragua" },
+    { value: "Niger", label: "Niger" },
+    { value: "Nigeria", label: "Nigeria" },
+    { value: "North Korea", label: "North Korea" },
+    { value: "North Macedonia", label: "North Macedonia" },
+    { value: "Norway", label: "Norway" },
+    { value: "Oman", label: "Oman" },
+    { value: "Pakistan", label: "Pakistan" },
+    { value: "Palau", label: "Palau" },
+    { value: "Palestine", label: "Palestine" },
+    { value: "Panama", label: "Panama" },
+    { value: "Papua New Guinea", label: "Papua New Guinea" },
+    { value: "Paraguay", label: "Paraguay" },
+    { value: "Peru", label: "Peru" },
+    { value: "Philippines", label: "Philippines" },
+    { value: "Poland", label: "Poland" },
+    { value: "Portugal", label: "Portugal" },
+    { value: "Qatar", label: "Qatar" },
+    { value: "Romania", label: "Romania" },
+    { value: "Russia", label: "Russia" },
+    { value: "Rwanda", label: "Rwanda" },
+    { value: "Saint Kitts and Nevis", label: "Saint Kitts and Nevis" },
+    { value: "Saint Lucia", label: "Saint Lucia" },
+    {
+      value: "Saint Vincent and the Grenadines",
+      label: "Saint Vincent and the Grenadines",
+    },
+    { value: "Samoa", label: "Samoa" },
+    { value: "San Marino", label: "San Marino" },
+    { value: "Sao Tome and Principe", label: "Sao Tome and Principe" },
+    { value: "Saudi Arabia", label: "Saudi Arabia" },
+    { value: "Senegal", label: "Senegal" },
+    { value: "Serbia", label: "Serbia" },
+    { value: "Seychelles", label: "Seychelles" },
+    { value: "Sierra Leone", label: "Sierra Leone" },
+    { value: "Singapore", label: "Singapore" },
+    { value: "Slovakia", label: "Slovakia" },
+    { value: "Slovenia", label: "Slovenia" },
+    { value: "Solomon Islands", label: "Solomon Islands" },
+    { value: "Somalia", label: "Somalia" },
+    { value: "South Africa", label: "South Africa" },
+    { value: "South Korea", label: "South Korea" },
+    { value: "South Sudan", label: "South Sudan" },
+    { value: "Spain", label: "Spain" },
+    { value: "Sri Lanka", label: "Sri Lanka" },
+    { value: "Sudan", label: "Sudan" },
+    { value: "Suriname", label: "Suriname" },
+    { value: "Sweden", label: "Sweden" },
+    { value: "Switzerland", label: "Switzerland" },
+    { value: "Syria", label: "Syria" },
+    { value: "Taiwan", label: "Taiwan" },
+    { value: "Tajikistan", label: "Tajikistan" },
+    { value: "Tanzania", label: "Tanzania" },
+    { value: "Thailand", label: "Thailand" },
+    { value: "Timor-Leste", label: "Timor-Leste" },
+    { value: "Togo", label: "Togo" },
+    { value: "Tonga", label: "Tonga" },
+    { value: "Trinidad and Tobago", label: "Trinidad and Tobago" },
+    { value: "Tunisia", label: "Tunisia" },
+    { value: "Turkey", label: "Turkey" },
+    { value: "Turkmenistan", label: "Turkmenistan" },
+    { value: "Tuvalu", label: "Tuvalu" },
+    { value: "Uganda", label: "Uganda" },
+    { value: "Ukraine", label: "Ukraine" },
+    { value: "United Arab Emirates", label: "United Arab Emirates" },
+    { value: "United Kingdom", label: "United Kingdom" },
+    { value: "United States", label: "United States" },
+    { value: "Uruguay", label: "Uruguay" },
+    { value: "Uzbekistan", label: "Uzbekistan" },
+    { value: "Vanuatu", label: "Vanuatu" },
+    { value: "Vatican City", label: "Vatican City" },
+    { value: "Venezuela", label: "Venezuela" },
+    { value: "Vietnam", label: "Vietnam" },
+    { value: "Yemen", label: "Yemen" },
+    { value: "Zambia", label: "Zambia" },
+    { value: "Zimbabwe", label: "Zimbabwe" },
    ];
 
   const isValidDocumentUrl = (url: string) => {
@@ -377,14 +379,14 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
       if (!isValid && value !== "") {
         // you can show inline error instead of alert if you prefer
-        alert("❌ Approx Volume must start with digits or be 'N/A'");
+        toast.error("❌ Approx Volume must start with digits or be 'N/A'");
         return;
       }
     }
 
     if (name === "sowUrl" || name === "inputUrl") {
       if (value && !isValidDocumentUrl(value)) {
-        alert(
+        toast.error(
           `❌ Invalid URL. Must start with http/https and end with one of: ${allowedExtensions.join(
             ", "
           )}`
@@ -491,18 +493,18 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
       if (!res.ok) {
         const errText = await res.text();
-        alert("❌ Error submitting task: " + errText);
+        toast.error("❌ Error submitting task: " + errText);
         return;
       }
 
       const data = await res.json();
       console.log("Returned task:", data);
 
-      alert("✅ Task submitted successfully!");
+      toast.success("✅ Task submitted successfully!");
       window.location.href = "/";
     } catch (err) {
       console.error(err);
-      alert("❌ Error submitting task!");
+      toast.error("❌ Error submitting task!");
     }
   };
 
@@ -553,9 +555,20 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
           { title: "Submit" },
         ]}
       />
-
-      <div className="min-h-screen w-full bg-gray-100 dark:bg-gray-900 flex justify-center py-10 px-4">
-        <div className="w-full max-w-7xl bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
+ <ToastContainer
+    position="top-right"
+    autoClose={3000}
+    hideProgressBar={false}
+    newestOnTop={false}
+    closeOnClick
+    rtl={false}
+    pauseOnFocusLoss
+    draggable
+    pauseOnHover
+    theme="colored"
+  />
+      <div className="min-h-screen w-full   flex justify-center py-10 px-4">
+        <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
           <h3 className="mb-6 text-xl font-semibold text-gray-800 dark:text-white/90">
             Submit Task
           </h3>
@@ -579,7 +592,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
               <table className="min-w-full text-left border-collapse rounded-lg overflow-hidden">
                 <thead>
-                  <tr className="bg-gray-700">
+                  <tr className="bg-gray-500">
                     <th className="px-4 py-3 text-gray-300 font-medium">
                       Platform
                     </th>
@@ -944,7 +957,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   name="complexity"
                   value={submission.complexity}
                   onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600 "
+                  className="w-full rounded-lg border border-gray-600 p-3"
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>

@@ -4,6 +4,9 @@ import { useParams, useNavigate } from "react-router"
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 interface Task {
   title: string;
@@ -95,7 +98,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   }, []);
 
   const assignedByOptions = users.filter((u) => u.role === "Sales");
-  const assignedToOptions = users.filter((u) => u.role === "TL");
+  const assignedToOptions = users.filter((u) => (u.role === "TL" || u.role==="Manager"));
   const developerOptions = users.filter((u) => u.role === "Developer");
 
 
@@ -231,6 +234,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
             assignedBy: normalizeUserId(data.assignedBy),
             assignedTo: normalizeUserId(data.assignedTo),
             developers: normalizeDevelopers(data.developers),
+            typeOfDelivery:data.typeOfDelivery,
             domain: (data.domains || []).map((d: any) => ({
               name: d.name,
               status: d.status,
@@ -257,50 +261,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       setTask(normalizedTask);
     }
   }, [taskData, id, users]);
-  // ✅ Fetch task only after users are loaded so developer names can be resolved
-  // useEffect(() => {
-  //   if (!id || !users.length) return;
-
-  //   const fetchTask = async () => {
-  //     try {
-  //       const res = await fetch(`${apiUrl}/tasks/${id}`, {
-  //         headers: { "Content-Type": "application/json" },
-  //         credentials: "include",
-  //       });
-  //       const data = await res.json();
-
-  //       // Map developer IDs → names immediately
-  //       const developers = {};
-  //       (data.domains || []).forEach((d: any) => {
-  //         developers[d.name] = (d.developers || []).map((devId: string) => {
-  //           const user = users.find((u) => String(u._id) === String(devId));
-  //           return user ? user.name : devId; // fallback to ID
-  //         });
-  //       });
-
-  //       const normalizedTask: Task = {
-  //         ...data,
-  //         assignedBy: normalizeUserId(data.assignedBy),
-  //         assignedTo: normalizeUserId(data.assignedTo),
-  //         developers,
-  //         domain: (data.domains || []).map((d: any) => ({
-  //             name: d.name,
-  //             status: d.status,
-  //             submission: d.submission || { files: [], outputUrl: "" }
-  //           })),
-  //         outputFile: data.outputFile || null,
-  //         outputUrl: data.outputUrl || "",
-  //       };
-
-  //       setTask(normalizedTask);
-  //     } catch (error) {
-  //       console.error("Error loading task:", error);
-  //     }
-  //   };
-
-  //   fetchTask();
-  // }, [id, users]);
-
+  
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -324,8 +285,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       setTask((prev) => ({ ...prev, [name]: value }));
     }
   };
-
-
 
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof Task) => {
@@ -444,15 +403,16 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        alert("❌ Error updating task: " + JSON.stringify(data.errors || data));
+         toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
         return;
       }
 
-      alert("✅ Task updated successfully!");
+       toast.success("✅ Task updated successfully!");
+    setTimeout(() => navigate("/"), 1500); 
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert("❌ Error updating task!");
+      toast.error("❌ Error updating task!");
     } finally {
       setLoading(false);
     }
@@ -501,8 +461,24 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
           { title: "Edit Task" },
         ]}
       />
-      <div className="min-h-screen w-full bg-gray-100 dark:bg-gray-900 flex justify-center py-10 px-4">
-        <div className="w-full max-w-7xl bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
+      <>
+  <ToastContainer
+    position="top-right"
+    autoClose={3000}
+    hideProgressBar={false}
+    newestOnTop={false}
+    closeOnClick
+    rtl={false}
+    pauseOnFocusLoss
+    draggable
+    pauseOnHover
+    theme="colored"
+  />
+  {/* ...rest of your form */}
+</>
+
+      <div className="min-h-screen w-full  dark:bg-gray-900 flex justify-center py-10 px-4">
+        <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
 
 
           <h1 className="text-3xl font-semibold text-center text-blue-400 mb-8">{task.projectCode ? `[${task.projectCode}] ${task.title}` : "Edit Task"}</h1>

@@ -53,10 +53,13 @@ const TaskDetail: React.FC = () => {
   const [task, setTask] = useState<Task | null>(null);
   const apiUrl = import.meta.env.VITE_API_URL as string;
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchTask = async () => {
       try {
+        setLoading(true);
         const res = await fetch(`${apiUrl}/tasks/${id}`, { 
           method: "GET",
           credentials: "include",
@@ -66,7 +69,9 @@ const TaskDetail: React.FC = () => {
         setTask(data);
       } catch (err) {
         console.error(err);
-      }
+      }finally {
+      setLoading(false); // stop loader
+    }
     };
     fetchTask();
   }, [id, apiUrl]);
@@ -91,18 +96,16 @@ const TaskDetail: React.FC = () => {
 
   if (!task) return <div className="p-6 text-gray-800">Loading task details...</div>;
 
-  let submission: Submission | null = null;
+  let domainObj: any = null;
+let showDomainDetails = false;
 let displayedDomain: string | null = domainParam;
+let submission: Submission | null = null;
 
-// Find the selected domain’s submission
 if (task.domains && task.domains.length > 0) {
-  let domainObj = null;
-
   // 1️⃣ If URL param ?domain=something is present
   if (domainParam) {
     domainObj = task.domains.find((d) => d.name === domainParam);
   }
-
   // 2️⃣ If not specified, pick the first domain (for single-domain tasks)
   if (!domainObj && task.domains.length === 1) {
     domainObj = task.domains[0];
@@ -113,6 +116,10 @@ if (task.domains && task.domains.length > 0) {
   if (domainObj && domainObj.submission) {
     submission = domainObj.submission;
   }
+
+  // ✅ Determine if remarks/file should be shown
+  showDomainDetails =
+    domainObj && domainObj.status && domainObj.status.toLowerCase() === "in-r&d";
 }
 
 
@@ -125,9 +132,18 @@ if (task.domains && task.domains.length > 0) {
       return url;
     }
   };
+ if (loading) {
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+    </div>
+  );
+}
+
+  
 
   return (
-    <>
+    <> 
       <PageBreadcrumb
         items={[
           { title: "Home", path: "/" },
@@ -135,10 +151,10 @@ if (task.domains && task.domains.length > 0) {
           { title: task.projectCode },
         ]}
       />
-      <div className="min-h-screen bg-gray-100 py-10 px-4">
+      <div className="min-h-screen  py-10 px-4">
         <div className="max-w-5xl mx-auto space-y-8 text-gray-900">
           {/* HEADER */}
-          <div className="bg-white rounded-xl shadow-lg p-6 space-y-3">
+          <div className="bg-gray-100 rounded-xl shadow-lg p-6 space-y-3">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-bold">{task.projectCode}</h1>
               <span className="text-3xl font-bold">-</span>
@@ -162,15 +178,34 @@ if (task.domains && task.domains.length > 0) {
     </span>
   )}
 </div>
-
+{showDomainDetails && (
+  <div className="mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+    {domainObj.remarks && (
+      <p className="text-gray-900 text-sm mb-2">
+        <span className="font-semibold ">Reason:</span> {domainObj.remarks}
+      </p>
+    )}
+    {domainObj.upload && domainObj.upload.filename && (
+      
+      <a
+        href={buildFileUrl(domainObj.upload.path)}
+        target="_blank"
+        rel="noreferrer"
+        className="text-blue-600  text-sm"
+      >
+        <span className="font-semibold text-black">View Uploaded File:</span> {domainObj.upload.originalname}
+      </a>
+    )}
+  </div>
+)}
 
 
           </div>
 
           {/* SUBMISSION */}
-          <Section title="Submission" icon={<FileText size={18} className="text-blue-600" />}>
+          <Section title="Submission" icon={<FileText size={18} className="text-blue-600 bg-gray-100" />}>
             {submission ? (
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-100">
                 <div className="mb-4">
                   <label className="block text-[14px] text-gray-800 mb-1">Sample Output Data</label>
                   {submission.files && submission.files.length > 0 ? (
@@ -258,8 +293,8 @@ if (task.domains && task.domains.length > 0) {
           </Section>
 
           {/* TIMELINE */}
-          <Section title="Task Timeline" icon={<Calendar size={18} className="text-green-600" />}>
-            <div className="grid md:grid-cols-3 gap-6">
+          <Section title="Task Timeline" icon={<Calendar size={18} className="text-green-600 bg-gray-100" />}>
+            <div className="grid md:grid-cols-3 gap-6 ">
               <Detail label="Assigned" value={formatDateTime(task.taskAssignedDate)} />
               <Detail label="Target" value={formatDateTime(task.targetDate)} />
               <Detail
@@ -328,11 +363,15 @@ interface SectionProps {
 }
 
 const Section: React.FC<SectionProps> = ({ title, icon, children }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6">
-    <div className="flex items-center gap-2 mb-4">{icon}<h2 className="text-xl font-semibold">{title}</h2></div>
+  <div className="bg-gray-100 rounded-xl shadow-lg p-6">
+    <div className="flex items-center gap-2 mb-4">
+      {icon}
+      <h2 className="text-xl font-semibold">{title}</h2>
+    </div>
     {children}
   </div>
 );
+
 
 interface DetailProps {
   label: string;

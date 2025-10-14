@@ -18,7 +18,7 @@ interface Stats {
 }
 
 interface Domain {
-  _id: string;
+  _id: string | { $oid: string };
   name: string;
   status: string;
 }
@@ -72,24 +72,27 @@ const TaskPage: React.FC = () => {
   const { role } = useAuth();
   const [domainStats, setDomainStats] = useState<Record<string, DomainStats>>({});
   const [currentDomain, setCurrentDomain] = useState<{ id: string; name: string } | null>(null);
-
+  const [file, setFile] = useState<File | null>(null);
   const [stats, setStats] = useState<Stats>({
-      total: 0,
-      completed: 0,
-      pending: 0,
-      delayed: 0,
-      inProgress: 0,
-      inRD: 0,
-    });
+    total: 0,
+    completed: 0,
+    pending: 0,
+    delayed: 0,
+    inProgress: 0,
+    inRD: 0,
+  });
   const [developers, setDevelopers] = useState<DeveloperTask[]>([]);
   const [userRole, setUserRole] = useState<string>("");
 
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+
   const [newStatus, setNewStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
 
   const normalizedFilter = statusFilter.toLowerCase().replace(/\s/g, "").replace(/&/g, "and");
+  const [loading, setLoading] = useState(true);
+
 
 
   // --- openStatusModal (update so domain includes id + status) ---
@@ -157,85 +160,22 @@ const TaskPage: React.FC = () => {
   };
 
 
- const token = getCookie("token");
-        if (!token) return navigate("/login");
-  
+  const token = getCookie("token");
+  if (!token) return navigate("/login");
+
 
   useEffect(() => {
-    // if (!tasks || tasks.length === 0) return;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setUserRole(payload.role);
+      fetchStats(token);
 
-    // // const token = Cookies.get("token");
-    // if (!token) return;
+      // if (payload.role === "Manager") fetchDevelopers(token);
+    } catch (err) {
+      console.error("Invalid token", err);
+      navigate("/login");
+    }
 
-    // const decoded = jwtDecode(token);
-    // const userId = decoded.id;
-    // const role = decoded.role;
-
-    // const domainStats = {
-    //   total: 0,
-    //   pending: 0,
-    //   inProgress: 0,
-    //   delayed: 0,
-    //   completed: 0,
-    //   inRD: 0,
-    // };
-
-    // tasks.forEach((task) => {
-    //   task.domains?.forEach((d) => {
-    //     // ✅ If role is Developer, only count assigned domains
-    //     if (
-    //       role === "Developer" &&
-    //       !(d.developers || []).some(
-    //         (dev) =>
-    //           String(dev?._id || dev) === String(userId)
-    //       )
-    //     ) {
-    //       return;
-    //     }
-
-    //     domainStats.total += 1;
-
-    //     const status = (d.submission?.status || d.status || "pending").toLowerCase();
-    //     switch (status) {
-    //       case "pending":
-    //         domainStats.pending += 1;
-    //         break;
-    //       case "in-progress":
-    //         domainStats.inProgress += 1;
-    //         break;
-    //       case "delayed":
-    //         domainStats.delayed += 1;
-    //         break;
-    //       case "completed":
-    //       case "submitted":
-    //         domainStats.completed += 1;
-    //         break;
-    //       case "in-r&d":
-    //       case "in-R&D":
-    //         domainStats.inRD += 1;
-    //         break;
-    //       default:
-    //         break;
-    //     }
-    //   });
-    // });
-
-    // setStats(domainStats);
-
-    
-       
-    
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          setUserRole(payload.role);
-          fetchStats(token);
-        
-          // if (payload.role === "Manager") fetchDevelopers(token);
-        } catch (err) {
-          console.error("Invalid token", err);
-          navigate("/login");
-        }
-   
   }, []);
 
 
@@ -260,6 +200,7 @@ const TaskPage: React.FC = () => {
   const normalizeStatus = (status: string) =>
     status.toLowerCase().replace(/\s/g, "-").replace(/&/g, "and");
   const fetchTasks = async () => {
+    setLoading(true);
     try {
       const statusParam = statusFilter && statusFilter !== "All"
         ? statusFilter
@@ -287,6 +228,8 @@ const TaskPage: React.FC = () => {
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
+    }finally {
+      setLoading(false); 
     }
   };
 
@@ -294,24 +237,35 @@ const TaskPage: React.FC = () => {
     fetchTasks();
   }, [searchText, statusFilter, page]);
 
- 
 
-const expandedRows = useMemo(() => {
-  const rows: any[] = [];
-  tasks.forEach((task) => {
-    if (task.domains?.length) {
-      task.domains.forEach((domain) => {
-        rows.push({ task, domainName: domain.name, domainStatus: domain.status, developers: domain.developers });
-      });
-    } else {
-      rows.push({ task, domainName: null, domainStatus: task.status, developers: [] });
-    }
-  });
-  return rows;
-}, [tasks]);
 
-const paginatedRows = expandedRows; // backend already paginated
-const totalPagesComputed = totalPages; // from backend response
+  const expandedRows = useMemo(() => {
+    const rows: any[] = [];
+    tasks.forEach((task) => {
+      if (task.domainName) {
+        const domainObj = task.domain?.find(d => d.name === task.domainName) || task.domain?.[0];
+        rows.push({
+          task,
+          domainName: task.domainName,
+          domainId: domainObj ? (typeof domainObj._id === "object" ? domainObj._id.$oid : domainObj._id) : "",
+          domainStatus: task.domainStatus,
+          developers: task.domainDevelopers || [],
+        });
+      } else {
+        rows.push({
+          task,
+          domainName: null,
+          domainStatus: task.domainStatus || task.status || "Pending",
+          developers: [],
+        });
+      }
+    });
+    return rows;
+  }, [tasks]);
+
+
+  const paginatedRows = expandedRows; // backend already paginated
+  const totalPagesComputed = totalPages; // from backend response
 
 
 
@@ -345,40 +299,55 @@ const totalPagesComputed = totalPages; // from backend response
 
   // --- Updated handleStatusUpdate (use currentDomain/currentTask internally) ---
   const handleStatusUpdate = async () => {
-    if (!currentTask || !currentDomain) {
-      alert("No domain selected!");
-      return;
-    }
+    if (!currentTask || !currentDomain) return;
+
+    // const taskId = typeof currentTask._id === "object" ? currentTask._id.$oid : currentTask._id;
+    // const domainId = currentDomain?.id ?? "";
+
+    // console.log("domainID", domainId);
+
+
+
+    // if (!taskId || !currentDomain.id || !newStatus) {
+    //   alert("taskId, domainId, and status are required");
+    //   return;
+    // }
+
+    const formData = new FormData();
+    formData.append("taskId", currentTask._id);
+    formData.append("domainName", currentTask.domainName);
+    formData.append("status", newStatus);
+    formData.append("reason", statusReason);
+
+    if (file) formData.append("file", file);
 
     try {
       const res = await fetch(`${apiUrl}/tasks/domain-status`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        body: formData,
         credentials: "include",
-        body: JSON.stringify({
-          taskId: currentTask._id,
-          domainId: currentDomain.id,  // ✅ correct now
-          status: newStatus,
-          reason: statusReason,
-        }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        alert(json.message || json.error || "Failed to update status");
-        return;
-      }
+      if (!res.ok) throw new Error(json.message || "Update failed");
 
       await fetchTasks();
       closeStatusModal();
     } catch (err) {
-      console.error("Status update failed:", err);
-      alert("Something went wrong.");
+      console.error(err);
+      alert("Something went wrong");
     }
   };
+ if (loading) {
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+    </div>
+  );
+}
+
+
 
   return (
     <>
@@ -434,7 +403,7 @@ const totalPagesComputed = totalPages; // from backend response
       </div>
 
       <div className="rounded-lg border border-gray-300 bg-white p-5">
-        <div className="w-full overflow-x-auto border border-gray-300 rounded-lg bg-white">
+        <div className="w-full overflow-x-auto border border-gray-300 rounded-lg bg-gray-100">
           <table className="text-left text-sm w-full">
             <thead className="bg-gray-200">
               <tr>
@@ -465,9 +434,15 @@ const totalPagesComputed = totalPages; // from backend response
                 const srNo = (page - 1) * limit + idx + 1;
 
                 const developers = row.developers || [];
-                const domainObj = row.task?.domains?.find(
-                  (d) => d.name === row.domainName
-                );
+                const domainObj = row.task?.domains?.find(d => d.name === row.domainName) || row.task?.domains?.[0];
+
+                const domainId = domainObj
+                  ? typeof domainObj._id === "object"
+                    ? domainObj._id.$oid
+                    : domainObj._id
+                  : ""; // fallback if domainObj is undefined
+                console.log("domainID", domainId);
+
 
                 return (
                   <tr
@@ -486,11 +461,7 @@ const totalPagesComputed = totalPages; // from backend response
 
                     {/* Completion Date → domain completeDate */}
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.domainName && row.task.domains
-                        ? formatDate(
-                          row.task.domains.find((d) => d.name === row.domainName)?.completeDate
-                        )
-                        : "-"}
+                      {formatDate(row.task.completeDate)}
                     </td>
 
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.domainName || "-"}</td>
@@ -501,13 +472,20 @@ const totalPagesComputed = totalPages; // from backend response
                       className="px-4 py-3 border-b border-gray-300 whitespace-nowrap cursor-pointer"
                       onClick={() => {
                         if (role === "TL" || role === "Manager" || role === "Admin") {
+                          const domainObj = row.task?.domains?.find(d => d.name === row.domainName) || row.task?.domains?.[0];
+
+                          const domainId =
+                            typeof domainObj?._id === "object" ? domainObj._id.$oid ?? "" : domainObj?._id ?? "";
+
                           openStatusModal(row.task, {
-                            id: domainObj?._id,        // ✅ actual MongoDB subdocument _id
+                            id: domainId,
                             name: domainObj?.name || "Unknown",
                             status: domainObj?.status || row.domainStatus || "Pending",
                           });
+
                         }
-                      }}
+                      }
+                      }
                     >
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.domainStatus)}`}
@@ -598,6 +576,17 @@ const totalPagesComputed = totalPages; // from backend response
                 placeholder="Enter reason for status change"
               />
             </div>
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Upload File</label>
+              <input
+                type="file"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="border rounded p-1 w-full"
+              />
+
+            </div>
+
+
 
             <div className="flex justify-end gap-2">
               <button
@@ -606,7 +595,12 @@ const totalPagesComputed = totalPages; // from backend response
               >
                 Update
               </button>
-
+              <button
+                onClick={closeStatusModal}
+                className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
 
 
             </div>

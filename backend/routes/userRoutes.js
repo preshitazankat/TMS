@@ -5,7 +5,7 @@ const router = express.Router();
 
 import { createUser, loginUser, getUserProfile,getAllUsers ,editUser, changePassword,logout} from "../controllers/userController.js";
 import verifyToken from "../middleware/Auth.js";
-import e from "express";
+
 
 router.post("/register", createUser);
 router.post("/login",  loginUser);

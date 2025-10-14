@@ -15,6 +15,17 @@ const domainSchema = new mongoose.Schema({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     default: [],
   }, // domain-specific submission
+  upload: {
+    filename: String,        // stored file name on server
+    originalname: String,    // original file name
+    path: String,            // server path
+    mimetype: String,
+    size: Number,
+    uploadedAt: Date,
+  },
+  reason:{
+    type:String,
+  }
 });
 
 const taskSchema = new mongoose.Schema(
