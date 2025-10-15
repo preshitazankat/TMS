@@ -17,7 +17,7 @@ interface Task {
   taskAssignedDate: string;
   targetDate: string;
   completeDate: string;
-  domain: string[];
+  domains: Domain[];
   developers: Record<string, string[]>;
   typeOfDelivery: string;
   typeOfPlatform: string;
@@ -57,7 +57,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     taskAssignedDate: "",
     targetDate: "",
     completeDate: "",
-    domain: [],
+    domains: [],
     developers: {},
     typeOfDelivery: "",
     typeOfPlatform: "",
@@ -100,12 +100,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   const assignedByOptions = users.filter((u) => u.role === "Sales");
   const assignedToOptions = users.filter((u) => (u.role === "TL" || u.role==="Manager"));
   const developerOptions = users.filter((u) => u.role === "Developer");
-
-
-
-
-
-  const DeliveryTypes = ["API", "Data as a Service"];
+  const DeliveryTypes = ["API", "Data as a Service","Both"];
   const PlatformTypes = ["Web", "App", "Both"];
 
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
@@ -135,8 +130,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
   const normalizeDevelopers = (devs: Record<string, any>) => {
     const normalized: Record<string, string[]> = {};
-    Object.entries(devs || {}).forEach(([domain, arr]) => {
-      normalized[domain] = (arr as any[])
+    Object.entries(devs || {}).forEach(([domains, arr]) => {
+      normalized[domains] = (arr as any[])
         .map((d) => {
           if (!d) return null;
           if (typeof d === "string" && /^[0-9a-fA-F]{24}$/.test(d)) return d;
@@ -148,6 +143,12 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     });
     return normalized;
   };
+
+  const normalizeOption = (value: string, options: string[]) => {
+  if (!value) return "";
+  return options.find(opt => opt.toLowerCase() === value.toLowerCase()) || "";
+};
+
 
   const getUserNameById = (id: string) => {
     const user = users.find((u) => u._id === id);
@@ -174,95 +175,95 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
     // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
 
-    if (!task.domain || task.domain.length === 0) newErrors.domain = "At least one Platform is required";
+    if (!task.domains || task.domains.length === 0) newErrors.domains = "At least one Platform is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-
-
-  // useEffect(() => {
-  //   if (!taskData && id) {
-  //     fetch(`${apiUrl}/tasks/${id}`, {
-  //       headers: { "Content-Type": "application/json" },
-  //       credentials: "include",
-  //     })
-  //       .then((res) => res.json())
-  //       .then((data) => {
-  //         // Normalize assignedBy / assignedTo / developers
-  //         const normalizedTask: Task = {
-  //           ...data,
-  //           assignedBy: normalizeUserId(data.assignedBy),
-  //           assignedTo: normalizeUserId(data.assignedTo),
-  //           developers: normalizeDevelopers(data.developers),
-
-  //           domains: (data.domains || []).map((d: any) => ({ name: d.name, status: d.status })),
-  //           outputFile: Object.values(data.submissions || {})
-  //             .map((sub: any) => sub.files)
-  //             .filter(Boolean),
-  //           outputUrl: data.outputUrl || "",
-  //         };
-  //         setTask(normalizedTask);
-  //       })
-  //       .catch(console.error);
-  //   } else if (taskData) {
-  //     const normalizedTask: Task = {
-  //       ...taskData,
-  //       assignedBy: normalizeUserId(taskData.assignedBy),
-  //       assignedTo: normalizeUserId(taskData.assignedTo),
-  //       developers: normalizeDevelopers(taskData.developers),
-  //     };
-  //     setTask(normalizedTask);
-  //   }
-  // }, [taskData, id, users]);
-
-
   // --------------------------- HANDLERS -----------------------------
 
+const normalizeTaskData = (data: any): Task => {
+  // Convert domains.developers (ObjectIds) to strings
+  const developersRecord: Record<string, string[]> = {};
+  (data.domains || []).forEach((d: any) => {
+    developersRecord[d.name] = (d.developers || []).map((dev: any) =>
+      typeof dev === "string" ? dev : dev.$oid ? dev.$oid : dev._id ? dev._id : ""
+    );
+  });
+
+  return {
+    ...data,
+     assignedBy: normalizeUserId(data.assignedBy), // map to _id
+    assignedTo: normalizeUserId(data.assignedTo),
+    developers: developersRecord,
+    domains: (data.domains || []).map((d: any) => ({
+      name: d.name,
+      status: d.status,
+      submission: d.submission || {},
+    })),
+    typeOfDelivery: normalizeOption(data.typeOfDelivery, DeliveryTypes),
+    typeOfPlatform: normalizeOption(data.typeOfPlatform, PlatformTypes),
+    sowFile: data.sowFile || null,
+    inputFile: data.inputFile || null,
+    outputFile: data.outputFile || null,
+    outputUrl: data.outputUrl || "",
+  };
+};
+
+
   useEffect(() => {
-    if (!users.length || !id) return;
-    if (!taskData && id) {
-      fetch(`${apiUrl}/tasks/${id}`, {
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          const normalizedTask: Task = {
-            ...data,
-            assignedBy: normalizeUserId(data.assignedBy),
-            assignedTo: normalizeUserId(data.assignedTo),
-            developers: normalizeDevelopers(data.developers),
-            typeOfDelivery:data.typeOfDelivery,
-            domain: (data.domains || []).map((d: any) => ({
-              name: d.name,
-              status: d.status,
-              submission: {
-            files: d.submission?.files || [],
-            outputUrl: d.submission?.outputUrl || "",
-          },
-            })),
+  // if (!users.length || !id) return;
 
-            outputFile:
-          data.domains?.[0]?.submission?.files?.[0] || null, // ✅ use first submission file
-        outputUrl: data.domains?.[0]?.submission?.outputUrl || "",
-          };
-          setTask(normalizedTask);
-        })
-        .catch(console.error);
-    } else if (taskData) {
-      const normalizedTask: Task = {
-        ...taskData,
-        assignedBy: normalizeUserId(taskData.assignedBy),
-        assignedTo: normalizeUserId(taskData.assignedTo),
-        developers: normalizeDevelopers(taskData.developers),
-      };
-      setTask(normalizedTask);
-    }
-  }, [taskData, id, users]);
-  
+  // const normalizeTaskData = (data: any): Task => ({
 
+    
+  //   ...data,
+  //   assignedBy: normalizeUserId(data.assignedBy),
+  //   assignedTo: normalizeUserId(data.assignedTo),
+  //   developers: normalizeDevelopers(data.developers), // now users are loaded
+  //   typeOfDelivery: normalizeOption(data.typeOfDelivery, DeliveryTypes),
+  //   typeOfPlatform: normalizeOption(data.typeOfPlatform, PlatformTypes),
+  //   domains: (data.domains || []).map((d: any) => ({
+  //     name: d.name,
+  //     status: d.status,
+  //     submission: {
+  //       files: d.submission?.files || [],
+  //       outputUrl: d.submission?.outputUrl || "",
+  //     },
+  //   })),
+  //   outputFile: data.domains?.[0]?.submission?.files?.[0] || null,
+  //   outputUrl: data.domains?.[0]?.submission?.outputUrl || "",
+  // });
+
+  // if (!taskData) {
+  //   fetch(`${apiUrl}/tasks/${id}`, {
+  //     headers: { "Content-Type": "application/json" },
+  //     credentials: "include",
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setTask(normalizeTaskData(data));
+  //     })
+  //     .catch(console.error);
+  // } else {
+  //   setTask(normalizeTaskData(taskData));
+  // }
+
+  if (!users.length || !id) return;
+
+  if (!taskData) {
+    fetch(`${apiUrl}/tasks/${id}`, {
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    })
+      .then(res => res.json())
+      .then(data => setTask(normalizeTaskData(data)))
+      .catch(console.error);
+  } else {
+    setTask(normalizeTaskData(taskData));
+  }
+}, [taskData, id, users]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
@@ -294,7 +295,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     }
   };
 
-
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const handleDomainAdd = () => {
@@ -303,14 +303,14 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
     const isValid = /^https?:\/\//i.test(trimmed);
     if (!isValid) {
-      setErrors((prev) => ({ ...prev, domain: "Platform must start with http:// or https://" }));
+      setErrors((prev) => ({ ...prev, domains: "Platform must start with http:// or https://" }));
       return;
     }
 
-    if (!task.domain.some(d => d.name === trimmed)) {
+    if (!task.domains.some(d => d.name === trimmed)) {
       setTask(prev => ({
         ...prev,
-        domains: [...prev.domain, { name: trimmed, status: "pending" }]
+        domains: [...prev.domains, { name: trimmed, status: "pending" }]
       }));
     }
 
@@ -318,45 +318,43 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     setDomainInput("");
   };
 
-  const handleDomainRemove = (domain: string) => {
-    const updatedDomains = task.domains.filter(d => d.name !== domain);
+  const handleDomainRemove = (domains: string) => {
+    const updatedDomains = task.domains.filter(d => d.name !== domains);
     const updatedDevelopers = { ...task.developers };
-    delete updatedDevelopers[domain];
+    delete updatedDevelopers[domains];
     setTask(prev => ({ ...prev, domains: updatedDomains, developers: updatedDevelopers }));
   };
 
-  const handleDeveloperAdd = (domain: string) => {
-    const selectedDev = developerInput[domain];
-    if (!selectedDev) return;
+  const handleDeveloperAdd = (domainName: string) => {
+  const devId = developerInput[domainName];
+  if (!devId) return;
 
-    // 🛑 Check if the developer is already assigned anywhere
-    const alreadyAssigned = Object.values(task.developers || {}).some((devs) =>
-      devs.includes(selectedDev)
-    );
+  // Prevent duplicates across domains
+  const alreadyAssigned = Object.values(task.developers).some(arr => arr.includes(devId));
+  if (alreadyAssigned) {
+    alert("This developer is already assigned!");
+    return;
+  }
 
-    if (alreadyAssigned) {
-      alert("❌ This developer is already assigned to another domain!");
-      return;
-    }
+  setTask(prev => ({
+    ...prev,
+    developers: {
+      ...prev.developers,
+      [domainName]: [...(prev.developers[domainName] || []), devId],
+    },
+  }));
+  setDeveloperInput(prev => ({ ...prev, [domainName]: "" }));
+};
 
-    const devList = task.developers[domain] || [];
-    if (!devList.includes(selectedDev)) {
-      setTask((prev) => ({
-        ...prev,
-        developers: { ...prev.developers, [domain]: [...devList, selectedDev] },
-      }));
-    }
-
-    setDeveloperInput((prev) => ({ ...prev, [domain]: "" }));
-  };
-
-
-  const handleDeveloperRemove = (domain: string, dev: string) => {
-    setTask((prev) => ({
-      ...prev,
-      developers: { ...prev.developers, [domain]: prev.developers[domain].filter((d) => d !== dev) },
-    }));
-  };
+const handleDeveloperRemove = (domainName: string, devId: string) => {
+  setTask(prev => ({
+    ...prev,
+    developers: {
+      ...prev.developers,
+      [domainName]: prev.developers[domainName].filter(d => d !== devId),
+    },
+  }));
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,8 +365,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
       // Convert developer names → IDs before sending
       const developersForBackend = Object.fromEntries(
-        Object.entries(task.developers).map(([domain, devs]) => [
-          domain,
+        Object.entries(task.developers).map(([domains, devs]) => [
+          domains,
           devs.map((d) => {
             const found = users.find((u) => u.name === d || u._id === d);
             return found ? found._id : d;
@@ -380,8 +378,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         if (value === null || value === undefined || value === "") return;
         if (key === "developers") {
           formData.append("developers", JSON.stringify(developersForBackend));
-        } else if (key === "domain") {
-          formData.append("domain", JSON.stringify(value));
+        } else if (key === "domains") {
+          formData.append("domains", JSON.stringify(value));
         } else {
           formData.append(key, value as any);
         }
@@ -438,16 +436,31 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-500 transition text-gray-700"
       >
         {fileName ? (
-          <span className="text-gray-700">{fileName}</span>
+           <div className="flex items-center gap-2">
+        <span>{fileName}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTask({ ...task, [name]: null });
+          }}
+          className="text-red-500 hover:text-red-700 font-bold"
+          title="Remove file"
+        >
+          ❌
+        </button>
+      </div>
         ) : (
           <span className="text-gray-700">Drag & Drop {label} here or click to upload</span>
         )}
+        {!file && (
         <input
           type="file"
           name={name}
           onChange={handleChange}
           className="absolute w-full h-full opacity-0 cursor-pointer"
         />
+        )}
       </div>
     );
   };
@@ -566,77 +579,63 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 </button>
               </div>
 
-              {errors.domain && <p className="text-red-500">{errors.domain}</p>}
+              {errors.domains && <p className="text-red-500">{errors.domains}</p>}
 
-              {task.domain.map((d) =>
-                <div
-                  key={d.name}
-                  className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">{d.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDomainRemove(d.name)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      ❌
-                    </button>
-                  </div>
+              {task.domains.map((d) => (
+  <div key={d.name} className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700">
+    <div className="flex justify-between items-center mb-2">
+      <span className="font-semibold">{d.name}</span>
+      <button
+        type="button"
+        onClick={() => handleDomainRemove(d.name)}
+        className="text-red-500 hover:text-red-600"
+      >
+        ❌
+      </button>
+    </div>
 
-                  <div className="flex gap-3 items-end flex-wrap">
-                    <select
-                      value={developerInput[d.name] || ""}
-                      onChange={(e) =>
-                        setDeveloperInput((prev) => ({
-                          ...prev,
-                          [d.name]: e.target.value,
-                        }))
-                      }
-                      className="flex-1 p-3 rounded-lg border  border-gray-300 dark:border-gray-600 dark:text-white/90"
-                    >
-                      <option value="" hidden>Select Developer</option>
-                      {developerOptions.map(u => (
-                        <option key={u._id} value={u._id}>{u.name}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => handleDeveloperAdd(d.name)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                    >
-                      Add Dev
-                    </button>
-                  </div>
+    <div className="flex gap-3 items-end flex-wrap">
+      <select
+        value={developerInput[d.name] || ""}
+        onChange={(e) =>
+          setDeveloperInput((prev) => ({ ...prev, [d.name]: e.target.value }))
+        }
+        className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white/90"
+      >
+        <option value="" hidden>Select Developer</option>
+        {developerOptions.map(u => (
+          <option key={u._id} value={u._id}>{u.name}</option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => handleDeveloperAdd(d.name)}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        Add Dev
+      </button>
+    </div>
 
-                  <ul className="flex flex-wrap gap-2 mt-2">
-                    {(task.developers[d.name] || []).map((dev) => {
-                      // resolve developer name
-                      const devName =
-                        typeof dev === "string"
-                          ? users.find((u) => u._id === dev)?.name || dev
-                          : dev.name; // if already object
-                      return (
-                        <li key={typeof dev === "string" ? dev : dev._id} className="bg-gray-200 ...">
-                          {devName}
-                          <button
-                            type="button"
-                            onClick={() => handleDeveloperRemove(d.name, typeof dev === "string" ? dev : dev._id)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            ❌
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+    <ul className="flex flex-wrap gap-2 mt-2">
+      {(task.developers[d.name] || []).map((devId) => {
+        const devName = users.find(u => u._id === devId)?.name || devId;
+        return (
+          <li key={devId} className="bg-gray-200 px-2 py-1 rounded flex items-center gap-2">
+            {devName}
+            <button
+              type="button"
+              onClick={() => handleDeveloperRemove(d.name, devId)}
+              className="text-red-500 hover:text-red-600"
+            >
+              ❌
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+))}
 
-
-
-
-
-                </div>
-              )}
 
 
             </div>
@@ -665,7 +664,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 checked={task.sempleFile}
                 onChange={handleChange}
               />
-              Sample File?
+              Sample File Required?
             </label>
 
             {/* Type of Delivery & Platform */}

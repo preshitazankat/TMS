@@ -6,7 +6,10 @@ import { format } from "date-fns";
 import { useAuth } from "../../hooks/useAuth";
 import { jwtDecode } from "jwt-decode";
 import { FiEye, FiEdit2, FiSend } from "react-icons/fi";
-import { GrCompliance } from "react-icons/gr";// View, Edit, Submit
+import { GrCompliance } from "react-icons/gr"; // View, Edit, Submit
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 interface Stats {
   total: number;
@@ -14,7 +17,7 @@ interface Stats {
   pending: number;
   delayed: number;
   inProgress: number;
-  inRD: number
+  inRD: number;
 }
 
 interface Domain {
@@ -25,7 +28,7 @@ interface Domain {
 
 interface Task {
   _id: any;
-  domain?: Domain[];
+  domains?: Domain[];
   srNo: number;
   projectCode: string;
   title: string;
@@ -66,14 +69,21 @@ interface DomainStats {
 const TaskPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState(searchText);
+
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { role } = useAuth();
-  const [domainStats, setDomainStats] = useState<Record<string, DomainStats>>({});
-  const [currentDomain, setCurrentDomain] = useState<{ id: string; name: string } | null>(null);
+  const [domainStats, setDomainStats] = useState<Record<string, DomainStats>>(
+    {}
+  );
+  const [currentDomain, setCurrentDomain] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [showAssignDevPopup, setShowAssignDevPopup] = useState(false);
+
   const [stats, setStats] = useState<Stats>({
     total: 0,
     completed: 0,
@@ -91,13 +101,17 @@ const TaskPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
 
-  const normalizedFilter = statusFilter.toLowerCase().replace(/\s/g, "").replace(/&/g, "and");
+  const normalizedFilter = statusFilter
+    .toLowerCase()
+    .replace(/\s/g, "")
+    .replace(/&/g, "and");
   const [loading, setLoading] = useState(true);
 
-
-
   // --- openStatusModal (update so domain includes id + status) ---
-  const openStatusModal = (task: Task, domain?: { id: string; name: string; status?: string }) => {
+  const openStatusModal = (
+    task: Task,
+    domain?: { id: string; name: string; status?: string }
+  ) => {
     setCurrentTask(task);
     if (domain) {
       setCurrentDomain(domain);
@@ -160,10 +174,8 @@ const TaskPage: React.FC = () => {
     }
   };
 
-
   const token = getCookie("token");
   if (!token) return navigate("/login");
-
 
   useEffect(() => {
     try {
@@ -176,17 +188,45 @@ const TaskPage: React.FC = () => {
       console.error("Invalid token", err);
       navigate("/login");
     }
-
   }, []);
 
-
   const cards = [
-    { label: "Total Tasks", value: stats.total, bgColor: "bg-blue-400" },
-    { label: "Pending Tasks", value: stats.pending, bgColor: "bg-yellow-400" },
-    { label: "In-Progress Tasks", value: stats.inProgress, bgColor: "bg-purple-400" },
-    { label: "Delayed Tasks", value: stats.delayed, bgColor: "bg-red-400" },
-    { label: "Completed Tasks", value: stats.completed, bgColor: "bg-green-400" },
-    { label: "In-R&D", value: stats.inRD, bgColor: "bg-orange-400" }
+    {
+      label: "Total Tasks",
+      value: stats.total,
+      bgColor: "bg-blue-50",
+      textColor: "text-gray-500",
+    },
+    {
+      label: "Pending Tasks",
+      value: stats.pending,
+      bgColor: "bg-yellow-50",
+      textColor: "text-gray-500",
+    },
+    {
+      label: "In-Progress Tasks",
+      value: stats.inProgress,
+      bgColor: "bg-purple-50",
+      textColor: "text-gray-500",
+    },
+    {
+      label: "Delayed Tasks",
+      value: stats.delayed,
+      bgColor: "bg-red-50",
+      textColor: "text-gray-500",
+    },
+    {
+      label: "Completed Tasks",
+      value: stats.completed,
+      bgColor: "bg-green-50",
+      textColor: "text-gray-500",
+    },
+    {
+      label: "In-R&D",
+      value: stats.inRD,
+      bgColor: "bg-orange-50",
+      textColor: "text-gray-500",
+    },
   ];
 
   if (token) {
@@ -196,23 +236,28 @@ const TaskPage: React.FC = () => {
 
   const limit = 10;
 
-  const statuses = ["All", "Pending", "In-Progress", "Submitted", "Delayed", "In-R&D"];
+  const statuses = [
+    "All",
+    "Pending",
+    "In-Progress",
+    "Submitted",
+    "Delayed",
+    "In-R&D",
+  ];
 
-  const normalizeStatus = (status: string) =>
-    status.toLowerCase().replace(/\s/g, "-").replace(/&/g, "and");
+
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const statusParam = statusFilter && statusFilter !== "All"
-        ? statusFilter
-        : "";
+      const statusParam =
+        statusFilter && statusFilter !== "All" ? statusFilter : "";
 
       const queryParams = new URLSearchParams({
-        search: debouncedSearch.trim(),
+        search: searchText,
         status: statusParam,
         page: page.toString(),
         limit: limit.toString(),
-
       }).toString();
 
       const res = await fetch(`${apiUrl}/tasks?${queryParams}`, {
@@ -229,35 +274,33 @@ const TaskPage: React.FC = () => {
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
-    }finally {
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-  const handler = setTimeout(() => {
-    setDebouncedSearch(searchText);
-  }, 1000); // wait 500ms after last keystroke
 
-  return () => clearTimeout(handler);
-}, [searchText]);
-
-
-  useEffect(() => {
     fetchTasks();
-  }, [debouncedSearch, statusFilter, page]);
 
 
+  }, [searchText, statusFilter, page]);
 
   const expandedRows = useMemo(() => {
     const rows: any[] = [];
     tasks.forEach((task) => {
       if (task.domainName) {
-        const domainObj = task.domain?.find(d => d.name === task.domainName) || task.domain?.[0];
+        const domainObj =
+          task.domain?.find((d) => d.name === task.domainName) ||
+          task.domain?.[0];
         rows.push({
           task,
           domainName: task.domainName,
-          domainId: domainObj ? (typeof domainObj._id === "object" ? domainObj._id.$oid : domainObj._id) : "",
+          domainId: domainObj
+            ? typeof domainObj._id === "object"
+              ? domainObj._id.$oid
+              : domainObj._id
+            : "",
           domainStatus: task.domainStatus,
           developers: task.domainDevelopers || [],
         });
@@ -273,11 +316,8 @@ const TaskPage: React.FC = () => {
     return rows;
   }, [tasks]);
 
-
   const paginatedRows = expandedRows; // backend already paginated
   const totalPagesComputed = totalPages; // from backend response
-
-
 
   const getStatusClass = (status?: string) => {
     if (!status) return "bg-gray-100 text-gray-800"; // fallback for undefined
@@ -300,7 +340,6 @@ const TaskPage: React.FC = () => {
     }
   };
 
-
   const formatDate = (dateStr: string | number | Date) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
@@ -308,13 +347,12 @@ const TaskPage: React.FC = () => {
   };
 
   const formatStatus = (status?: string) => {
-  if (!status) return "-";
-  return status
-    .split(/[-\s]/) // split by hyphen or space
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join("-"); // join with hyphen
-};
-
+    if (!status) return "-";
+    return status
+      .split(/[-\s]/) // split by hyphen or space
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join("-"); // join with hyphen
+  };
 
   // --- Updated handleStatusUpdate (use currentDomain/currentTask internally) ---
   const handleStatusUpdate = async () => {
@@ -324,8 +362,6 @@ const TaskPage: React.FC = () => {
     // const domainId = currentDomain?.id ?? "";
 
     // console.log("domainID", domainId);
-
-
 
     // if (!taskId || !currentDomain.id || !newStatus) {
     //   alert("taskId, domainId, and status are required");
@@ -358,14 +394,26 @@ const TaskPage: React.FC = () => {
       alert("Something went wrong");
     }
   };
- if (loading) {
-  return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
-    </div>
-  );
-}
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+      </div>
+    );
+  }
 
+  //   const SearchInput = React.memo(({ value, onChange }: { value: string; 
+  //     onChange: (e: any) => void }) => {
+  //   return (
+  //     <input
+  //       type="text"
+  //       value={value}
+  //       onChange={onChange}
+  //       placeholder="Search..."
+  //       className="flex-grow w-full md:w-80 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
+  //     />
+  //   );
+  // });
 
 
   return (
@@ -377,18 +425,18 @@ const TaskPage: React.FC = () => {
           { title: "Tasks", path: "/tasks" },
         ]}
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-5 text-black">
         {cards.map((card, idx) => (
           <div
             key={idx}
-            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg transition text-white`}
+            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg `}
+
           >
-            <h3 className="text-lg font-medium">{card.label}</h3>
+            <h3 className="text-lg font-medium text-black">{card.label}</h3>
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}
-      </div> 
-
+      </div>
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex gap-2 flex-1">
@@ -397,8 +445,11 @@ const TaskPage: React.FC = () => {
             placeholder="Search by project, code, or developer"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
+            autoFocus={true}
             className="flex-grow w-full md:w-80 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           />
+          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -453,7 +504,9 @@ const TaskPage: React.FC = () => {
                 const srNo = (page - 1) * limit + idx + 1;
 
                 const developers = row.developers || [];
-                const domainObj = row.task?.domains?.find(d => d.name === row.domainName) || row.task?.domains?.[0];
+                const domainObj =
+                  row.task?.domains?.find((d) => d.name === row.domainName) ||
+                  row.task?.domains?.[0];
 
                 const domainId = domainObj
                   ? typeof domainObj._id === "object"
@@ -462,17 +515,26 @@ const TaskPage: React.FC = () => {
                   : ""; // fallback if domainObj is undefined
                 console.log("domainID", domainId);
 
-
                 return (
                   <tr
                     key={`${row.task.srNo}-${row.domainName ?? "none"}-${idx}`}
                     className="hover:bg-gray-100 transition-colors"
                   >
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{srNo}</td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.task.projectCode}</td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.task.title}</td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.task.assignedBy?.name || row.task.assignedBy || "-"}</td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.task.assignedTo?.name || row.task.assignedTo || "-"}</td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {srNo}
+                    </td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {row.task.projectCode}
+                    </td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {row.task.title}
+                    </td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {row.task.assignedBy?.name || row.task.assignedBy || "-"}
+                    </td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {row.task.assignedTo?.name || row.task.assignedTo || "-"}
+                    </td>
                     {/* Assigned Date → task.createdAt */}
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
                       {formatDate(row.task.createdAt)}
@@ -483,73 +545,125 @@ const TaskPage: React.FC = () => {
                       {formatDate(row.task.completeDate)}
                     </td>
 
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">{row.domainName || "-"}</td>
+                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {row.domainName || "-"}
+                    </td>
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
                       {developers.length ? developers.join(", ") : "-"}
                     </td>
                     <td
                       className="px-4 py-3 border-b border-gray-300 whitespace-nowrap cursor-pointer"
                       onClick={() => {
-                        if (role === "TL" || role === "Manager" || role === "Admin") {
-                          const domainObj = row.task?.domains?.find(d => d.name === row.domainName) || row.task?.domains?.[0];
+                        if (
+                          role === "TL" ||
+                          role === "Manager" ||
+                          role === "Admin"
+                        ) {
+                          const domainObj =
+                            row.task?.domains?.find(
+                              (d) => d.name === row.domainName
+                            ) || row.task?.domains?.[0];
 
                           const domainId =
-                            typeof domainObj?._id === "object" ? domainObj._id.$oid ?? "" : domainObj?._id ?? "";
+                            typeof domainObj?._id === "object"
+                              ? domainObj._id.$oid ?? ""
+                              : domainObj?._id ?? "";
 
                           openStatusModal(row.task, {
                             id: domainId,
                             name: domainObj?.name || "Unknown",
-                            status: domainObj?.status || row.domainStatus || "Pending",
+                            status:
+                              domainObj?.status ||
+                              row.domainStatus ||
+                              "Pending",
                           });
-
                         }
-                      }
-                      }
+                      }}
                     >
                       <span
-  className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.domainStatus)}`}
-  title={role === "TL" || role === "Manager" ? "Click to change status" : ""}
->
-  {formatStatus(row.domainStatus)}
-</span>
-
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(
+                          row.domainStatus
+                        )}`}
+                        title={
+                          role === "TL" || role === "Manager"
+                            ? "Click to change status"
+                            : ""
+                        }
+                      >
+                        {formatStatus(row.domainStatus)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 border-b border-gray-300">
                       <div className="flex gap-4 items-center">
                         <FiEye
-                          onClick={() => navigate(`/tasks/${row.task._id}${row.domainName ? `?domain=${encodeURIComponent(row.domainName)}` : ""}`)}
+                          onClick={() =>
+                            navigate(
+                              `/tasks/${row.task._id}${row.domainName
+                                ? `?domain=${encodeURIComponent(
+                                  row.domainName
+                                )}`
+                                : ""
+                              }`
+                            )
+                          }
                           className="cursor-pointer text-blue-600 hover:text-blue-800"
                           title="View"
                           size={20}
                         />
-                        {(role === "Admin" || role === "Sales" || role === "TL" || role === "Manager") && (
-                          <FiEdit2
-                            onClick={() => navigate(`/edit/${row.task._id}`)}
-                            className="cursor-pointer text-yellow-500 hover:text-yellow-600"
-                            title="Edit"
-                            size={20}
-                          />
-                        )}
-                        {(role === "Admin" || role === "TL" || role === "Developer" || role === "Manager") && (
-                          <GrCompliance
-                            onClick={() => navigate(`/submit/${row.task._id}${row.domainName ? `?domain=${encodeURIComponent(row.domainName)}` : ""}`)}
-                            className="cursor-pointer text-green-600 hover:text-green-700"
-                            title="Submit"
-                            size={20}
-                          />
-                        )}
+                        {(role === "Admin" ||
+                          role === "Sales" ||
+                          role === "TL" ||
+                          role === "Manager") && (
+                            <FiEdit2
+                              onClick={() => navigate(`/edit/${row.task._id}`)}
+                              className="cursor-pointer text-yellow-500 hover:text-yellow-600"
+                              title="Edit"
+                              size={20}
+                            />
+                          )}
+                        {/* ✅ Show Submit button only if not submitted and developer is assigned */}
+                        {(role === "Admin" ||
+                          role === "TL" ||
+                          role === "Developer" ||
+                          role === "Manager") &&
+                          row.domainStatus?.toLowerCase() !== "submitted" &&
+                          (row.developers?.length > 0 ? (
+                            <GrCompliance
+                              onClick={() =>
+                                navigate(
+                                  `/submit/${row.task._id}${row.domainName
+                                    ? `?domain=${encodeURIComponent(row.domainName)}`
+                                    : ""
+                                  }`
+                                )
+                              }
+                              className="cursor-pointer text-green-600 hover:text-green-700"
+                              title="Submit"
+                              size={20}
+                            />
+                          ) : (
+                            // Show popup instead of disabled icon
+                            <GrCompliance
+                              onClick={() => setShowAssignDevPopup(true)}
+                              className="cursor-pointer text-gray-400"
+                              title="Assign a developer first"
+                              size={20}
+                            />
+                          ))}
+
                       </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-
           </table>
         </div>
 
         <div className="flex justify-end gap-2 mt-4 items-center">
-          <div className="text-gray-600">No. Of Rows: {paginatedRows.length}</div>
+          <div className="text-gray-600">
+            No. Of Rows: {paginatedRows.length}
+          </div>
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -582,7 +696,9 @@ const TaskPage: React.FC = () => {
                 className="w-full p-2 border rounded"
               >
                 {["Pending", "In-Progress", "Completed", "in-R&D"].map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </select>
             </div>
@@ -603,10 +719,7 @@ const TaskPage: React.FC = () => {
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 className="border rounded p-1 w-full"
               />
-
             </div>
-
-
 
             <div className="flex justify-end gap-2">
               <button
@@ -621,15 +734,29 @@ const TaskPage: React.FC = () => {
               >
                 Cancel
               </button>
-
-
             </div>
           </div>
         </div>
       )}
+      {showAssignDevPopup && (
+        <div className="fixed inset-0  bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
+          <div className="bg-white rounded-lg p-6 w-80 text-center shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Cannot Submit</h2>
+            <p className="mb-4">Please assign at least one developer before submitting this task.</p>
+            <button
+              onClick={() => setShowAssignDevPopup(false)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
     </>
   );
 };
 
-export default TaskPage;
 
+
+export default TaskPage;

@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 interface SubmitTaskProps {
   taskData?: any;
 }
-
+ 
 interface Submission {
   [key: string]: any;
   platform: string;
@@ -33,7 +33,7 @@ interface Submission {
   complexity: string;
   githubLink: string;
   files: File[];
-  sowUrl: string;
+  outputUrl: string;
   remark: string;
 }
 
@@ -277,6 +277,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     feasibleFor: "",
     approxVolume: "",
     method: "",
+    apiName: "",
+    proxyType: "",
     proxyUsed: false,
     proxyName: "",
     perRequestCredit: "",
@@ -285,13 +287,16 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     complexity: "Medium",
     githubLink: "",
     files: [],
-    sowUrl: "",
+    outputUrl: "",
     remark: "",
   });
 
   const [domains, setDomains] = useState<string[]>([]);
   const [taskDetails, setTaskDetails] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [method, setMethod] = useState("");
+const [apiName, setApiName] = useState("");
+
 
   useEffect(() => {
     if (taskData) {
@@ -384,17 +389,12 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       }
     }
 
-    if (name === "sowUrl" || name === "inputUrl") {
-      if (value && !isValidDocumentUrl(value)) {
-        toast.error(
-          `❌ Invalid URL. Must start with http/https and end with one of: ${allowedExtensions.join(
-            ", "
-          )}`
-        );
-        setSubmission((prev) => ({ ...prev, [name]: "" }));
-        return;
-      }
-    }
+    if (name === "outputUrl" || name === "inputUrl") {
+  // Just update value while typing; don't validate yet
+  setSubmission({ ...submission, [name]: value });
+  return;
+}
+
   };
 
   const validateForm = () => {
@@ -428,10 +428,15 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
     if (
       (!submission.files || submission.files.length === 0) &&
-      !submission.sowUrl
+      !submission.outputUrl
     ) {
-      newErrors.sowUrl = "Upload a file or provide a SOW document URL.";
+      newErrors.outputUrl = "Upload a file or provide a output document URL.";
     }
+
+    if (submission.outputUrl && !isValidDocumentUrl(submission.outputUrl)) {
+  newErrors.outputUrl = "Invalid document URL format.";
+}
+
 
     if (submission.githubLink) {
       const githubPattern =
@@ -461,7 +466,11 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       submission.country.forEach((c) => formData.append("country[]", c)); // convert array to JSON string
 
       formData.append("approxVolume", submission.approxVolume || "");
-      formData.append("method", submission.method || "");
+      formData.append("method", submission.method);
+if (method === "third-party-api") {
+  formData.append("apiName", submission.apiName);
+}
+
       formData.append("userLogin", submission.userLogin ? "true" : "false"); // boolean as string
       formData.append("loginType", submission.loginType || "");
       formData.append("credentials", submission.credentials || "");
@@ -472,7 +481,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       formData.append("lastCheckedDate", submission.lastCheckedDate || "");
       formData.append("complexity", submission.complexity || "");
       formData.append("githubLink", submission.githubLink || "");
-      formData.append("sowUrl", submission.sowUrl || "");
+      formData.append("outputUrl", submission.outputUrl || "");
       formData.append("remark", submission.remark || "");
 
       // Append files
@@ -501,7 +510,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       console.log("Returned task:", data);
 
       toast.success("✅ Task submitted successfully!");
-      window.location.href = "/";
+      window.location.href = "/tasks";
     } catch (err) {
       console.error(err);
       toast.error("❌ Error submitting task!");
@@ -772,25 +781,66 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   </p>
                 )}
               </div>
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 ">
-                  Method
-                </label>
-                <select
-                  value={submission.method}
-                  name="method"
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600  p-3  "
-                >
-                  <option value="" hidden>
-                    Select Method
-                  </option>
-                  <option value="Browser Automation">Browser Automation</option>
+              {/* Method Selection */}
+<div className="mb-4">
+  <label className="block mb-2 text-sm font-medium text-gray-700">
+    Method
+  </label>
+  <select
+    name="method"
+    value={submission.method}
+    onChange={(e) => {
+      handleChange(e);
+      setMethod(e.target.value); // update state for conditional rendering
+    }}
+    className="w-full border border-gray-300 rounded-lg p-3"
+  >
+    <option value="" hidden>Select Method</option>
+   <option value="Browser Automation">Browser Automation</option>
                   <option value="Request">Request</option>
                   <option value="Semi Automation">Semi Automation</option>
-                </select>
-              </div>
+    <option value="third-party-api">Third-Party API</option>
+  </select>
+  {errors.method && (
+    <p className="text-red-400 text-sm mt-1">{errors.method}</p>
+  )}
+</div>
+
+{/* Show API Name only when Third-Party API is selected */}
+{submission.method === "third-party-api" && (
+  <div className="mb-4">
+    <label className="block mb-2 text-sm font-medium text-gray-700">
+      API Name
+    </label>
+    <input
+      type="text"
+      name="apiName"
+      value={submission.apiName}
+      onChange={handleChange}
+      placeholder="Enter API Name"
+      className="w-full border border-gray-300 rounded-lg p-3"
+    />
+  </div>
+)}
+
+              {/* API Name Field (Only when method === "third-party-api") */}
+
+
+
             </div>
+            {/* {submission.method === "third-party-api" && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium mb-1">API Name</label>
+    <input
+      type="text"
+      name="apiName"
+      value={submission.apiName}
+      onChange={handleChange}
+      placeholder="Enter API Name"
+      className="w-full border border-gray-300 rounded-lg p-2"
+    />
+  </div>
+)} */}
 
             {/* Login & Proxy */}
             <div className="flex gap-6 flex-wrap">
@@ -1027,7 +1077,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   </label>
                   <input
                     type="text"
-                    name="sowUrl"
+                    name="outputUrl"
                     value={submission.
 outputUrl || ""}
                     onChange={handleChange}
@@ -1035,6 +1085,27 @@ outputUrl || ""}
                     className="w-full p-3 rounded-md  border border-gray-600 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
                   />
+                   {submission.files.length > 0 && (
+    <ul className="list-disc pl-5">
+      {submission.files.map((file, index) => (
+        <li key={index} className="flex items-center justify-between gap-2">
+          <span>{file.name}</span>
+          <button
+            type="button"
+            className="text-red-500 text-sm hover:underline"
+            onClick={() => {
+              setSubmission((prev) => ({
+                ...prev,
+                files: prev.files.filter((_, i) => i !== index),
+              }));
+            }}
+          >
+            Remove
+          </button>
+        </li>
+      ))}
+    </ul>
+  )}
                 </div>
               </div>
             </div>

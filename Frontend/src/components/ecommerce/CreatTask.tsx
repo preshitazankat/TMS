@@ -65,7 +65,7 @@ const CreateTaskUI: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
 
-  useEffect(() => {
+  useEffect(() => {  
     const fetchUsers = async () => {
       try {
         const res = await fetch(`${apiUrl}/users/all`, {

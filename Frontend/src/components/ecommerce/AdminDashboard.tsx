@@ -4,15 +4,15 @@ import PageMeta from "../common/PageMeta";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import CreateUserModal from "./CreateUserModal";
 import EditUserModal from "./EditUserModal";
- import { FiEye, FiEdit2, FiSend } from "react-icons/fi"; 
+import { FiEye, FiEdit2, FiSend } from "react-icons/fi";
 
 interface User {
   _id: string;
   name: string;
   email: string;
   department?: string;
-  designation?:string;
- role?: string;
+  designation?: string;
+  role?: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -24,18 +24,11 @@ const AdminDashboard: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-
-    // Fetch users from API (mocked here)
-    // In real implementation, replace with actual API call
-  fetch(`${apiUrl}/users/all`)
+    fetch(`${apiUrl}/users/all`)
       .then(res => res.json())
       .then(data => setUsers(data))
-        .catch(err => console.error(err));
-    // Mock data
-    // setUsers([
-    //   { _id: "1", name: "John Doe", email: "john@example.com", department: "IT", designation: "Developer" },
-    //   { _id: "2", name: "Jane Smith", email: "jane@example.com", department: "HR", designation: "Manager" },
-    // ]);
+      .catch(err => console.error(err));
+
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -43,14 +36,14 @@ const AdminDashboard: React.FC = () => {
       (u) =>
         u.name.toLowerCase().includes(searchText.toLowerCase()) ||
         u.email.toLowerCase().includes(searchText.toLowerCase()) ||
-        u.designation?.toLocaleLowerCase().includes(searchText.toLowerCase())||
+        u.designation?.toLocaleLowerCase().includes(searchText.toLowerCase()) ||
         (u.department?.toLowerCase().includes(searchText.toLowerCase()) ?? false) ||
         (u.role?.toLowerCase().includes(searchText.toLowerCase()) ?? false)
     );
   }, [users, searchText]);
 
   const handleEditClick = (user: User) => {
-    setSelectedUser(user); 
+    setSelectedUser(user);
     setEditOpen(true);
   };
 
@@ -88,7 +81,7 @@ const AdminDashboard: React.FC = () => {
           <table className="min-w-full text-left text-sm">
             <thead className="bg-gray-100 dark:bg-gray-800/50">
               <tr>
-                {["Sr", "Name", "Email", "Department","Designation" ,"Role", "Actions"].map((h) => (
+                {["Sr", "Name", "Email", "Department", "Designation", "Role", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-gray-700"
@@ -101,30 +94,30 @@ const AdminDashboard: React.FC = () => {
             <tbody>
               {filteredUsers.map((user, idx) => (
                 <tr
-  key={user._id}
-  className="hover:bg-gray-50  transition-colors text-gray-800"
->
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 ">{idx + 1}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.name}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.email}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.department}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.designation}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.role}</td>
-  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-  
+                  key={user._id}
+                  className="hover:bg-gray-50  transition-colors text-gray-800"
+                >
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 ">{idx + 1}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.name}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.email}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.department}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.designation}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">{user.role}</td>
+                  <td className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
 
 
-<FiEdit2
-  onClick={() => handleEditClick(user)}
-  className="cursor-pointer text-yellow-500 hover:text-yellow-600"
-  title="Edit"
-  size={20}
-/>
 
-  </td>
-</tr>
+                    <FiEdit2
+                      onClick={() => handleEditClick(user)}
+                      className="cursor-pointer text-yellow-500 hover:text-yellow-600"
+                      title="Edit"
+                      size={20}
+                    />
 
-               
+                  </td>
+                </tr>
+
+
               ))}
             </tbody>
           </table>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { FiClipboard, FiClock, FiCheckCircle, FiAlertCircle, FiPlay, FiBox } from "react-icons/fi";
 
 interface DomainStats {
   total: number;
@@ -125,12 +126,12 @@ const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   
 
   const cards = [
-    { label: "Total Tasks", value: stats.total, bgColor: "bg-blue-500" },
-    { label: "Pending Tasks", value: stats.pending, bgColor: "bg-yellow-500" },
-    { label: "In-Progress Tasks", value: stats.inProgress, bgColor: "bg-purple-500" },
-    { label: "Delayed Tasks", value: stats.delayed, bgColor: "bg-red-500" },
-    { label: "Completed Tasks", value: stats.completed, bgColor: "bg-green-500" },
-    { label: "In-R&D", value: stats.inRD, bgColor: "bg-orange-500" },
+    { label: "Total Tasks", value: stats.total,icon: <FiClipboard />, bgColor: "bg-blue-50" ,textColor: "text-gray-500"},
+    { label: "Pending Tasks", value: stats.pending,icon: <FiClock />, bgColor: "bg-yellow-50",textColor: "text-gray-500" },
+    { label: "In-Progress Tasks", value: stats.inProgress,icon: <FiPlay />, bgColor: "bg-purple-50",textColor: "text-gray-500" },
+    { label: "Delayed Tasks", value: stats.delayed,icon: <FiAlertCircle />, bgColor: "bg-red-50",textColor: "text-gray-500" },
+    { label: "Completed Tasks", value: stats.completed, icon: <FiCheckCircle />,bgColor: "bg-green-50",textColor: "text-gray-500"},
+    { label: "In-R&D", value: stats.inRD,icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
   ];
 
   const sortedDevelopers = [...developers].sort((a, b) => {
@@ -147,9 +148,14 @@ const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
         {cards.map((card, idx) => (
           <div
             key={idx}
-            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg transition text-white`}
+            className={`${card.bgColor}  rounded-lg p-4 text-center shadow hover:shadow-lg transition text-black`}
+            
           >
-            <h3 className="text-lg font-medium">{card.label}</h3>
+            
+            <div className="flex items-center justify-center gap-2">
+    <span className="text-2xl">{card.icon}</span>
+    <h3 className="text-lg font-medium">{card.label}</h3>
+  </div>
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}
@@ -162,7 +168,7 @@ const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
       <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
         <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
         <table className="w-full border-collapse">
-          <thead className="bg-yellow-300">
+          <thead className="bg-gray-300">
   <tr>
     <th className="border px-4 py-2">No.</th>
     <th className="border px-4 py-2">Name</th>

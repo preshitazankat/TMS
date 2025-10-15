@@ -11,8 +11,8 @@ import {
   //getStats,
   updateTask,
   submitTask,
-  getSingleTask,
-  updateTaskDomainStatus,
+  getSingleTask, 
+  updateTaskDomainStatus, 
  getDevelopersDomainStatus,
  getDomainStats
 } from "../controllers/taskController.js";
@@ -23,7 +23,9 @@ const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
   filename: (req, file, cb) => {
     const now = new Date();
     const year = now.getFullYear();
@@ -31,29 +33,26 @@ const storage = multer.diskStorage({
     const day = String(now.getDate()).padStart(2, "0");
     const hours = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
 
-    const dateSuffix = `${year}_${month}_${day}_${hours}_${minutes}`;
+    const dateSuffix = `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
     const ext = path.extname(file.originalname);
-    const baseName = path.basename(file.originalname, ext);
 
-    let newFileName = `${baseName}_${dateSuffix}${ext}`;
-    const existingFiles = fs.readdirSync(uploadDir);
+    // Extract projectName and type from request body (assuming sent from frontend)
+    const projectName = req.body.title?.replace(/\s+/g, "_") || "project";
+    let fileType = "file";
 
-    // check if file with same name already exists (any version)
-    const sameFileExists = existingFiles.some(f =>
-      f.startsWith(baseName) && f.endsWith(ext)
-    );
+    if (file.fieldname === "inputFile") fileType = "inputfile";
+    else if (file.fieldname === "outputFile") fileType = "outputfile";
+    else if (file.fieldname === "sowFile") fileType = "sowfile";
 
-    // if exists, trim the date suffix and use base name
-    if (sameFileExists) {
-      newFileName = `${baseName}${ext}`;
-    }
+    const newFileName = `${projectName}_${fileType}_${dateSuffix}${ext}`;
     cb(null, newFileName);
   },
 });
 
-const upload = multer({ storage });
 
+const upload = multer({ storage });
 router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
   { name: "sowFile", maxCount: 1 },
   { name: "inputFile", maxCount: 1 },

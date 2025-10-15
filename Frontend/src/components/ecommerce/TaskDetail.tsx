@@ -9,6 +9,7 @@ interface Submission {
   country?: string[];
   approxVolume?: string;
   method?: string;
+  apiName?:string;
   userLogin?: boolean;
   loginType?: string;
   credentials?: string;
@@ -65,6 +66,7 @@ const TaskDetail: React.FC = () => {
           headers: { "Content-Type": "application/json" },
         });
         const data: Task = await res.json();
+        
         setTask(data);
       } catch (err) {
         console.error(err);
@@ -234,7 +236,24 @@ if (task.domains && task.domains.length > 0) {
                     <p className="text-gray-500">No file uploaded</p>
                   )}
                 </div>
-
+                <div className="mb-4">
+        <label className="block text-[14px] text-gray-800 mb-1">
+          Output Document URL
+        </label>
+        {submission.outputUrl ? (
+          <a
+            href={submission.outputUrl.startsWith("http") ? submission.outputUrl : `https://${submission.outputUrl}`}
+            className="text-blue-600 underline break-words"
+            target="_blank"
+            rel="noreferrer"
+          >
+             View URL
+          </a>
+        ) : (
+          <p className="text-gray-500">No output document URL provided</p>
+        )}
+      </div>
+               
                 <Detail label="Platform" value={displayedDomain || "-"} />
                 <Detail
                   label="Country"
@@ -244,6 +263,10 @@ if (task.domains && task.domains.length > 0) {
                 />
                 <Detail label="Approx Volume" value={submission.approxVolume || "-"} />
                 <Detail label="Method" value={submission.method || "-"} />
+                {submission.method &&(
+<Detail label="API Name" value={submission.apiName|| "-"} />
+                )}
+                
                 <Detail label="User Login" value={submission.userLogin ? "Yes" : "No"} />
                 <Detail label="Proxy Used" value={submission.proxyUsed ? "Yes" : "No"} />
 

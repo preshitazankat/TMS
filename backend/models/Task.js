@@ -23,9 +23,7 @@ const domainSchema = new mongoose.Schema({
     size: Number,
     uploadedAt: Date,
   },
-  reason:{
-    type:String,
-  }
+  
 });
 
 const taskSchema = new mongoose.Schema(
@@ -55,6 +53,7 @@ const taskSchema = new mongoose.Schema(
     feasibleFor: { type: String },
     approxVolume: { type: String },
     method: { type: String },
+    apiName:{type:String},
     proxyUsed: { type: Boolean, default: false },
     proxyName: { type: String },
     perRequestCredit: { type: Number },
@@ -67,10 +66,10 @@ const taskSchema = new mongoose.Schema(
     sowUrl: { type: String },
     inputFile: { type: String },
     inputUrl: { type: String },
-    outputFile: { type: String },
+    outputFile: { type: String }, 
     outputUrl: { type: String },
 
-    submittedAt: { type: Date },
+    
     remarks: { type: String },
   },
   { timestamps: true }
