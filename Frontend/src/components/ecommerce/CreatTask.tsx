@@ -83,8 +83,8 @@ const CreateTaskUI: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const DeliveryTypes = ["API", "Data as a Service", "Both"];
-  const PlatformTypes = ["Web", "App", "Both"];
+  const DeliveryTypes = ["API", "Data as a Service", "Both(API & Data As A Service)"];
+  const PlatformTypes = ["Web", "App", "Both (App & Web)"];
 
   const isValidDocumentUrl = (url: string) => {
     const pattern = new RegExp(

@@ -213,13 +213,14 @@ const TaskDetail: React.FC = () => {
                     <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto">
                       {(Array.isArray(submission.outputFiles) ? submission.outputFiles : [submission.outputFiles]).map((file, idx) => (
                         <li key={idx}>
+                           Version.{idx+1}:-
                           <a
                             href={file.startsWith("http") ? file : buildFileUrl(file)}
                             className="text-blue-600 underline"
                             target="_blank"
                             rel="noreferrer"
                           >
-                            View File {idx+1}
+                           View File 
                           </a>
                           <Detail
                             label="Date"
@@ -245,7 +246,8 @@ const TaskDetail: React.FC = () => {
             {submission.outputUrls.map((url, index) => (
                 // Only render if the URL string is not empty
                 url.trim() && (
-                    <div key={index}>
+                    <div key={index} className="flex">
+                       Version.{index+1}:-
                         <a
                             // Construct the full URL for the href attribute
                             href={
@@ -258,7 +260,7 @@ const TaskDetail: React.FC = () => {
                             rel="noreferrer"
                         >
                             {/* Display the URL and its index */}
-                           View URL {index + 1}
+                            View URL
                         </a>
                     </div>
                 )
@@ -378,6 +380,8 @@ const TaskDetail: React.FC = () => {
                   ((task.sowFiles || []).concat(task.sowUrls || [])).map((fileOrUrl, idx) => {
                     const isUrl = fileOrUrl.startsWith("http");
                     return (
+                      <div className="flex">
+                        Version.{idx+1}:-
                       <a
                         key={idx}
                         href={isUrl ? fileOrUrl : buildFileUrl(fileOrUrl)}
@@ -385,8 +389,9 @@ const TaskDetail: React.FC = () => {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {isUrl ? `View URL ${idx+1} `: `view file ${idx+1}`}
+                        {isUrl ? `View URL `: `View file `}
                       </a>
+                      </div>
                     );
                   })
                 ) : (
@@ -401,6 +406,8 @@ const TaskDetail: React.FC = () => {
                   ((task.inputFiles || []).concat(task.inputUrls || [])).map((fileOrUrl, idx) => {
                     const isUrl = fileOrUrl.startsWith("http");
                     return (
+                      <div className="flex">
+                         Version.{idx+1}:-
                       <a
                         key={idx}
                         href={isUrl ? fileOrUrl : buildFileUrl(fileOrUrl)}
@@ -408,8 +415,9 @@ const TaskDetail: React.FC = () => {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {isUrl ? `View URL ${idx+1} `: `view file ${idx+1}`}
+                        {isUrl ? `View URL `: `View file `}
                       </a>
+                      </div>
                     );
                   })
                 ) : (

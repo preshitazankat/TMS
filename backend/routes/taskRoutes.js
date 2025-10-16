@@ -35,7 +35,7 @@ const storage = multer.diskStorage({
     const minutes = String(now.getMinutes()).padStart(2, "0");
     const seconds = String(now.getSeconds()).padStart(2, "0");
 
-    const dateSuffix = `${year}_${month}_${day}_${hours}_${minutes}_${seconds}`;
+    const dateSuffix = `${year}_${month}_${day}_${hours}_${minutes}`;
     const ext = path.extname(file.originalname);
 
     // Extract projectName and type from request body (assuming sent from frontend)

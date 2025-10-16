@@ -26,7 +26,7 @@ interface DeveloperTask {
   completed: number;
   inProgress: number;
   inRD: number;
-  delayed:number;
+  delayed: number;
 }
 
 const Dashboard: React.FC = () => {
@@ -45,7 +45,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
   const [sortBy, setSortBy] = useState<keyof DeveloperTask | "total" | "completed" | "inProgress" | "inRD" | "delayed" | "assigned" | "none">("none");
-const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
@@ -108,7 +108,7 @@ const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     const token = getCookie("token");
     if (!token) return navigate("/login");
 
@@ -123,112 +123,112 @@ const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
       navigate("/login");
     }
   }, []);
-  
+
 
   const cards = [
-    { label: "Total Tasks", value: stats.total,icon: <FiClipboard />, bgColor: "bg-blue-50" ,textColor: "text-gray-500"},
-    { label: "Pending Tasks", value: stats.pending,icon: <FiClock />, bgColor: "bg-yellow-50",textColor: "text-gray-500" },
-    { label: "In-Progress Tasks", value: stats.inProgress,icon: <FiPlay />, bgColor: "bg-purple-50",textColor: "text-gray-500" },
-    { label: "Delayed Tasks", value: stats.delayed,icon: <FiAlertCircle />, bgColor: "bg-red-50",textColor: "text-gray-500" },
-    { label: "Completed Tasks", value: stats.completed, icon: <FiCheckCircle />,bgColor: "bg-green-50",textColor: "text-gray-500"},
-    { label: "In-R&D", value: stats.inRD,icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
+    { label: "Total Tasks", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
+    { label: "Pending Tasks", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
+    { label: "In-Progress Tasks", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
+    { label: "Delayed Tasks", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
+    { label: "Completed Tasks", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
+    { label: "In-R&D", value: stats.inRD, icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
   ];
 
   const sortedDevelopers = [...developers].sort((a, b) => {
-  if (sortBy === "none") return 0;
-  const aValue = (a as any)[sortBy] || 0;
-  const bValue = (b as any)[sortBy] || 0;
-  return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-});
+    if (sortBy === "none") return 0;
+    const aValue = (a as any)[sortBy] || 0;
+    const bValue = (b as any)[sortBy] || 0;
+    return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+  });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen p-6">
       {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         {cards.map((card, idx) => (
           <div
             key={idx}
             className={`${card.bgColor}  rounded-lg p-4 text-center shadow hover:shadow-lg transition text-black`}
-            
+
           >
-            
+
             <div className="flex items-center justify-center gap-2">
-    <span className="text-2xl">{card.icon}</span>
-    <h3 className="text-lg font-medium">{card.label}</h3>
-  </div>
+              <span className="text-2xl">{card.icon}</span>
+              <h3 className="text-lg font-medium">{card.label}</h3>
+            </div>
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}
       </div>
 
-     
+
 
       {/* Developer Table (Manager only) */}
       {(userRole === "Admin" || userRole === "Manager") && developers.length > 0 && (
-      <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
-        <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-300">
-  <tr>
-    <th className="border px-4 py-2">No.</th>
-    <th className="border px-4 py-2">Name</th>
-    {["total", "completed", "inProgress", "inRD", "delayed"].map((col) => (
-      <th
-        key={col}
-        className="border px-4 py-2 cursor-pointer"
-        onClick={() => {
-          if (sortBy === col) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-          } else {
-            setSortBy(col as keyof DeveloperTask);
-            setSortOrder("desc");
-          }
-        }}
-      >
-        {col === "total" ? "Assigned" : col === "inProgress" ? "In Progress" : col === "inRD" ? "In R&D" : col.charAt(0).toUpperCase() + col.slice(1)}
-        {sortBy === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
-      </th>
-    ))}
-  </tr>
-</thead>
+        <div className="overflow-x-auto bg-gray-100 rounded-lg shadow p-4">
+          <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
+          <table className="w-full border-collapse bg-white">
+            <thead className="bg-gray-300">
+              <tr>
+                <th className="border px-4 py-2">No.</th>
+                <th className="border px-4 py-2">Name</th>
+                {["total", "completed", "inProgress", "inRD", "delayed"].map((col) => (
+                  <th
+                    key={col}
+                    className="border px-4 py-2 cursor-pointer"
+                    onClick={() => {
+                      if (sortBy === col) {
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                      } else {
+                        setSortBy(col as keyof DeveloperTask);
+                        setSortOrder("desc");
+                      }
+                    }}
+                  >
+                    {col === "total" ? "Assigned" : col === "inProgress" ? "In Progress" : col === "inRD" ? "In R&D" : col.charAt(0).toUpperCase() + col.slice(1)}
+                    {sortBy === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          <tbody>
-            {sortedDevelopers.map((dev, idx) => (
-      <tr key={idx} className="hover:bg-gray-100 text-center">
-      <td className="border px-4 py-2">{idx + 1}</td> {/* Auto number */}
-      <td className="border px-4 py-2">{dev.name}</td>
-      <td className="border px-4 py-2">{dev.total}</td>
-      <td className="border px-4 py-2">{dev.completed}</td>
-      <td className="border px-4 py-2">{dev.inProgress}</td>
-      <td className="border px-4 py-2">{dev.inRD}</td>
-      <td className="border px-4 py-2">{dev.delayed}</td>
-    </tr>
-  ))}
-          <tr className="bg-gray-200 font-bold text-center">
-          <td className="border px-4 py-2"></td>
-          <td className="border px-4 py-2">Total</td>
-          <td className="border px-4 py-2">
-            {developers.reduce((sum, dev) => sum + dev.total, 0)}
-          </td>
-          <td className="border px-4 py-2">
-            {developers.reduce((sum, dev) => sum + dev.completed, 0)}
-          </td>
-          <td className="border px-4 py-2">
-            {developers.reduce((sum, dev) => sum + dev.inProgress, 0)}
-          </td>
-          <td className="border px-4 py-2">
-            {developers.reduce((sum, dev) => sum + dev.inRD, 0)}
-          </td>
-          <td className="border px-4 py-2">
-            {developers.reduce((sum, dev) => sum + dev.delayed, 0)}
-          </td>
-        </tr>
-          </tbody>
-        </table>
-      </div>
-       )} 
-       
-      
+            <tbody>
+              {sortedDevelopers.map((dev, idx) => (
+                <tr key={idx} className="hover:bg-gray-100 text-center">
+                  <td className="border px-4 py-2">{idx + 1}</td> {/* Auto number */}
+                  <td className="border px-4 py-2">{dev.name}</td>
+                  <td className="border px-4 py-2">{dev.total}</td>
+                  <td className="border px-4 py-2">{dev.completed}</td>
+                  <td className="border px-4 py-2">{dev.inProgress}</td>
+                  <td className="border px-4 py-2">{dev.inRD}</td>
+                  <td className="border px-4 py-2">{dev.delayed}</td>
+                </tr>
+              ))}
+              <tr className="bg-gray-200 font-bold text-center">
+                <td className="border px-4 py-2"></td>
+                <td className="border px-4 py-2">Total</td>
+                <td className="border px-4 py-2">
+                  {developers.reduce((sum, dev) => sum + dev.total, 0)}
+                </td>
+                <td className="border px-4 py-2">
+                  {developers.reduce((sum, dev) => sum + dev.completed, 0)}
+                </td>
+                <td className="border px-4 py-2">
+                  {developers.reduce((sum, dev) => sum + dev.inProgress, 0)}
+                </td>
+                <td className="border px-4 py-2">
+                  {developers.reduce((sum, dev) => sum + dev.inRD, 0)}
+                </td>
+                <td className="border px-4 py-2">
+                  {developers.reduce((sum, dev) => sum + dev.delayed, 0)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+
     </div>
   );
 };

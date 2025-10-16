@@ -428,16 +428,16 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
     // src/pages/SubmitTaskUI.tsx - Around line 405
 
-if (
-  (!submission.outputfiles || submission.outputfiles.length === 0) &&
-  !submission.outputUrls?.[0] // ✅ Check if the array has a non-empty first element
-) {
-  newErrors.outputUrls = "Upload a file or provide a output document URL."; // ✅ Updated error key
-}
+    if (
+      (!submission.outputfiles || submission.outputfiles.length === 0) &&
+      !submission.outputUrls?.[0] // ✅ Check if the array has a non-empty first element
+    ) {
+      newErrors.outputUrls = "Upload a file or provide a output document URL."; // ✅ Updated error key
+    }
 
-if (submission.outputUrls?.[0] && !isValidDocumentUrl(submission.outputUrls[0])) { // ✅ Check the first element
-  newErrors.outputUrls = "Invalid document URL format."; // ✅ Updated error key
-}
+    if (submission.outputUrls?.[0] && !isValidDocumentUrl(submission.outputUrls[0])) { // ✅ Check the first element
+      newErrors.outputUrls = "Invalid document URL format."; // ✅ Updated error key
+    }
 
 
     if (submission.githubLink) {
@@ -618,58 +618,58 @@ if (submission.outputUrls?.[0] && !isValidDocumentUrl(submission.outputUrls[0]))
                 </h3>
               </div>
               <div className="overflow-x-auto rounded-lg shadow-lg">
-              <table className="min-w-full text-left border-collapse rounded-lg overflow-hidden">
-                <thead>
-                  <tr className="bg-gray-500">
-                    <th className="px-4 py-3 text-gray-300 font-medium">
-                      Platform
-                    </th>
-                    <th className="px-4 py-3 text-gray-300 font-medium">
-                      Developers
-                    </th>
-                    <th className="px-4 py-3 text-gray-300 font-medium">
-                      Submission Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {taskDetails.domains?.map((domainObj, idx) => {
-                    const devNames =
-                      domainObj.developers?.map((dev) => dev.name) || [];
-                    const submissionStatus = domainObj.status || "pending";
-                    const isSubmitted =
-                      submissionStatus.toLowerCase() === "submitted";
+                <table className="min-w-full text-left border-collapse rounded-lg overflow-hidden">
+                  <thead>
+                    <tr className="bg-gray-500">
+                      <th className="px-4 py-3 text-gray-300 font-medium">
+                        Platform
+                      </th>
+                      <th className="px-4 py-3 text-gray-300 font-medium">
+                        Developers
+                      </th>
+                      <th className="px-4 py-3 text-gray-300 font-medium">
+                        Submission Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taskDetails.domains?.map((domainObj, idx) => {
+                      const devNames =
+                        domainObj.developers?.map((dev) => dev.name) || [];
+                      const submissionStatus = domainObj.status || "pending";
+                      const isSubmitted =
+                        submissionStatus.toLowerCase() === "submitted";
 
-                    return (
-                      <tr
-                        key={idx}
-                        className={
-                          idx % 2 === 0
-                            ? "bg-gray-100 hover:bg-gray-200"
-                            : "bg-white hover:bg-gray-200"
-                        }
-                      >
-                        <td className="px-4 py-3 border-b border-gray-700">
-                          {domainObj.name}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-700">
-                          {devNames.join(", ") || "-"}
-                        </td>
-                        <td className="px-4 py-3 border-b border-gray-700">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${isSubmitted
+                      return (
+                        <tr
+                          key={idx}
+                          className={
+                            idx % 2 === 0
+                              ? "bg-gray-100 hover:bg-gray-200"
+                              : "bg-white hover:bg-gray-200"
+                          }
+                        >
+                          <td className="px-4 py-3 border-b border-gray-700">
+                            {domainObj.name}
+                          </td>
+                          <td className="px-4 py-3 border-b border-gray-700">
+                            {devNames.join(", ") || "-"}
+                          </td>
+                          <td className="px-4 py-3 border-b border-gray-700">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${isSubmitted
                                 ? "bg-green-500/20 text-green-600"
                                 : "bg-yellow-500/20 text-yellow-600"
-                              }`}
-                          >
-                            {submissionStatus}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                                }`}
+                            >
+                              {submissionStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1086,40 +1086,21 @@ if (submission.outputUrls?.[0] && !isValidDocumentUrl(submission.outputUrls[0]))
                   </label>
                   <input
                     type="text"
-                    name="outputUrls" // ✅ Change name to plural
+                    name="outputUrls"
                     value={submission.outputUrls?.[0] || ""}
-                    onChange={(e) => // 🔥 FIX: Dedicated handler for array field
-      setSubmission((prev) => ({
-        ...prev,
-      
-        outputUrls: [e.target.value].filter(Boolean),
-      }))
-    }
+                    onChange={(e) =>
+                      setSubmission((prev) => ({
+                        ...prev,
+                        outputUrls: [e.target.value].filter(Boolean),
+                      }))
+                    }
+                    // ✅ Ensure this is a static string, not a variable.
                     placeholder="Enter Output Document URL"
                     className="w-full p-3 rounded-md  border border-gray-600 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
                   />
-                  {/* {submission.outputfiles.length > 0 && (
-                    <ul className="list-disc pl-5">
-                      {submission.outputfiles.map((file, index) => (
-                        <li key={index} className="flex items-center justify-between gap-2">
-                          <span>{file.name}</span>
-                          <button
-                            type="button"
-                            className="text-red-500 text-sm hover:underline"
-                            onClick={() => {
-                              setSubmission((prev) => ({
-                                ...prev,
-                                outputfiles: prev.outputfiles.filter((_, i) => i !== index),
-                              }));
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )} */}
+
+
                 </div>
               </div>
             </div>

@@ -36,8 +36,8 @@ const taskSchema = new mongoose.Schema(
     taskAssignedDate: { type: Date, required: true },
     targetDate: { type: Date, required: true },
     completeDate: { type: Date },
-    typeOfDelivery: { type: String, enum: ["api", "data as a service","both"] },
-    typeOfPlatform: { type: String, enum: ["web", "app", "both"] },
+    typeOfDelivery: { type: String, enum: ["api", "data as a service","both(api & data as a service)"] },
+    typeOfPlatform: { type: String, enum: ["web", "app", "both (app & web)"] },
 
     
 
