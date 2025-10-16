@@ -45,8 +45,8 @@ const taskSchema = new mongoose.Schema(
     domains: { type: [domainSchema], default: [] },
 
     platform: { type: String }, // backward compatibility
-    userLogin: { type: Boolean, default: false },
-    loginType: { type: String, enum: ["Free login", "Paid login"], default: null },
+    userLogin: { type: Boolean,  },
+    loginType: { type: String, enum: ["Free login", "Paid login"], },
     credentials: { type: String },
 
     country: { type: String },
@@ -54,7 +54,7 @@ const taskSchema = new mongoose.Schema(
     approxVolume: { type: String },
     method: { type: String },
     apiName:{type:String},
-    proxyUsed: { type: Boolean, default: false },
+    proxyUsed: { type: Boolean,},
     proxyName: { type: String },
     perRequestCredit: { type: Number },
     totalRequest: { type: Number },
@@ -62,12 +62,12 @@ const taskSchema = new mongoose.Schema(
     complexity: { type: String, enum: ["Low", "Medium", "High", "Very High"] },
     githubLink: { type: String },
 
-    sowFile: { type: String },
-    sowUrl: { type: String },
-    inputFile: { type: String },
-    inputUrl: { type: String },
-    outputFile: { type: String }, 
-    outputUrl: { type: String },
+    sowFiles: { type: [String], default: [] },
+    sowUrls: { type: [String], default: [] },
+    inputFiles: { type: [String], default: [] },
+    inputUrls: { type: [String], default: [] },
+    outputFiles: { type: [String], default: [] },
+    outputUrls: { type: [String], default: [] },
 
     
     remarks: { type: String },

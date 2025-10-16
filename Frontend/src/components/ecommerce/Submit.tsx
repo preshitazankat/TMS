@@ -13,7 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 interface SubmitTaskProps {
   taskData?: any;
 }
- 
+
 interface Submission {
   [key: string]: any;
   platform: string;
@@ -32,8 +32,8 @@ interface Submission {
   lastCheckedDate: string;
   complexity: string;
   githubLink: string;
-  files: File[];
-  outputUrl: string;
+  outputfiles: File[],
+  outputUrl: string[];
   remark: string;
 }
 
@@ -55,9 +55,9 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
   const allCountries = [
     { value: "Afghanistan", label: "Afghanistan" },
-     { value: "Albania", label: "Albania" },
-     { value: "Algeria", label: "Algeria" },
-     { value: "Algeria", label: "Algeria" },
+    { value: "Albania", label: "Albania" },
+    { value: "Algeria", label: "Algeria" },
+    { value: "Algeria", label: "Algeria" },
     { value: "Andorra", label: "Andorra" },
     { value: "Angola", label: "Angola" },
     { value: "Antigua and Barbuda", label: "Antigua and Barbuda" },
@@ -252,7 +252,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     { value: "Yemen", label: "Yemen" },
     { value: "Zambia", label: "Zambia" },
     { value: "Zimbabwe", label: "Zimbabwe" },
-   ];
+  ];
 
   const isValidDocumentUrl = (url: string) => {
     // Must start with http/https and end with allowed extension
@@ -286,8 +286,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     lastCheckedDate: format(today, "yyyy-MM-dd"),
     complexity: "Medium",
     githubLink: "",
-    files: [],
-    outputUrl: "",
+    outputfiles: [],
+    outputUrl: [],
     remark: "",
   });
 
@@ -295,7 +295,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
   const [taskDetails, setTaskDetails] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [method, setMethod] = useState("");
-const [apiName, setApiName] = useState("");
+  const [apiName, setApiName] = useState("");
 
 
   useEffect(() => {
@@ -307,12 +307,12 @@ const [apiName, setApiName] = useState("");
         lastCheckedDate: taskData.lastCheckedDate
           ? taskData.lastCheckedDate.slice(0, 10)
           : new Date().toISOString().slice(0, 10),
-        files: [],
+        outputfiles: [],
         country: Array.isArray(taskData.country)
           ? taskData.country
           : taskData.country
-          ? [taskData.country]
-          : [],
+            ? [taskData.country]
+            : [],
       }));
       if (taskData.developers) setDomains(Object.keys(taskData.developers));
       setTaskDetails(taskData);
@@ -327,12 +327,12 @@ const [apiName, setApiName] = useState("");
             lastCheckedDate: data.lastCheckedDate
               ? data.lastCheckedDate.slice(0, 10)
               : new Date().toISOString().slice(0, 10),
-            files: [],
+            outputfiles: [],
             country: Array.isArray(data.country)
               ? data.country
               : data.country
-              ? [data.country]
-              : [],
+                ? [data.country]
+                : [],
           }));
 
           setTaskDetails(data);
@@ -346,7 +346,7 @@ const [apiName, setApiName] = useState("");
     if (e.target.files) {
       setSubmission((prev) => ({
         ...prev,
-        files: Array.from(e.target.files as FileList),
+        outputfiles: Array.from(e.target.files as FileList),
       }));
     }
   };
@@ -365,7 +365,7 @@ const [apiName, setApiName] = useState("");
     if (type === "checkbox") {
       setSubmission({ ...submission, [name]: checked });
     } else if (type === "file") {
-      setSubmission({ ...submission, files: files ? Array.from(files) : [] });
+      setSubmission({ ...submission, outputfiles: files ? Array.from(files) : [] });
     } else if (multiple) {
       // multi-select <select multiple>
       const selected = Array.from((target as HTMLSelectElement).options)
@@ -390,10 +390,10 @@ const [apiName, setApiName] = useState("");
     }
 
     if (name === "outputUrl" || name === "inputUrl") {
-  // Just update value while typing; don't validate yet
-  setSubmission({ ...submission, [name]: value });
-  return;
-}
+      // Just update value while typing; don't validate yet
+      setSubmission({ ...submission, [name]: value });
+      return;
+    }
 
   };
 
@@ -426,15 +426,17 @@ const [apiName, setApiName] = useState("");
         newErrors.totalRequest = "Total Request is required.";
     }
 
-    if (
-      (!submission.files || submission.files.length === 0) &&
-      !submission.outputUrl
-    ) {
-      newErrors.outputUrl = "Upload a file or provide a output document URL.";
-    }
+    // src/pages/SubmitTaskUI.tsx - Around line 405
 
-    if (submission.outputUrl && !isValidDocumentUrl(submission.outputUrl)) {
-  newErrors.outputUrl = "Invalid document URL format.";
+if (
+  (!submission.outputfiles || submission.outputfiles.length === 0) &&
+  !submission.outputUrls?.[0] // ✅ Check if the array has a non-empty first element
+) {
+  newErrors.outputUrls = "Upload a file or provide a output document URL."; // ✅ Updated error key
+}
+
+if (submission.outputUrls?.[0] && !isValidDocumentUrl(submission.outputUrls[0])) { // ✅ Check the first element
+  newErrors.outputUrls = "Invalid document URL format."; // ✅ Updated error key
 }
 
 
@@ -467,9 +469,9 @@ const [apiName, setApiName] = useState("");
 
       formData.append("approxVolume", submission.approxVolume || "");
       formData.append("method", submission.method);
-if (method === "third-party-api") {
-  formData.append("apiName", submission.apiName);
-}
+      if (method === "third-party-api") {
+        formData.append("apiName", submission.apiName);
+      }
 
       formData.append("userLogin", submission.userLogin ? "true" : "false"); // boolean as string
       formData.append("loginType", submission.loginType || "");
@@ -481,13 +483,32 @@ if (method === "third-party-api") {
       formData.append("lastCheckedDate", submission.lastCheckedDate || "");
       formData.append("complexity", submission.complexity || "");
       formData.append("githubLink", submission.githubLink || "");
-      formData.append("outputUrl", submission.outputUrl || "");
+      // formData.append("outputUrl", submission.outputUrl || "");
       formData.append("remark", submission.remark || "");
 
       // Append files
-      if (submission.files && submission.files.length > 0) {
-        submission.files.forEach((file) => formData.append("files", file));
-      }
+      // Inside handleSubmit in Submit.tsx
+
+      Object.entries(submission).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") return;
+
+        // ... other array/file handling
+
+        // 🔥 Handle plural URL arrays by JSON stringifying them
+        if (key === "outputUrls") {
+          formData.append(key, JSON.stringify(value));
+        }
+        // Handle file arrays
+        else if (key === "outputfiles") {
+          (value as File[]).forEach((file) => {
+            formData.append(key, file);
+          });
+        }
+        else {
+          formData.append(key, value as any);
+        }
+      });
+
 
       // Debug: see exactly what is being sent
       for (let pair of formData.entries()) {
@@ -507,8 +528,8 @@ if (method === "third-party-api") {
       }
 
       const data = await res.json();
-      console.log("Returned task:", data);
 
+      console.log("Returned task:", data);
       toast.success("✅ Task submitted successfully!");
       window.location.href = "/tasks";
     } catch (err) {
@@ -564,28 +585,28 @@ if (method === "third-party-api") {
           { title: "Submit" },
         ]}
       />
- <ToastContainer
-    position="top-right"
-    autoClose={3000}
-    hideProgressBar={false}
-    newestOnTop={false}
-    closeOnClick
-    rtl={false}
-    pauseOnFocusLoss
-    draggable
-    pauseOnHover
-    theme="colored"
-  />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       <div className="min-h-screen w-full   flex justify-center py-10 px-4">
         <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
-          
+
           <h2 className="text-3xl text-center text-[#3903a0] font-semibold mb-8">
             {/* Project codes */}
             {Array.isArray(taskDetails?.projectCode)
               ? `[${taskDetails.projectCode.join(", ")}]`
               : taskDetails?.projectCode
-              ? `[${taskDetails.projectCode}]`
-              : "-"}{" "}
+                ? `[${taskDetails.projectCode}]`
+                : "-"}{" "}
             {/* Title */}
             {taskDetails?.title || ""}
           </h2>
@@ -596,7 +617,7 @@ if (method === "third-party-api") {
                   Task Platform & Submissions
                 </h3>
               </div>
-
+              <div className="overflow-x-auto rounded-lg shadow-lg">
               <table className="min-w-full text-left border-collapse rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-gray-500">
@@ -636,11 +657,10 @@ if (method === "third-party-api") {
                         </td>
                         <td className="px-4 py-3 border-b border-gray-700">
                           <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              isSubmitted
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${isSubmitted
                                 ? "bg-green-500/20 text-green-600"
                                 : "bg-yellow-500/20 text-yellow-600"
-                            }`}
+                              }`}
                           >
                             {submissionStatus}
                           </span>
@@ -650,6 +670,7 @@ if (method === "third-party-api") {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
@@ -660,19 +681,19 @@ if (method === "third-party-api") {
                 <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Platform
                 </label>
-              
+
                 <input
-      type="text"
-      value={
-        submission.domain ||
-        (taskDetails?.domains
-          ? taskDetails.domains.map((d: any) => d.name).join(", ")
-          : "")
-      }
-      readOnly
-      placeholder="Domain"
-      className="w-full rounded-lg border border-gray-200 bg-gray-100 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90 cursor-not-allowed"
-    />
+                  type="text"
+                  value={
+                    submission.domain ||
+                    (taskDetails?.domains
+                      ? taskDetails.domains.map((d: any) => d.name).join(", ")
+                      : "")
+                  }
+                  readOnly
+                  placeholder="Domain"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-100 p-3 text-gray-800 dark:border-gray-700 dark:bg-white/[0.05] dark:text-white/90 cursor-not-allowed"
+                />
               </div>
             </div>
 
@@ -718,8 +739,8 @@ if (method === "third-party-api") {
                       backgroundColor: state.isSelected
                         ? "#3B82F6" // blue-500 for selected
                         : state.isFocused
-                        ? "#EFF6FF" // blue-50 for hover
-                        : "#ffffff",
+                          ? "#EFF6FF" // blue-50 for hover
+                          : "#ffffff",
                       color: state.isSelected ? "#ffffff" : "#111827",
                       cursor: "pointer",
                     }),
@@ -782,65 +803,53 @@ if (method === "third-party-api") {
                 )}
               </div>
               {/* Method Selection */}
-<div className="mb-4">
-  <label className="block mb-2 text-sm font-medium text-gray-700">
-    Method
-  </label>
-  <select
-    name="method"
-    value={submission.method}
-    onChange={(e) => {
-      handleChange(e);
-      setMethod(e.target.value); // update state for conditional rendering
-    }}
-    className="w-full border border-gray-300 rounded-lg p-3"
-  >
-    <option value="" hidden>Select Method</option>
-   <option value="Browser Automation">Browser Automation</option>
+              <div className="mb-4">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Method
+                </label>
+                <select
+                  name="method"
+                  value={submission.method}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setMethod(e.target.value); // update state for conditional rendering
+                  }}
+                  className="w-full border border-gray-300 rounded-lg p-3"
+                >
+                  <option value="" hidden>Select Method</option>
+                  <option value="Browser Automation">Browser Automation</option>
                   <option value="Request">Request</option>
                   <option value="Semi Automation">Semi Automation</option>
-    <option value="third-party-api">Third-Party API</option>
-  </select>
-  {errors.method && (
-    <p className="text-red-400 text-sm mt-1">{errors.method}</p>
-  )}
-</div>
+                  <option value="third-party-api">Third-Party API</option>
+                </select>
+                {errors.method && (
+                  <p className="text-red-400 text-sm mt-1">{errors.method}</p>
+                )}
+              </div>
 
-{/* Show API Name only when Third-Party API is selected */}
-{submission.method === "third-party-api" && (
-  <div className="mb-4">
-    <label className="block mb-2 text-sm font-medium text-gray-700">
-      API Name
-    </label>
-    <input
-      type="text"
-      name="apiName"
-      value={submission.apiName}
-      onChange={handleChange}
-      placeholder="Enter API Name"
-      className="w-full border border-gray-300 rounded-lg p-3"
-    />
-  </div>
-)}
+              {/* Show API Name only when Third-Party API is selected */}
+              {submission.method === "third-party-api" && (
+                <div className="mb-4">
+                  <label className="block mb-2 text-sm font-medium text-gray-700">
+                    API Name
+                  </label>
+                  <input
+                    type="text"
+                    name="apiName"
+                    value={submission.apiName}
+                    onChange={handleChange}
+                    placeholder="Enter API Name"
+                    className="w-full border border-gray-300 rounded-lg p-3"
+                  />
+                </div>
+              )}
 
               {/* API Name Field (Only when method === "third-party-api") */}
 
 
 
             </div>
-            {/* {submission.method === "third-party-api" && (
-  <div className="mb-4">
-    <label className="block text-sm font-medium mb-1">API Name</label>
-    <input
-      type="text"
-      name="apiName"
-      value={submission.apiName}
-      onChange={handleChange}
-      placeholder="Enter API Name"
-      className="w-full border border-gray-300 rounded-lg p-2"
-    />
-  </div>
-)} */}
+
 
             {/* Login & Proxy */}
             <div className="flex gap-6 flex-wrap">
@@ -1050,7 +1059,7 @@ if (method === "third-party-api") {
                   </label>
                   <input
                     type="file"
-                    name="files"
+                    name="outputfiles"
                     onChange={handleChange}
                     multiple
                     placeholder="Choose output file(s)"
@@ -1077,35 +1086,40 @@ if (method === "third-party-api") {
                   </label>
                   <input
                     type="text"
-                    name="outputUrl"
-                    value={submission.
-outputUrl || ""}
-                    onChange={handleChange}
+                    name="outputUrls" // ✅ Change name to plural
+                    value={submission.outputUrls?.[0] || ""}
+                    onChange={(e) => // 🔥 FIX: Dedicated handler for array field
+      setSubmission((prev) => ({
+        ...prev,
+      
+        outputUrls: [e.target.value].filter(Boolean),
+      }))
+    }
                     placeholder="Enter Output Document URL"
                     className="w-full p-3 rounded-md  border border-gray-600 
                  focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
                   />
-                   {submission.files.length > 0 && (
-    <ul className="list-disc pl-5">
-      {submission.files.map((file, index) => (
-        <li key={index} className="flex items-center justify-between gap-2">
-          <span>{file.name}</span>
-          <button
-            type="button"
-            className="text-red-500 text-sm hover:underline"
-            onClick={() => {
-              setSubmission((prev) => ({
-                ...prev,
-                files: prev.files.filter((_, i) => i !== index),
-              }));
-            }}
-          >
-            Remove
-          </button>
-        </li>
-      ))}
-    </ul>
-  )}
+                  {/* {submission.outputfiles.length > 0 && (
+                    <ul className="list-disc pl-5">
+                      {submission.outputfiles.map((file, index) => (
+                        <li key={index} className="flex items-center justify-between gap-2">
+                          <span>{file.name}</span>
+                          <button
+                            type="button"
+                            className="text-red-500 text-sm hover:underline"
+                            onClick={() => {
+                              setSubmission((prev) => ({
+                                ...prev,
+                                outputfiles: prev.outputfiles.filter((_, i) => i !== index),
+                              }));
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )} */}
                 </div>
               </div>
             </div>

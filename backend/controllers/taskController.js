@@ -88,7 +88,6 @@ const updateDelayedDomains = async (task) => {
   return task;
 };
 
-
 export const computeTaskOverallStatus = (task) => {
   if (!task.domains || !task.domains.length) return task.status;
   let hasRD = false, hasDelay = false;
@@ -100,7 +99,6 @@ export const computeTaskOverallStatus = (task) => {
   if (hasDelay) return "delayed";
   return task.status;
 };
-
 
 function normalizeStatus(status) {
   // Lowercase and trim only; DO NOT remove special chars used for status uniqueness
@@ -115,6 +113,24 @@ export const createTask = async (req, res) => {
   try {
     const raw = req.body || {};
     const developers = encodeDevelopers(raw.developers);
+
+    const safeParseArray = (value) => {
+        if (Array.isArray(value)) return value;
+        if (typeof value === "string" && value.trim().startsWith("[")) {
+            try {
+                return JSON.parse(value);
+            } catch (e) {
+                console.warn(`Failed to JSON.parse value: ${value}. Treating as single item array.`);
+            }
+        }
+        // If it's a single URL string, wrap it in an array.
+        if (typeof value === "string" && value.trim() !== "") return [value];
+        
+        return [];
+    };
+    
+    let sowUrls = safeParseArray(raw.sowUrls);
+    let inputUrls = safeParseArray(raw.inputUrls);
 
     let domain = raw.domain;
     if (typeof domain === "string") {
@@ -140,8 +156,12 @@ export const createTask = async (req, res) => {
       domains: domain ? (Array.isArray(domain) ? domain : [domain]).map(d => ({ name: d })) : [],
       taskAssignedDate: assignedDate,
       targetDate,
-      sowFile: req.files?.sowFile?.[0] ? `uploads/${req.files.sowFile[0].filename}` : undefined,
-      inputFile: req.files?.inputFile?.[0] ? `uploads/${req.files.inputFile[0].filename}` : undefined
+      sowFiles:
+        req.files?.sowFile?.map((f) => `uploads/${f.filename}`) || [],
+      inputFiles:
+        req.files?.inputFile?.map((f) => `uploads/${f.filename}`) || [],
+      sowUrls: sowUrls, 
+      inputUrls: inputUrls,
     };
 
     const task = new Task(taskData);
@@ -157,116 +177,6 @@ export const createTask = async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
-
-
-// UPDATE TASK
-// export const updateTask = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const body = cleanBody(req.body);
-
-//     const task = await Task.findById(id);
-//     if (!task) return res.status(404).json({ error: "Task not found" });
-
-//     // Basic field updates
-//     const fields = [
-//       "title",
-//       "assignedBy",
-//       "assignedTo",
-//       "description",
-//       "taskAssignedDate",
-//       "targetDate",
-//       "completeDate",
-//       "complexity",
-//       "status",
-//       "typeOfDelivery",
-//       "typeOfPlatform",
-//     ];
-//     fields.forEach((f) => {
-//       if (body[f] !== undefined) task[f] = body[f];
-//     });
-
-//     /* ---------- 🧩 Developer & Domain Handling ---------- */
-//     if (body.developers) {
-//       const devObj =
-//         typeof body.developers === "string"
-//           ? JSON.parse(body.developers)
-//           : body.developers;
-
-//           if (body.typeOfDelivery) {
-//   task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
-// }
-
-// if (body.typeOfPlatform) {
-//   task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
-// }
-
-
-//       if (Array.isArray(task.domains)) {
-//         // 🧩 Track all developers assigned across domains
-//         const assignedDevelopers = new Set();
-
-//         task.domains = task.domains.map((domain) => {
-//           const devsForDomain = devObj[domain.name] || [];
-
-//           // ✅ Filter valid ObjectIds and prevent duplicates
-//           const uniqueDevs = [];
-//           for (const dev of devsForDomain) {
-//             const devId = typeof dev === "object" ? dev._id : dev;
-//             if (mongoose.Types.ObjectId.isValid(devId) && !assignedDevelopers.has(String(devId))) {
-//               uniqueDevs.push(devId);
-//               assignedDevelopers.add(String(devId));
-//             }
-//           }
-
-//           const updatedStatus =
-//             uniqueDevs.length > 0 ? "in-progress" : "pending";
-
-//           return {
-//             ...domain,
-//             developers: uniqueDevs,
-//             status: updatedStatus,
-//           };
-//         });
-
-//       }
-
-//       // If any domain has developers → mark task as in-progress
-//       const hasAnyDev = Object.values(devObj).some(
-//         (arr) => Array.isArray(arr) && arr.length > 0
-//       );
-//       if (hasAnyDev) {
-//         task.status = "in-progress";
-//       }
-//     }
-
-//     /* ---------- 📎 File Handling ---------- */
-//     ["sowFile", "inputFile", "outputFile"].forEach(key => {
-//       if (req.files?.[key]?.[0]) {
-//         // Delete old file if exists
-//         if (task[key]) {
-//           const oldFilePath = path.join(process.cwd(), task[key]);
-//           if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
-//         }
-//         // Save new file
-//         task[key] = `uploads/${req.files[key][0].filename}`;
-//       }
-//     });
-
-
-//     await task.save();
-
-//     const taskObj = task.toObject();
-//     taskObj.submissions = decodeSubmissions(taskObj.submissions || {});
-
-//     res.json(taskObj);
-//   } catch (err) {
-//     console.error("UpdateTask Error:", err);
-//     res
-//       .status(500)
-//       .json({ error: err.message || "Server error while updating task" });
-//   }
-// };
 
 export const updateTask = async (req, res) => {
   try {
@@ -289,6 +199,9 @@ export const updateTask = async (req, res) => {
       "status",
       "typeOfDelivery",
       "typeOfPlatform",
+      "sowUrls", 
+      "inputUrls",
+      "outputUrls",
     ];
 
     fields.forEach((f) => {
@@ -340,12 +253,12 @@ export const updateTask = async (req, res) => {
         return {
           ...domain.toObject(),
           developers: uniqueDevs,
-            status:
-      domain.status === "submitted" // if already submitted, keep it
-        ? "submitted"
-        : uniqueDevs.length > 0
-        ? "in-progress"
-        : "pending",
+          status:
+            domain.status === "submitted" // if already submitted, keep it
+              ? "submitted"
+              : uniqueDevs.length > 0
+                ? "in-progress"
+                : "pending",
         };
       });
 
@@ -358,16 +271,23 @@ export const updateTask = async (req, res) => {
 
     // ---------- 4️⃣ Handle file uploads ----------
     ["sowFile", "inputFile", "outputFile"].forEach((key) => {
-      if (req.files?.[key]?.[0]) {
-        // Delete old file if exists
-        if (task[key]) {
-          const oldFilePath = path.join(process.cwd(), task[key]);
-          if (fs.existsSync(oldFilePath)) fs.unlinkSync(oldFilePath);
-        }
-        // Save new file
-        task[key] = `uploads/${req.files[key][0].filename}`;
+      if (req.files?.[key]?.length) {
+        const fieldName =
+          key === "sowFile"
+            ? "sowFiles"
+            : key === "inputFile"
+              ? "inputFiles"
+              : "outputFiles";
+        console.log("Files received:", req.files);
+
+
+        const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
+
+        // Append new uploads to existing array
+        task[fieldName] = [...(task[fieldName] || []), ...filePaths];
       }
     });
+
 
     // ---------- 5️⃣ Save task ----------
     await task.save();
@@ -406,11 +326,26 @@ export const submitTask = async (req, res) => {
 
     if (!Array.isArray(domains)) domains = [domains];
 
-    const files = req.files?.files?.map(f => `uploads/${f.filename}`) || [];
+    //const outputFiles = req.files?.outputFiles?.map(f => `uploads/${f.filename}`) || [];
+    const newOutputFiles = req.files?.outputFile?.map(f => `uploads/${f.filename}`) || [];
+
+    // 🔥 FIX: 2. Store the new file paths into the main task document
+    if (newOutputFiles.length > 0) {
+      task.outputFiles = [...(task.outputFiles || []), ...newOutputFiles];
+    }
+
+    if (body.outputUrls) {
+      // Assuming outputUrls from the body is the final array of URLs
+      task.outputUrls = typeof body.outputUrls === 'string' ? JSON.parse(body.outputUrls) : body.outputUrls;
+    }
+
+    // Use the *updated* array from the task object for submissionData
+    const submissionOutputFiles = task.outputFiles || [];
+    const submissionOutputUrls = task.outputUrls || [];
 
     const submissionData = {
       platform: body.platform,
-      typeOfDelivery: normalizeEnum(body.typeOfDelivery, ["api", "data as a service","both"]),
+      typeOfDelivery: normalizeEnum(body.typeOfDelivery, ["api", "data as a service", "both"]),
       typeOfPlatform: normalizeEnum(body.typeOfPlatform, ["web", "app", "both"]),
       complexity: normalizeEnum(body.complexity, ["Low", "Medium", "High", "Very High"]),
       userLogin: body.userLogin === true || body.userLogin === "true",
@@ -419,18 +354,18 @@ export const submitTask = async (req, res) => {
       feasibleFor: body.feasibleFor,
       approxVolume: body.approxVolume,
       method: body.method,
-      apiName:body.apiName,
+      apiName: body.apiName,
       proxyName: body.proxyName,
       perRequestCredit: body.perRequestCredit,
       totalRequest: body.totalRequest,
       lastCheckedDate: body.lastCheckedDate,
       githubLink: body.githubLink,
-      files,
-      outputUrl: body.outputUrl || null,
+      outputFiles: submissionOutputFiles,
+      outputUrls: submissionOutputUrls,
       loginType: body.loginType,
       credentials: body.credentials,
-      submittedAt: new Date(),
-      // Ensure status is 'submitted' by default if not provided, for completion logic
+
+
       status: body.status ? String(body.status).toLowerCase() : "submitted",
       remarks: body.remarks || ""
     };
@@ -447,7 +382,7 @@ export const submitTask = async (req, res) => {
 
     // 1. Save submission data keyed by domain name (or directly to task if no domains)
     if (domains.length > 0) {
-      domains.forEach(d => { 
+      domains.forEach(d => {
         const key = typeof d === "object" ? d.name : d;
         setSubmission(key, submissionData);
       });
@@ -502,7 +437,6 @@ export const submitTask = async (req, res) => {
 };
 
 
-
 export const getTask = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
@@ -515,7 +449,7 @@ export const getTask = async (req, res) => {
         const decoded = jwtDecode(token);
         userId = decoded?.id;
         role = decoded?.role;
-      } catch {}
+      } catch { }
     }
 
     /* ---------------- Match before lookups ---------------- */
@@ -569,20 +503,20 @@ export const getTask = async (req, res) => {
       /* ------------- Second $match (for search) ------------- */
       ...(search.trim()
         ? [
-            {
-              $match: {
-                $or: [
-                  { projectCode: { $regex: search, $options: "i" } },
-                  { title: { $regex: search, $options: "i" } },
-                  { description: { $regex: search, $options: "i" } },
-                  { "domains.name": { $regex: search, $options: "i" } },
-                  { "assignedBy.name": { $regex: search, $options: "i" } },
-                  { "assignedTo.name": { $regex: search, $options: "i" } },
-                  { "domainDevelopers.name": { $regex: search, $options: "i" } },
-                ],
-              },
+          {
+            $match: {
+              $or: [
+                { projectCode: { $regex: search, $options: "i" } },
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+                { "domains.name": { $regex: search, $options: "i" } },
+                { "assignedBy.name": { $regex: search, $options: "i" } },
+                { "assignedTo.name": { $regex: search, $options: "i" } },
+                { "domainDevelopers.name": { $regex: search, $options: "i" } },
+              ],
             },
-          ]
+          },
+        ]
         : []),
 
       /* ------------- Project flattened fields ------------- */
@@ -640,7 +574,7 @@ export const getTask = async (req, res) => {
 
 // GET SINGLE TASK
 export const getSingleTask = async (req, res) => {
-  try { 
+  try {
     const task = await Task.findById(req.params.id).populate("assignedBy", "name role").
       populate("assignedTo", "name role").populate("domains.developers", "name role");;
 
@@ -658,7 +592,6 @@ export const getSingleTask = async (req, res) => {
   } catch (err) { console.error("GetSingleTask Error:", err); res.status(500).json({ message: "Failed to fetch task" }); }
 };
 
-
 // GET DOMAIN STATS PER DOMAIN NAME
 export const getDomainStats = async (req, res) => {
   try {
@@ -667,7 +600,7 @@ export const getDomainStats = async (req, res) => {
 
     let userId, role;
     try {
-      const decoded = jwtDecode(token) 
+      const decoded = jwtDecode(token)
       userId = decoded.id;
       role = decoded.role;
     } catch (err) {
@@ -727,7 +660,6 @@ export const getDomainStats = async (req, res) => {
   }
 };
 
-
 export const getDevelopersDomainStatus = async (req, res) => {
   try {
     // Fetch all tasks and populate the developer names
@@ -785,38 +717,38 @@ export const getDevelopersDomainStatus = async (req, res) => {
 // UPDATE DOMAIN STATUS
 export const updateTaskDomainStatus = async (req, res) => {
   try {
-    const { taskId, domainName, status ,reason} = req.body;
-     const file = req.file;
+    const { taskId, domainName, status, reason } = req.body;
+    const file = req.file;
 
     if (!taskId || !domainName || !status) {
       return res.status(400).json({ message: "taskId, domainId, and status are required" });
     }
 
-    console.log("domainId",domainName);
-    
+    console.log("domainId", domainName);
+
 
     // Find the task by its ID
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     // Find the domain inside the domains array
-   const domain = task.domains?.find(d => d.name === domainName); // using Mongoose subdocument id method
+    const domain = task.domains?.find(d => d.name === domainName); // using Mongoose subdocument id method
     if (!domain) return res.status(404).json({ message: "Domain not found" });
 
     // Update status
     domain.status = status;
     if (reason) domain.remarks = reason;
 
-   if (req.file) {
-        domain.upload = {
-          filename: req.file.filename,
-          originalname: req.file.originalname,
-          path: req.file.path,
-          mimetype: req.file.mimetype,
-          size: req.file.size,
-          uploadedAt: new Date(),
-        };
-      }
+    if (req.file) {
+      domain.upload = {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        path: req.file.path,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date(),
+      };
+    }
 
 
     // Optional: update domain's completeDate if submitted

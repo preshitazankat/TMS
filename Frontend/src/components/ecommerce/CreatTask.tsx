@@ -21,10 +21,10 @@ interface TaskType {
   typeOfPlatform: string;
   status: string;
   sempleFile: boolean;
-  sowFile: File | null;
-  sowUrl: string;
-  inputFile: File | null;
-  inputUrl: string;
+  sowFile: File[] | null;
+  sowUrls: string[];
+  inputFile: File[] | null;
+  inputUrls: string[];
 }
 
 interface UserOption {
@@ -51,10 +51,10 @@ const CreateTaskUI: React.FC = () => {
     typeOfPlatform: "",
     status: "pending",
     sempleFile: false,
-    sowFile: null,
-    sowUrl: "",
-    inputFile: null,
-    inputUrl: "",
+    sowFile: [],
+    sowUrls: [],
+    inputFile: [],
+    inputUrls: [],
   });
 
   const [domainInput, setDomainInput] = useState("");
@@ -65,7 +65,7 @@ const CreateTaskUI: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
 
-  useEffect(() => {  
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await fetch(`${apiUrl}/users/all`, {
@@ -75,7 +75,7 @@ const CreateTaskUI: React.FC = () => {
         });
         const data = await res.json();
         setAssignedByOptions(data.filter((user: any) => user.role === "Sales"));
-        setAssignedToOptions(data.filter((user: any) => (user.role === "TL" || user.role==="Manager")));
+        setAssignedToOptions(data.filter((user: any) => (user.role === "TL" || user.role === "Manager")));
       } catch (err) {
         console.error("Error fetching users:", err);
       }
@@ -83,7 +83,7 @@ const CreateTaskUI: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const DeliveryTypes = ["API", "Data as a Service","Both"];
+  const DeliveryTypes = ["API", "Data as a Service", "Both"];
   const PlatformTypes = ["Web", "App", "Both"];
 
   const isValidDocumentUrl = (url: string) => {
@@ -97,9 +97,15 @@ const CreateTaskUI: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, files } = e.target as any;
     if (files) {
-      setTask({ ...task, [name]: files[0] });
-    } else {
-      setTask({ ...task, [name]: value });
+      const newFiles = Array.from(files);
+      setTask((prev) => ({
+        ...prev,
+        [name]: [...(prev[name] || []), ...newFiles], // append files
+      }));
+    }
+    else {
+      const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name;
+      setTask({ ...task, [mappedName]: value });
     }
   };
 
@@ -149,11 +155,18 @@ const CreateTaskUI: React.FC = () => {
     if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
     if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
-    if (!task.sowFile && !task.sowUrl) newErrors.sowFile = "SOW Document (file or URL) is required";
-    else if (!task.sowFile && task.sowUrl && !isValidDocumentUrl(task.sowUrl)) newErrors.sowUrl = "Invalid SOW URL";
 
-    if (!task.inputFile && !task.inputUrl) newErrors.inputFile = "Input Document (file or URL) is required";
-    else if (!task.inputFile && task.inputUrl && !isValidDocumentUrl(task.inputUrl)) newErrors.inputUrl = "Invalid Input URL";
+    const hasSowUrls = (task.sowUrls || []).some(url => url && url.trim() !== "");
+
+    if ((task.sowFile || []).length === 0 && !hasSowUrls)
+      newErrors.sowFile = "SOW Document (file or URL) is required";
+    else if (!task.sowFile && task.sowUrls && !isValidDocumentUrl(task.sowUrls[0])) newErrors.sowUrl = "Invalid SOW URL";
+
+     const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+
+    if ((task.inputFile || []).length === 0 && !hasInputUrls)
+      newErrors.inputFile = "Input Document (file or URL) is required";
+    else if (!task.inputFile && task.inputUrls && !isValidDocumentUrl(task.inputUrls[0])) newErrors.inputUrl = "Invalid Input URL";
 
     if (task.domain.length === 0) newErrors.domain = "At least one Platform is required";
 
@@ -168,9 +181,16 @@ const CreateTaskUI: React.FC = () => {
     try {
       const formData = new FormData();
       Object.entries(task).forEach(([key, value]) => {
-        if (Array.isArray(value)) value.forEach((v) => formData.append(key, v));
-        else formData.append(key, value as any);
+        if (Array.isArray(value)) {
+          value.forEach((v) => formData.append(key, v));
+        } else if (key === "sowUrls" || key === "inputUrls" || key === "domain") {
+          formData.append(key, JSON.stringify(value));
+        }
+        else {
+          formData.append(key, value as any);
+        }
       });
+
 
       const res = await fetch(`${apiUrl}/tasks`, {
         method: "POST",
@@ -202,40 +222,50 @@ const CreateTaskUI: React.FC = () => {
 
   const renderError = (field: string) => errors[field] && <p className="text-red-500 text-sm mt-1">{errors[field]}</p>;
 
-  const renderFileDropArea = (file: File | null, name: keyof TaskType, label: string) => (
+  const renderFileDropArea = (
+    files: File[] | null,
+    name: keyof TaskType,
+    label: string
+  ) => (
     <div
       onDrop={(e) => handleDrop(e, name)}
       onDragOver={handleDragOver}
       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
     >
-      {file ? (
-      <div className="flex items-center gap-2">
-        <span>{file.name}</span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setTask({ ...task, [name]: null });
-          }}
-          className="text-red-500 hover:text-red-700 font-bold"
-          title="Remove file"
-        >
-          ❌
-        </button>
-      </div>
-    ) : (
-      `Drag & Drop ${label} here or click to upload`
-    )}
-      {!file && (
+      {files && files.length > 0 ? (
+        <ul className="w-full">
+          {files.map((file, index) => (
+            <li key={index} className="flex justify-between items-center py-1">
+              <span>{file.name}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTask((prev) => ({
+                    ...prev,
+                    [name]: prev[name].filter((_: any, i: number) => i !== index),
+                  }));
+                }}
+                className="text-red-500 hover:text-red-700 font-bold"
+              >
+                ❌
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        `Drag & Drop ${label} here or click to upload`
+      )}
       <input
         type="file"
         name={name}
+        multiple
         onChange={handleChange}
         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
       />
-    )}
     </div>
   );
+
 
   return (
     <>
@@ -359,9 +389,10 @@ const CreateTaskUI: React.FC = () => {
               <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
               <div className="flex-1">
                 <label className="block text-gray-700 font-medium mb-2">SOW Document URL</label>
-                <input type="text" name="sowUrl" value={task.sowUrl} onChange={handleChange}
-                  placeholder="Enter SOW Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
-                {renderError("sowUrl")}
+                <input type="text" name="sowUrls" value={task.sowUrls[0] || ""} 
+  onChange={(e) => setTask({...task, sowUrls: [e.target.value]})} 
+  placeholder="Enter SOW Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
+                {renderError("sowUrls")}
               </div>
             </div>
 
@@ -374,9 +405,10 @@ const CreateTaskUI: React.FC = () => {
               <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
               <div className="flex-1">
                 <label className="block text-gray-700 font-medium mb-2">Input Document URL</label>
-                <input type="text" name="inputUrl" value={task.inputUrl} onChange={handleChange}
-                  placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
-                {renderError("inputUrl")}
+               <input type="text" name="inputUrls" value={task.inputUrls[0] || ""} 
+  onChange={(e) => setTask({...task, inputUrls: [e.target.value]})}
+  placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
+                {renderError("inputUrls")}
               </div>
             </div>
 

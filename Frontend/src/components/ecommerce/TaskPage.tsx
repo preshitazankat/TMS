@@ -9,6 +9,7 @@ import { FiEye, FiEdit2, FiSend } from "react-icons/fi";
 import { GrCompliance } from "react-icons/gr"; // View, Edit, Submit
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FiClipboard, FiClock, FiCheckCircle, FiAlertCircle, FiPlay, FiBox } from "react-icons/fi";
 
 
 interface Stats {
@@ -191,43 +192,13 @@ const TaskPage: React.FC = () => {
   }, []);
 
   const cards = [
-    {
-      label: "Total Tasks",
-      value: stats.total,
-      bgColor: "bg-blue-50",
-      textColor: "text-gray-500",
-    },
-    {
-      label: "Pending Tasks",
-      value: stats.pending,
-      bgColor: "bg-yellow-50",
-      textColor: "text-gray-500",
-    },
-    {
-      label: "In-Progress Tasks",
-      value: stats.inProgress,
-      bgColor: "bg-purple-50",
-      textColor: "text-gray-500",
-    },
-    {
-      label: "Delayed Tasks",
-      value: stats.delayed,
-      bgColor: "bg-red-50",
-      textColor: "text-gray-500",
-    },
-    {
-      label: "Completed Tasks",
-      value: stats.completed,
-      bgColor: "bg-green-50",
-      textColor: "text-gray-500",
-    },
-    {
-      label: "In-R&D",
-      value: stats.inRD,
-      bgColor: "bg-orange-50",
-      textColor: "text-gray-500",
-    },
-  ];
+      { label: "Total Tasks", value: stats.total,icon: <FiClipboard />, bgColor: "bg-blue-50" ,textColor: "text-gray-500"},
+      { label: "Pending Tasks", value: stats.pending,icon: <FiClock />, bgColor: "bg-yellow-50",textColor: "text-gray-500" },
+      { label: "In-Progress Tasks", value: stats.inProgress,icon: <FiPlay />, bgColor: "bg-purple-50",textColor: "text-gray-500" },
+      { label: "Delayed Tasks", value: stats.delayed,icon: <FiAlertCircle />, bgColor: "bg-red-50",textColor: "text-gray-500" },
+      { label: "Completed Tasks", value: stats.completed, icon: <FiCheckCircle />,bgColor: "bg-green-50",textColor: "text-gray-500"},
+      { label: "In-R&D", value: stats.inRD,icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
+    ];
 
   if (token) {
     const decoded = jwtDecode<TokenPayload>(token);
@@ -432,7 +403,10 @@ const TaskPage: React.FC = () => {
             className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg `}
 
           >
-            <h3 className="text-lg font-medium text-black">{card.label}</h3>
+           <div className="flex items-center justify-center gap-2">
+    <span className="text-2xl">{card.icon}</span>
+    <h3 className="text-lg font-medium">{card.label}</h3>
+  </div>
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
         ))}

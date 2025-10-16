@@ -23,12 +23,12 @@ interface Task {
   typeOfPlatform: string;
   status: string;
   sempleFile: boolean;
-  sowFile: File | null;
-  sowUrl: string;
-  inputFile: File | null;
-  inputUrl: string;
-  outputFile: File | null;
-  outputUrl: string;
+  sowFile: File[] | null;
+  sowUrls: string[];
+  inputFile: File[] | null;
+  inputUrls: string[];
+  outputFiles: File[] | null;
+  outputUrls: string[];
 }
 
 interface Domain {
@@ -63,12 +63,12 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     typeOfPlatform: "",
     status: "in-progress",
     sempleFile: false,
-    sowFile: null,
-    sowUrl: "",
-    inputFile: null,
-    inputUrl: "",
-    outputFile: null,
-    outputUrl: "",
+    sowFile: [],
+    sowUrls: [],
+    inputFile: [],
+    outputUrls: [],
+    outputFiles: [],
+    outputUrls:[],
   });
 
   const [domainInput, setDomainInput] = useState("");
@@ -88,6 +88,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
           credentials: "include"
         });
         const data = await res.json();
+        
+        
         setUsers(data); // store all users
       } catch (err) {
         console.error("Error fetching users:", err);
@@ -98,9 +100,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   }, []);
 
   const assignedByOptions = users.filter((u) => u.role === "Sales");
-  const assignedToOptions = users.filter((u) => (u.role === "TL" || u.role==="Manager"));
+  const assignedToOptions = users.filter((u) => (u.role === "TL" || u.role === "Manager"));
   const developerOptions = users.filter((u) => u.role === "Developer");
-  const DeliveryTypes = ["API", "Data as a Service","Both"];
+  const DeliveryTypes = ["API", "Data as a Service", "Both"];
   const PlatformTypes = ["Web", "App", "Both"];
 
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
@@ -128,6 +130,13 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     return mapped ? mapped._id : "";
   };
 
+  const buildFileUrl = (fileUrl?: string) => {
+    if (!fileUrl) return "";
+    if (fileUrl.startsWith("http")) return fileUrl;
+    const base = apiUrl.replace(/\/api$/, "");
+    return `${base}/${fileUrl}`;
+  };
+
   const normalizeDevelopers = (devs: Record<string, any>) => {
     const normalized: Record<string, string[]> = {};
     Object.entries(devs || {}).forEach(([domains, arr]) => {
@@ -145,9 +154,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   };
 
   const normalizeOption = (value: string, options: string[]) => {
-  if (!value) return "";
-  return options.find(opt => opt.toLowerCase() === value.toLowerCase()) || "";
-};
+    if (!value) return "";
+    return options.find(opt => opt.toLowerCase() === value.toLowerCase()) || "";
+  };
 
 
   const getUserNameById = (id: string) => {
@@ -166,11 +175,20 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
     if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
-    if (!task.sowFile && !task.sowUrl) newErrors.sowFile = "SOW Document (file or URL) is required";
-    else if (task.sowUrl && !isValidDocumentUrl(task.sowUrl)) newErrors.sowUrl = "Invalid SOW URL";
+    const hasSowUrls = (task.sowUrls || []).some(url => url && url.trim() !== "");
+    if ((task.sowFile || []).length === 0 && !hasSowUrls) {
+      newErrors.sowFile = "SOW Document (file or URL) is required";
+    } else if (hasSowUrls && !isValidDocumentUrl(task.sowUrls[0])) {
+      newErrors.sowUrls = "Invalid SOW URL"; // 🔥 Use plural key
+    }
 
-    if (!task.inputFile && !task.inputUrl) newErrors.inputFile = "Input Document (file or URL) is required";
-    else if (task.inputUrl && !isValidDocumentUrl(task.inputUrl)) newErrors.inputUrl = "Invalid Input URL";
+    // Input Validation (check array length and first item validity)
+    const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+    if ((task.inputFile || []).length === 0 && !hasInputUrls) {
+      newErrors.inputFile = "Input Document (file or URL) is required";
+    } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
+      newErrors.inputUrls = "Invalid Input URL"; // 🔥 Use plural key
+    }
 
     // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
     // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
@@ -183,87 +201,68 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
   // --------------------------- HANDLERS -----------------------------
 
-const normalizeTaskData = (data: any): Task => {
-  // Convert domains.developers (ObjectIds) to strings
-  const developersRecord: Record<string, string[]> = {};
+  const normalizeTaskData = (data: any): Task => {
+  const toArray = (val: any): string[] =>
+    Array.isArray(val) ? val : val ? [val] : [];
+
+   // 🔹 Convert developers per domain into an object
+  const developers: Record<string, string[]> = {};
   (data.domains || []).forEach((d: any) => {
-    developersRecord[d.name] = (d.developers || []).map((dev: any) =>
-      typeof dev === "string" ? dev : dev.$oid ? dev.$oid : dev._id ? dev._id : ""
-    );
+    if (d.developers && Array.isArray(d.developers)) {
+      developers[d.name] = d.developers.map(
+        (dev: any) => (dev._id ? dev._id : dev) // keep only IDs
+      );
+    }
   });
 
   return {
     ...data,
-     assignedBy: normalizeUserId(data.assignedBy), // map to _id
+    assignedBy: normalizeUserId(data.assignedBy),
     assignedTo: normalizeUserId(data.assignedTo),
-    developers: developersRecord,
+   developers,
     domains: (data.domains || []).map((d: any) => ({
       name: d.name,
       status: d.status,
+       developers: d.developers || [],
       submission: d.submission || {},
     })),
     typeOfDelivery: normalizeOption(data.typeOfDelivery, DeliveryTypes),
     typeOfPlatform: normalizeOption(data.typeOfPlatform, PlatformTypes),
-    sowFile: data.sowFile || null,
-    inputFile: data.inputFile || null,
-    outputFile: data.outputFile || null,
-    outputUrl: data.outputUrl || "",
+
+    // FIX HERE — Always arrays
+    sowFile: toArray(data.sowFiles),
+    inputFile: toArray(data.inputFiles),
+    outputFile: toArray(data.outputFiles),
+
+    // Keep URLs safe
+    sowUrls: toArray(data.sowUrls || data.sowUrl), 
+    inputUrls: toArray(data.inputUrls || data.inputUrl), 
+    outputUrls: toArray(data.outputUrls || data.outputUrl),
   };
 };
 
 
+
   useEffect(() => {
-  // if (!users.length || !id) return;
+    if (!users.length || !id) return;
 
-  // const normalizeTaskData = (data: any): Task => ({
-
-    
-  //   ...data,
-  //   assignedBy: normalizeUserId(data.assignedBy),
-  //   assignedTo: normalizeUserId(data.assignedTo),
-  //   developers: normalizeDevelopers(data.developers), // now users are loaded
-  //   typeOfDelivery: normalizeOption(data.typeOfDelivery, DeliveryTypes),
-  //   typeOfPlatform: normalizeOption(data.typeOfPlatform, PlatformTypes),
-  //   domains: (data.domains || []).map((d: any) => ({
-  //     name: d.name,
-  //     status: d.status,
-  //     submission: {
-  //       files: d.submission?.files || [],
-  //       outputUrl: d.submission?.outputUrl || "",
-  //     },
-  //   })),
-  //   outputFile: data.domains?.[0]?.submission?.files?.[0] || null,
-  //   outputUrl: data.domains?.[0]?.submission?.outputUrl || "",
-  // });
-
-  // if (!taskData) {
-  //   fetch(`${apiUrl}/tasks/${id}`, {
-  //     headers: { "Content-Type": "application/json" },
-  //     credentials: "include",
-  //   })
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setTask(normalizeTaskData(data));
-  //     })
-  //     .catch(console.error);
-  // } else {
-  //   setTask(normalizeTaskData(taskData));
-  // }
-
-  if (!users.length || !id) return;
-
-  if (!taskData) {
+    if (!taskData) {
     fetch(`${apiUrl}/tasks/${id}`, {
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    })
-      .then(res => res.json())
-      .then(data => setTask(normalizeTaskData(data)))
-      .catch(console.error);
-  } else {
-    setTask(normalizeTaskData(taskData));
-  }
-}, [taskData, id, users]);
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      })
+        .then(res => res.json())
+        
+        .then(data => setTask(normalizeTaskData(data)))
+       
+        .catch(console.error);
+       
+    } else {
+      setTask(normalizeTaskData(taskData));
+      
+      
+    }
+  }, [taskData, id, users]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
@@ -274,7 +273,11 @@ const normalizeTaskData = (data: any): Task => {
     }
 
     if (files && files.length > 0) {
-      setTask((prev) => ({ ...prev, [name]: files[0] }));
+      const selectedFiles = Array.from(files);
+      setTask((prev) => ({
+        ...prev,
+        [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
+      }));
     } else {
       // URL validation
       if (name.endsWith("Url") && value) {
@@ -326,35 +329,35 @@ const normalizeTaskData = (data: any): Task => {
   };
 
   const handleDeveloperAdd = (domainName: string) => {
-  const devId = developerInput[domainName];
-  if (!devId) return;
+    const devId = developerInput[domainName];
+    if (!devId) return;
 
-  // Prevent duplicates across domains
-  const alreadyAssigned = Object.values(task.developers).some(arr => arr.includes(devId));
-  if (alreadyAssigned) {
-    alert("This developer is already assigned!");
-    return;
-  }
+    // Prevent duplicates across domains
+    const alreadyAssigned = Object.values(task.developers).some(arr => arr.includes(devId));
+    if (alreadyAssigned) {
+      alert("This developer is already assigned!");
+      return;
+    }
 
-  setTask(prev => ({
-    ...prev,
-    developers: {
-      ...prev.developers,
-      [domainName]: [...(prev.developers[domainName] || []), devId],
-    },
-  }));
-  setDeveloperInput(prev => ({ ...prev, [domainName]: "" }));
-};
+    setTask(prev => ({
+      ...prev,
+      developers: {
+        ...prev.developers,
+        [domainName]: [...(prev.developers[domainName] || []), devId],
+      },
+    }));
+    setDeveloperInput(prev => ({ ...prev, [domainName]: "" }));
+  };
 
-const handleDeveloperRemove = (domainName: string, devId: string) => {
-  setTask(prev => ({
-    ...prev,
-    developers: {
-      ...prev.developers,
-      [domainName]: prev.developers[domainName].filter(d => d !== devId),
-    },
-  }));
-};
+  const handleDeveloperRemove = (domainName: string, devId: string) => {
+    setTask(prev => ({
+      ...prev,
+      developers: {
+        ...prev.developers,
+        [domainName]: prev.developers[domainName].filter(d => d !== devId),
+      },
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,9 +383,20 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
           formData.append("developers", JSON.stringify(developersForBackend));
         } else if (key === "domains") {
           formData.append("domains", JSON.stringify(value));
-        } else {
+        }
+        else if (["sowUrls", "inputUrls", "outputUrls"].includes(key)) {
+          formData.append(key, JSON.stringify(value));
+        }
+        // Handle multiple file arrays
+        else if (["sowFile", "inputFile", "outputFile"].includes(key)) {
+          (value as File[]).forEach((file) => {
+            formData.append(key, file);
+          });
+        }
+        else {
           formData.append(key, value as any);
         }
+
       });
 
 
@@ -401,12 +415,12 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
 
       const data = await res.json();
       if (!res.ok) {
-         toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
+        toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
         return;
       }
 
-       toast.success("✅ Task updated successfully!");
-       setTimeout(() => navigate("/tasks"), 1500); 
+      toast.success("✅ Task updated successfully!");
+      setTimeout(() => navigate("/tasks"), 1500);
       navigate("/tasks");
     } catch (err) {
       console.error(err);
@@ -418,52 +432,81 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
 
   // --------------------------- FILE DROP COMPONENT -----------------------------
 
-  const renderFileDropArea = (file: File | string[] | null, name: string | undefined, label: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined) => {
-    let fileName = null;
+  const renderFileDropArea = (
+  files: File[] | string[] | null,
+  name: keyof Task,
+  label: string
+) => {
+  const fileList = Array.isArray(files) ? files : files ? [files] : [];
 
-    if (file instanceof File) {
-      fileName = file.name;
-    } else if (Array.isArray(file)) {
-      fileName = file.length > 0 ? file[0].split("/").pop() : null; // show first file
-    } else if (typeof file === "string") {
-      fileName = (file as string).split("/").pop();
-    }
-
-    return (
+  return (
+    <div className="mb-4">
+      {/* 🔹 Drop area */}
       <div
-        onDrop={(e) => { if (name) handleDrop(e, name as keyof Task); }}
+        onDrop={(e) => handleDrop(e, name)}
         onDragOver={handleDragOver}
-        className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-500 transition text-gray-700"
+        className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 cursor-pointer hover:border-blue-500 transition text-gray-700"
       >
-        {fileName ? (
-           <div className="flex items-center gap-2">
-        <span>{fileName}</span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setTask({ ...task, [name]: null });
-          }}
-          className="text-red-500 hover:text-red-700 font-bold"
-          title="Remove file"
-        >
-          ❌
-        </button>
-      </div>
-        ) : (
-          <span className="text-gray-700">Drag & Drop {label} here or click to upload</span>
-        )}
-        {!file && (
+        <span className="text-gray-700">
+          Drag & Drop {label} here or click to upload
+        </span>
+
         <input
           type="file"
           name={name}
+          multiple
           onChange={handleChange}
           className="absolute w-full h-full opacity-0 cursor-pointer"
         />
-        )}
       </div>
-    );
-  };
+
+      {/* 🔹 File list shown BELOW the drop area */}
+      {fileList.length > 0 && (
+        <div className="mt-3 flex flex-col gap-2">
+          {fileList.map((file, i) => {
+            const fileName =
+              file instanceof File ? file.name : file.split("/").pop();
+              const fileUrlOrPath = file instanceof File ? URL.createObjectURL(file) : (file as string);
+            const finalUrl = buildFileUrl(fileUrlOrPath);
+
+            return (
+              <div
+                key={i}
+                className="flex items-center justify-between bg-gray-100 p-2 rounded"
+              >
+                <a
+                  href={finalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 underline truncate max-w-[80%]"
+                >
+                  📄 {fileName}
+                </a>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTask((prev) => ({
+                      ...prev,
+                      [name]: (prev[name] as any[]).filter((_, idx) => idx !== i),
+                    }));
+                  }}
+                  className="text-red-500 hover:text-red-700 font-bold"
+                  title="Remove file"
+                >
+                  ❌
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+
   // --------------------------- RENDER -----------------------------
   return (
     <>
@@ -475,20 +518,20 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
         ]}
       />
       <>
-  <ToastContainer
-    position="top-right"
-    autoClose={3000}
-    hideProgressBar={false}
-    newestOnTop={false}
-    closeOnClick
-    rtl={false}
-    pauseOnFocusLoss
-    draggable
-    pauseOnHover
-    theme="colored"
-  />
-  {/* ...rest of your form */}
-</>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
+        {/* ...rest of your form */}
+      </>
 
       <div className="min-h-screen w-full  dark:bg-gray-900 flex justify-center py-10 px-4">
         <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
@@ -582,59 +625,59 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
               {errors.domains && <p className="text-red-500">{errors.domains}</p>}
 
               {task.domains.map((d) => (
-  <div key={d.name} className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700">
-    <div className="flex justify-between items-center mb-2">
-      <span className="font-semibold">{d.name}</span>
-      <button
-        type="button"
-        onClick={() => handleDomainRemove(d.name)}
-        className="text-red-500 hover:text-red-600"
-      >
-        ❌
-      </button>
-    </div>
+                <div key={d.name} className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold">{d.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDomainRemove(d.name)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      ❌
+                    </button>
+                  </div>
 
-    <div className="flex gap-3 items-end flex-wrap">
-      <select
-        value={developerInput[d.name] || ""}
-        onChange={(e) =>
-          setDeveloperInput((prev) => ({ ...prev, [d.name]: e.target.value }))
-        }
-        className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white/90"
-      >
-        <option value="" hidden>Select Developer</option>
-        {developerOptions.map(u => (
-          <option key={u._id} value={u._id}>{u.name}</option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={() => handleDeveloperAdd(d.name)}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-      >
-        Add Dev
-      </button>
-    </div>
+                  <div className="flex gap-3 items-end flex-wrap">
+                    <select
+                      value={developerInput[d.name] || ""}
+                      onChange={(e) =>
+                        setDeveloperInput((prev) => ({ ...prev, [d.name]: e.target.value }))
+                      }
+                      className="flex-1 p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:text-white/90"
+                    >
+                      <option value="" hidden>Select Developer</option>
+                      {developerOptions.map(u => (
+                        <option key={u._id} value={u._id}>{u.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleDeveloperAdd(d.name)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                    >
+                      Add Dev
+                    </button>
+                  </div>
 
-    <ul className="flex flex-wrap gap-2 mt-2">
-      {(task.developers[d.name] || []).map((devId) => {
-        const devName = users.find(u => u._id === devId)?.name || devId;
-        return (
-          <li key={devId} className="bg-gray-200 px-2 py-1 rounded flex items-center gap-2">
-            {devName}
-            <button
-              type="button"
-              onClick={() => handleDeveloperRemove(d.name, devId)}
-              className="text-red-500 hover:text-red-600"
-            >
-              ❌
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  </div>
-))}
+                  <ul className="flex flex-wrap gap-2 mt-2">
+                    {(task.developers[d.name] || []).map((devId) => {
+                      const devName = users.find(u => u._id === devId)?.name || devId;
+                      return (
+                        <li key={devId} className="bg-gray-200 px-2 py-1 rounded flex items-center gap-2">
+                          {devName}
+                          <button
+                            type="button"
+                            onClick={() => handleDeveloperRemove(d.name, devId)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            ❌
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
 
 
 
@@ -720,7 +763,9 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">SOW Document URL</label>
-                <input type="text" name="sowUrl" value={task.sowUrl || ""} onChange={handleChange} placeholder="Enter SOW Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" name="sowUrls" // 🔥 Changed to plural
+                  value={task.sowUrls?.[0] || ""} // 🔥 Access first element
+                  onChange={(e) => setTask({...task, sowUrls: [e.target.value]})} placeholder="Enter SOW Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
@@ -733,7 +778,9 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">Input Document URL</label>
-                <input type="text" name="inputUrl" value={task.inputUrl || ""} onChange={handleChange} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input type="text" name="inputUrls" // 🔥 Changed to plural
+                  value={task.inputUrls?.[0] || ""} // 🔥 Access first element
+                  onChange={(e) => setTask({...task, inputUrls: [e.target.value]})} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
 
@@ -746,7 +793,7 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
                 </label>
 
                 {/* Show already uploaded file */}
-                {task?.outputFile && !(task.outputFile instanceof File) && (
+                {/* {task?.outputFile && !(task.outputFile instanceof File) && (
                   <div className="mb-2">
                     <a
                       href={`${apiUrl}/${task.outputFile}`}
@@ -757,10 +804,14 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
 
                     </a>
                   </div>
-                )}
+
+                )} */}
+                
 
                 {/* Upload new file */}
-                {renderFileDropArea(task.outputFile, "outputFile", "Output File")}
+                {/* Already handled in renderFileDropArea */}
+{renderFileDropArea(task.outputFiles, "outputFiles", "Output File")}
+
               </div>
 
               {/* OR Divider */}
@@ -776,12 +827,12 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
                 {task.outputUrl && (
                   <div className="mb-2">
                     <a
-                      href={task.outputUrl}
+                     href={task.outputUrls?.[0]}
                       target="_blank"
                       rel="noreferrer"
                       className="text-green-400 underline"
                     >
-                      🌐 View Output URL
+                       View Output URL
                     </a>
                   </div>
                 )}
@@ -789,9 +840,9 @@ const handleDeveloperRemove = (domainName: string, devId: string) => {
 
                 <input
                   type="text"
-                  name="outputUrl"
-                  value={task.outputUrl || ""}
-                  onChange={handleChange}
+                  name="outputUrls" // 🔥 Changed to plural
+                  value={task.outputUrls?.[0] || ""} // 🔥 Access first element
+                  onChange={(e) => setTask({...task, outputUrls: [e.target.value]})}
                   placeholder="Enter Output Document URL"
                   className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
                 />
