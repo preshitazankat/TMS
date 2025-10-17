@@ -41,6 +41,10 @@ interface Task {
   sowUrl?: string;
   inputFiles?: string;
   inputUrl?: string;
+  clientSampleSchemaFiles?: string;
+  clientSampleSchemaUrl?: string;
+  
+  domains?: Domain[];
   submissions?: Record<string, Submission>;
   reason?: string;
 }
@@ -76,7 +80,7 @@ const TaskDetail: React.FC = () => {
     };
     fetchTask();
   }, [id, apiUrl]);
-
+ 
   const buildFileUrl = (fileUrl?: string) => {
     if (!fileUrl) return "";
     if (fileUrl.startsWith("http")) return fileUrl;
@@ -133,6 +137,7 @@ const TaskDetail: React.FC = () => {
       return url;
     }
   };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -140,8 +145,6 @@ const TaskDetail: React.FC = () => {
       </div>
     );
   }
-
-
 
   return (
     <>
@@ -157,10 +160,18 @@ const TaskDetail: React.FC = () => {
           {/* HEADER */}
           <div className="bg-gray-100 rounded-xl shadow-lg p-6 space-y-3">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-bold">{task.projectCode}</h1>
+              <h1 className="text-3xl font-bold">[{task.projectCode}]</h1>
               <span className="text-3xl font-bold">-</span>
               <h1 className="text-3xl font-bold">{task.title}</h1>
+
+              {displayedDomain && (
+                <>
+                  <span className="text-3xl font-bold">{" >> "}</span>
+                  <h1 className="text-3xl font-bold ">{displayedDomain}</h1>
+                </>
+              )}
             </div>
+
             {task.description && <p className="text-gray-700">{task.description}</p>}
             {/* Show only selected domain */}
             <div className="flex gap-2">
@@ -204,131 +215,216 @@ const TaskDetail: React.FC = () => {
           </div>
 
           {/* SUBMISSION */}
-          <Section title="Submission" icon={<FileText size={18} className="text-blue-600 bg-gray-100" />}>
-            {submission ? (
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-100">
-                <div className="mb-4">
-                  <label className="block text-[14px] text-gray-800 mb-1">Sample Output Data</label>
-                  {submission.outputFiles && submission.outputFiles.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto">
-                      {(Array.isArray(submission.outputFiles) ? submission.outputFiles : [submission.outputFiles]).map((file, idx) => (
-                        <li key={idx}>
-                           Version.{idx+1}:-
-                          <a
-                            href={file.startsWith("http") ? file : buildFileUrl(file)}
-                            className="text-blue-600 underline"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                           View File 
-                          </a>
-                          <Detail
-                            label="Date"
-                             value={formatDateTime(
-    domainObj?.completeDate ?? submission?.submittedAt
-  )}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500">No file uploaded</p>
-                  )}
-                </div>
-               <div className="mb-4">
-    <label className="block text-[14px] text-gray-800 mb-1">
-        Output Document URL
-    </label>
-    
-    {/* Check if the outputUrls array exists and has at least one element */}
-    {submission.outputUrls && submission.outputUrls.length > 0 ? (
-        <div className="space-y-1">
-            {submission.outputUrls.map((url, index) => (
-                // Only render if the URL string is not empty
-                url.trim() && (
-                    <div key={index} className="flex">
-                       Version.{index+1}:-
-                        <a
-                            // Construct the full URL for the href attribute
-                            href={
-                                url.startsWith("http")
+          {submission ? (
+            <Section title="Submission" icon={<FileText size={18} className="text-blue-600 bg-gray-100" />}>
+              {submission ? (
+                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-100">
+                  <div className="mb-4">
+                    <label className="block text-[14px] text-gray-800 mb-1">Sample Output Data</label>
+                    {submission.outputFiles && submission.outputFiles.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto">
+                        {(Array.isArray(submission.outputFiles) ? submission.outputFiles : [submission.outputFiles]).map((file, idx) => (
+                          <li key={idx}>
+                            Version.{idx + 1}:-
+                            <a
+                              href={file.startsWith("http") ? file : buildFileUrl(file)}
+                              className="text-blue-600 underline"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              View File
+                            </a>
+                            <Detail
+                              label="Date"
+                              value={formatDateTime(
+                                domainObj?.completeDate ?? submission?.submittedAt
+                              )}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500">No file uploaded</p>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-[14px] text-gray-800 mb-1">
+                      Output Document URL
+                    </label>
+
+                    {/* Check if the outputUrls array exists and has at least one element */}
+                    {submission.outputUrls && submission.outputUrls.length > 0 ? (
+                      <div className="space-y-1">
+                        {submission.outputUrls.map((url, index) => (
+                          // Only render if the URL string is not empty
+                          url.trim() && (
+                            <div key={index} className="flex">
+                              Version.{index + 1}:-
+                              <a
+                                // Construct the full URL for the href attribute
+                                href={
+                                  url.startsWith("http")
                                     ? url
                                     : `https://${url}`
-                            }
-                            className="text-blue-600 underline break-words block"
-                            target="_blank"
-                            rel="noreferrer"
+                                }
+                                className="text-blue-600 underline break-words block"
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {/* Display the URL and its index */}
+                                View URL
+                              </a>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No output document URL provided</p>
+                    )}
+                  </div>
+
+                  <Detail label="Platform" value={displayedDomain || "-"} />
+                  <Detail
+                    label="Country"
+                    value={Array.isArray(submission.country)
+                      ? submission.country.join(" • ")
+                      : submission.country || "-"}
+                  />
+                  <Detail label="Approx Volume" value={submission.approxVolume || "-"} />
+                  <Detail label="Method" value={submission.method || "-"} />
+                  {submission.method && (
+                    <Detail label="API Name" value={submission.apiName || "-"} />
+                  )}
+
+                  <Detail label="User Login" value={submission.userLogin ? "Yes" : "No"} />
+                  <Detail label="Proxy Used" value={submission.proxyUsed ? "Yes" : "No"} />
+
+                  {submission.proxyUsed && (
+                    <>
+                      <Detail label="Proxy Name" value={submission.proxyName || "-"} />
+                      <Detail label="Per Request Credit" value={submission.perRequestCredit?.toString() || "-"} />
+                      <Detail label="Total Requests" value={submission.totalRequest?.toString() || "-"} />
+                    </>
+                  )}
+
+                  {submission.userLogin && (
+                    <>
+                      <Detail label="Login Type" value={submission.loginType || "-"} />
+                      <Detail label="Credentials" value={submission.credentials || "-"} />
+                    </>
+                  )}
+
+                  <Detail label="Complexity" value={submission.complexity || "-"} />
+                  <Detail label="Type Of Delivery" value={task.typeOfDelivery || "-"} />
+                  <Detail label="Type Of Platform" value={task.typeOfPlatform || "-"} />
+
+                  <div className="md:col-span-2">
+                    <p className="text-gray-700 text-sm">GitHub Link</p>
+                    {submission.githubLink ? (
+                      <a href={submission.githubLink} className="text-blue-600 underline">
+                        View Repo
+                      </a>
+                    ) : (
+                      <p className="text-gray-500">-</p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <p className="text-gray-700 text-sm">Remark</p>
+                    {submission.remarks ? (
+                      <span className="text-gray-900 whitespace-pre-wrap">{submission.remarks}</span>
+                    ) : (
+                      <p className="text-gray-500">-</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500">No submission found for this domain.</p>
+              )}
+            </Section>
+          ) : null}
+
+          <Section title="Attachment" icon={<Folder size={18} className="text-yellow-600" />}>
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* SOW Documents */}
+              <div>
+                <p className="text-gray-700 text-sm">SOW Documents</p>
+                {((task.sowFiles || []).concat(task.sowUrls || [])).length > 0 ? (
+                  ((task.sowFiles || []).concat(task.sowUrls || [])).map((fileOrUrl, idx) => {
+                    const isUrl = fileOrUrl.startsWith("http");
+                    return (
+                      <div className="flex">
+                        Version.{idx + 1}:-
+                        <a
+                          key={idx}
+                          href={isUrl ? fileOrUrl : buildFileUrl(fileOrUrl)}
+                          className="text-blue-600 underline block"
+                          target="_blank"
+                          rel="noreferrer"
                         >
-                            {/* Display the URL and its index */}
-                            View URL
+                          {isUrl ? `View URL ` : `View File `}
                         </a>
-                    </div>
-                )
-            ))}
-        </div>
-    ) : (
-        <p className="text-gray-500">No output document URL provided</p>
-    )}
-</div>
-
-                <Detail label="Platform" value={displayedDomain || "-"} />
-                <Detail
-                  label="Country"
-                  value={Array.isArray(submission.country)
-                    ? submission.country.join(" • ")
-                    : submission.country || "-"}
-                />
-                <Detail label="Approx Volume" value={submission.approxVolume || "-"} />
-                <Detail label="Method" value={submission.method || "-"} />
-                {submission.method && (
-                  <Detail label="API Name" value={submission.apiName || "-"} />
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500">No SOW file or URL uploaded</p>
                 )}
-
-                <Detail label="User Login" value={submission.userLogin ? "Yes" : "No"} />
-                <Detail label="Proxy Used" value={submission.proxyUsed ? "Yes" : "No"} />
-
-                {submission.proxyUsed && (
-                  <>
-                    <Detail label="Proxy Name" value={submission.proxyName || "-"} />
-                    <Detail label="Per Request Credit" value={submission.perRequestCredit?.toString() || "-"} />
-                    <Detail label="Total Requests" value={submission.totalRequest?.toString() || "-"} />
-                  </>
-                )}
-
-                {submission.userLogin && (
-                  <>
-                    <Detail label="Login Type" value={submission.loginType || "-"} />
-                    <Detail label="Credentials" value={submission.credentials || "-"} />
-                  </>
-                )}
-
-                <Detail label="Complexity" value={submission.complexity || "-"} />
-                <Detail label="Type Of Delivery" value={task.typeOfDelivery || "-"} />
-                <Detail label="Type Of Platform" value={task.typeOfPlatform || "-"} />
-
-                <div className="md:col-span-2">
-                  <p className="text-gray-700 text-sm">GitHub Link</p>
-                  {submission.githubLink ? (
-                    <a href={submission.githubLink} className="text-blue-600 underline">
-                      View Repo
-                    </a>
-                  ) : (
-                    <p className="text-gray-500">-</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <p className="text-gray-700 text-sm">Remark</p>
-                  {submission.remarks ? (
-                    <span className="text-gray-900 whitespace-pre-wrap">{submission.remarks}</span>
-                  ) : (
-                    <p className="text-gray-500">-</p>
-                  )}
-                </div>
               </div>
-            ) : (
-              <p className="text-gray-500">No submission found for this domain.</p>
-            )}
+
+              {/* Input Documents */}
+              <div>
+                <p className="text-gray-700 text-sm">Input Documents</p>
+                {((task.inputFiles || []).concat(task.inputUrls || [])).length > 0 ? (
+                  ((task.inputFiles || []).concat(task.inputUrls || [])).map((fileOrUrl, idx) => {
+                    const isUrl = fileOrUrl.startsWith("http");
+                    return (
+                      <div className="flex">
+                        Version.{idx + 1}:-
+                        <a
+                          key={idx}
+                          href={isUrl ? fileOrUrl : buildFileUrl(fileOrUrl)}
+                          className="text-blue-600 underline block"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {isUrl ? `View URL ` : `View File `}
+                        </a>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500">No input file or URL uploaded</p>
+                )}
+              </div>
+
+              {/* client sample schema Documents */}
+              <div>
+                <p className="text-gray-700 text-sm">Client Sample Schema Documents</p>
+                {((task.clientSampleSchemaFiles || []).concat(task.clientSampleSchemaUrls || [])).length > 0 ? (
+                  ((task.clientSampleSchemaFiles || []).concat(task.clientSampleSchemaUrls || [])).map((fileOrUrl, idx) => {
+                    const isUrl = fileOrUrl.startsWith("http");
+                    return (
+                      <div className="flex">
+                        Version.{idx + 1}:-
+                        <a
+                          key={idx}
+                          href={isUrl ? fileOrUrl : buildFileUrl(fileOrUrl)}
+                          className="text-blue-600 underline block"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {isUrl ? `View URL ` : `View File `}
+                        </a>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-gray-500">No client sample schema file or URL uploaded</p>
+                )}
+              </div>
+
+            </div>
           </Section>
 
           {/* TIMELINE */}
@@ -338,9 +434,9 @@ const TaskDetail: React.FC = () => {
               <Detail label="Target" value={formatDateTime(task.targetDate)} />
               <Detail
                 label="Completed"
-                 value={formatDateTime(
-    domainObj?.completeDate ?? submission?.submittedAt
-  )}
+                value={formatDateTime(
+                  domainObj?.completeDate ?? submission?.submittedAt
+                )}
               />
             </div>
           </Section>
@@ -371,9 +467,9 @@ const TaskDetail: React.FC = () => {
           </Section>
 
           {/* FILES */}
-          <Section title="Attachment" icon={<Folder size={18} className="text-yellow-600" />}>
+          {/* <Section title="Attachment" icon={<Folder size={18} className="text-yellow-600" />}>
             <div className="grid md:grid-cols-2 gap-6">
-              {/* SOW Documents */}
+              
               <div>
                 <p className="text-gray-700 text-sm">SOW Documents</p>
                 {((task.sowFiles || []).concat(task.sowUrls || [])).length > 0 ? (
@@ -389,7 +485,7 @@ const TaskDetail: React.FC = () => {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        {isUrl ? `View URL `: `View file `}
+                        {isUrl ? `View URL `: `View File `}
                       </a>
                       </div>
                     );
@@ -399,7 +495,6 @@ const TaskDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Input Documents */}
               <div>
                 <p className="text-gray-700 text-sm">Input Documents</p>
                 {((task.inputFiles || []).concat(task.inputUrls || [])).length > 0 ? (
@@ -425,7 +520,7 @@ const TaskDetail: React.FC = () => {
                 )}
               </div>
             </div>
-          </Section>  
+          </Section>   */}
 
           {/* BACK */}
           <div className="flex gap-4 pt-4 border-t border-gray-300">

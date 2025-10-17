@@ -68,7 +68,9 @@ const taskSchema = new mongoose.Schema(
     inputUrls: { type: [String], default: [] },
     outputFiles: { type: [String], default: [] },
     outputUrls: { type: [String], default: [] },
-
+    clientSampleSchemaFiles: { type:   [String], default: [] },
+    clientSampleSchemaUrls: { type:   [String], default: [] },
+    
     
     remarks: { type: String },
   },

@@ -501,7 +501,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
         // Handle file arrays
         else if (key === "outputfiles") {
           (value as File[]).forEach((file) => {
-            formData.append(key, file);
+            formData.append("outputFile", file);
           });
         }
         else {
@@ -702,6 +702,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Country
+                  <span className="text-red-500">*</span>
                 </label>
                 <CreatableSelect
                   isMulti
@@ -783,7 +784,9 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700 ">
+                  
                   Approx Volume
+                   <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -806,6 +809,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
               <div className="mb-4">
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                   Method
+                  <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="method"
@@ -890,7 +894,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                       Select Login Type
                     </option>
                     <option value="Free">Free Login</option>
-                    <option value="Padi login">Padi Login</option>
+                    <option value="Paid login">Paid Login</option>
                   </select>
                   {errors.loginType && (
                     <p className="text-red-400 text-sm mt-1">
@@ -927,6 +931,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Proxy Name
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={submission.proxyName}
@@ -944,6 +949,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Per Request Credit
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -961,6 +967,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-700 ">
                     Total Requests
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"

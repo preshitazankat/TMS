@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 interface Task {
   title: string;
   projectCode?: string;
-  assignedBy: string;
+
   assignedTo: string;
   description: string;
   taskAssignedDate: string;
@@ -24,11 +24,13 @@ interface Task {
   status: string;
   sempleFile: boolean;
   sowFile: File[] | null;
-  sowUrls: string;
+  sowUrls: string[];
   inputFile: File[] | null;
-  inputUrls: string;
+  inputUrls: string[];
   outputFiles: File[] | null;
-  outputUrls: string;
+  outputUrls: string[];
+  clientSampleSchemaFiles: File[] | null;
+  clientSampleSchemaUrl: string[];
 }
 
 interface Domain {
@@ -51,7 +53,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
   const [task, setTask] = useState<Task>({
     title: "",
-    assignedBy: "",
     assignedTo: "",
     description: "",
     taskAssignedDate: "",
@@ -64,17 +65,20 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     status: "in-progress",
     sempleFile: false,
     sowFile: [],
-    sowUrls: "",
+    sowUrls: [],
     inputFile: [],
-    outputUrls: "",
+    outputUrls: [],
     outputFiles: [],
-    outputUrls: "",
+    outputUrls: [],
+    clientSampleSchemaFiles: [],
+    clientSampleSchemaUrl: [],
   });
 
   const [domainInput, setDomainInput] = useState("");
   const [developerInput, setDeveloperInput] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [originalTask, setOriginalTask] = useState<Task | null>(null);
 
   const [users, setUsers] = useState<{ _id: string; name: string; role: string }[]>([]);
 
@@ -99,7 +103,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     fetchUsers();
   }, []);
 
-  const assignedByOptions = users.filter((u) => u.role === "Sales");
+  //const assignedByOptions = users.filter((u) => u.role === "Sales");
   const assignedToOptions = users.filter((u) => (u.role === "TL" || u.role === "Manager"));
   const developerOptions = users.filter((u) => u.role === "Developer");
   const DeliveryTypes = ["API", "Data as a Service", "Both(API & Data As A Service)"];
@@ -167,7 +171,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     const newErrors: Record<string, string> = {};
 
     if (!task.title.trim()) newErrors.title = "Project title is required";
-    if (!task.assignedBy) newErrors.assignedBy = "Assigned By is required";
+
     if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
     if (!task.description.trim()) newErrors.description = "Description is required";
     if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
@@ -233,11 +237,13 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       sowFile: toArray(data.sowFiles),
       inputFile: toArray(data.inputFiles),
       outputFile: toArray(data.outputFiles),
+      clientSampleSchemaFiles: toArray(data.clientSampleSchemaFiles),
 
       // Keep URLs safe
-      sowUrl: Array.isArray(data.sowUrls) ? data.sowUrls[0] || "" : (data.sowUrl || ""),
-inputUrl: Array.isArray(data.inputUrls) ? data.inputUrls[0] || "" : (data.inputUrl || ""),
-outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.outputUrl || ""),
+      sowUrls: toArray(data.sowUrls),
+      inputUrls: toArray(data.inputUrls),
+      outputUrls: toArray(data.outputUrls),
+      clientSampleSchemaUrl: toArray(data.clientSampleSchemaUrls),
 
     };
   };
@@ -385,13 +391,13 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
         } else if (key === "domains") {
           formData.append("domains", JSON.stringify(value));
         }
-        else if (["sowUrl", "inputUrl", "outputUrl"].includes(key)) {
-  // Convert single URL into array for backend consistency
-  formData.append(key + "s", JSON.stringify([value]));
-}
+        else if (["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(key)) {
+          // Convert single URL into array for backend consistency
+          formData.append(key + "s", JSON.stringify([value]));
+        }
 
         // Handle multiple file arrays
-        else if (["sowFile", "inputFile", "outputFile"].includes(key)) {
+        else if (["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].includes(key)) {
           (value as File[]).forEach((file) => {
             formData.append(key, file);
           });
@@ -560,26 +566,8 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
             </div>
 
             {/* Assigned By & To */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Assigned By <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="assignedBy"
-                  value={task.assignedBy}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-gray-600  p-3 dark:text-white/90"
-                >
-                  <option value="" hidden>Select Assignee</option>
-                  {assignedByOptions.map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.assignedBy && <p className="text-red-500 text-sm mt-1">{errors.assignedBy}</p>}
-              </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-1">
+
 
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -754,23 +742,25 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
 
             {/* File Uploads */}
             {/* {renderFileDropWithURL("SOW", "sowFile", "sowUrl")}
-          {renderFileDropWithURL("Input", "inputFile", "inputUrl")}
-          {renderFileDropWithURL("Output", "outputFile", "outputUrl")} */}
+            {renderFileDropWithURL("Input", "inputFile", "inputUrl")}
+            {renderFileDropWithURL("Output", "outputFile", "outputUrl")} */}
 
             {/* SOW File / URL */}
             <div className="flex flex-col md:flex-row gap-4 w-full ">
               <div className="flex-1 ">
                 <label className="block  font-medium mb-2">SOW Document File</label>
                 {renderFileDropArea(task.sowFile, "sowFile", "SOW File")}
+                {errors.sowFile && <p className="text-red-500 text-sm mt-1">{errors.sowFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">SOW Document URL</label>
                 <input type="text" name="sowUrls" // 🔥 Changed to plural
-                  value={task.sowUrls}// 🔥 Access first element
+                  value={task.sowUrls?.[0] || ""}
                   onChange={(e) => setTask({ ...task, sowUrls: [e.target.value] })}
                   placeholder="Enter SOW Document URL"
                   className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {errors.sowUrls && <p className="text-red-500 text-sm mt-1">{errors.sowUrls}</p>}
               </div>
             </div>
 
@@ -779,15 +769,34 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
               <div className="flex-1">
                 <label className="block  font-medium mb-2">Input Document File</label>
                 {renderFileDropArea(task.inputFile, "inputFile", "Input File")}
+                {errors.inputFile && <p className="text-red-500 text-sm mt-1">{errors.inputFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
               <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">Input Document URL</label>
-                <input type="text" name="inputUrls" // 🔥 Changed to plural
-                 value={task.inputUrls} // 🔥 Access first element
+                <input type="text" name="inputUrls"
+                  value={task.inputUrls?.[0] || ""}
                   onChange={(e) => setTask({ ...task, inputUrls: [e.target.value] })} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {errors.inputUrl && <p className="text-red-500 text-sm mt-1">{errors.inputUrl}</p>}
               </div>
             </div>
+            
+             <div className="flex flex-col md:flex-row gap-4 w-full ">
+              <div className="flex-1">
+                <label className="block  font-medium mb-2">Client Sample Schema Document File</label>
+                {renderFileDropArea(task.clientSampleSchemaFiles, "clientSampleSchemaFiles", "Client Sample Schema File")}
+                
+              </div>
+              <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
+              <div className="flex-1 h-18">
+                <label className="block  font-medium mb-2">Client Sample Schema Document URL</label>
+                <input type="text" name="clientSampleSchemaUrls"
+                  value={task.clientSampleSchemaUrls?.[0] || ""}
+                  onChange={(e) => setTask({ ...task, clientSampleSchemaUrls: [e.target.value] })} placeholder="Enter Client Sample Schema Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                
+              </div>
+            </div>
+
 
             {/* Output File / URL */}
             <div className="flex flex-col md:flex-row gap-4 w-full">
@@ -797,26 +806,9 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
                   Output Document File
                 </label>
 
-                {/* Show already uploaded file */}
-                {/* {task?.outputFile && !(task.outputFile instanceof File) && (
-                  <div className="mb-2">
-                    <a
-                      href={`${apiUrl}/${task.outputFile}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-400 underline"
-                    >
 
-                    </a>
-                  </div>
-
-                )} */}
-
-
-                {/* Upload new file */}
-                {/* Already handled in renderFileDropArea */}
                 {renderFileDropArea(task.outputFiles, "outputFiles", "Output File")}
-
+                {errors.outputFile && <p className="text-red-500 text-sm mt-1">{errors.outputFile}</p>}
               </div>
 
               {/* OR Divider */}
@@ -851,16 +843,17 @@ outputUrl: Array.isArray(data.outputUrls) ? data.outputUrls[0] || "" : (data.out
                   placeholder="Enter Output Document URL"
                   className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
                 />
+                {errors.outputUrl && <p className="text-red-500 text-sm mt-1">{errors.outputUrl}</p>}
               </div>
             </div>
             {/* Submit */}
             <div>
               <button
                 type="submit"
-                disabled={loading}
+
                 className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {loading ? "Updating..." : "Update Task"}
+                Update Task
               </button>
             </div>
           </form>

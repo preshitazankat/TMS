@@ -10,7 +10,7 @@ import PageBreadcrumb from "../common/PageBreadCrumb";
 
 interface TaskType {
   title: string;
-  assignedBy: string;
+
   assignedTo: string;
   description: string;
   taskAssignedDate: string;
@@ -25,6 +25,8 @@ interface TaskType {
   sowUrls: string[];
   inputFile: File[] | null;
   inputUrls: string[];
+  clientSampleSchemaFiles: File[] | null;
+  clientSampleSchemaUrls: string[];
 }
 
 interface UserOption {
@@ -40,7 +42,7 @@ const CreateTaskUI: React.FC = () => {
 
   const [task, setTask] = useState<TaskType>({
     title: "",
-    assignedBy: "",
+
     assignedTo: "",
     description: "",
     taskAssignedDate: format(today, "yyyy-MM-dd"),
@@ -55,11 +57,13 @@ const CreateTaskUI: React.FC = () => {
     sowUrls: [],
     inputFile: [],
     inputUrls: [],
+    clientSampleSchemaFiles: [],
+    clientSampleSchemaUrls: []
   });
 
   const [domainInput, setDomainInput] = useState("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [assignedByOptions, setAssignedByOptions] = useState<UserOption[]>([]);
+  //const [assignedByOptions, setAssignedByOptions] = useState<UserOption[]>([]);
   const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -74,7 +78,7 @@ const CreateTaskUI: React.FC = () => {
           },
         });
         const data = await res.json();
-        setAssignedByOptions(data.filter((user: any) => user.role === "Sales"));
+        //setAssignedByOptions(data.filter((user: any) => user.role === "Sales"));
         setAssignedToOptions(data.filter((user: any) => (user.role === "TL" || user.role === "Manager")));
       } catch (err) {
         console.error("Error fetching users:", err);
@@ -104,8 +108,8 @@ const CreateTaskUI: React.FC = () => {
       }));
     }
     else {
-      const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name;
-      setTask({ ...task, [mappedName]: value });
+      const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name === "clientSampleSchemaUrl" ? "clientSampleSchemaUrls" : name;
+      setTask({ ...task, [mappedName]: value });
     }
   };
 
@@ -147,7 +151,7 @@ const CreateTaskUI: React.FC = () => {
     const newErrors: { [key: string]: string } = {};
 
     if (!task.title.trim()) newErrors.title = "Title is required";
-    if (!task.assignedBy) newErrors.assignedBy = "Assigned By is required";
+
     if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
     if (!task.description.trim()) newErrors.description = "Description is required";
     if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
@@ -162,7 +166,7 @@ const CreateTaskUI: React.FC = () => {
       newErrors.sowFile = "SOW Document (file or URL) is required";
     else if (!task.sowFile && task.sowUrls && !isValidDocumentUrl(task.sowUrls[0])) newErrors.sowUrl = "Invalid SOW URL";
 
-     const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+    const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
 
     if ((task.inputFile || []).length === 0 && !hasInputUrls)
       newErrors.inputFile = "Input Document (file or URL) is required";
@@ -183,7 +187,7 @@ const CreateTaskUI: React.FC = () => {
       Object.entries(task).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           value.forEach((v) => formData.append(key, v));
-        } else if (key === "sowUrls" || key === "inputUrls" || key === "domain") {
+        } else if (key === "sowUrls" || key === "inputUrls" || key === "clientSampleSchemaUrl" || key === "domain") {
           formData.append(key, JSON.stringify(value));
         }
         else {
@@ -195,6 +199,7 @@ const CreateTaskUI: React.FC = () => {
       const res = await fetch(`${apiUrl}/tasks`, {
         method: "POST",
         credentials: "include",
+
         body: formData,
       });
 
@@ -293,10 +298,10 @@ const CreateTaskUI: React.FC = () => {
 
             {/* Assigned By & To */}
             <div className="flex flex-col md:flex-row gap-4 w-full">
-              {["assignedBy", "assignedTo"].map((field) => (
+              {["assignedTo"].map((field) => (
                 <div className="flex-1" key={field}>
                   <label className="block text-gray-700 font-medium mb-2">
-                    {field === "assignedBy" ? "Assigned By" : "Assigned To"} <span className="text-red-500">*</span>
+                    {field === "assignedTo" ? "Assigned To" : "Assigned To"} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name={field}
@@ -307,7 +312,7 @@ const CreateTaskUI: React.FC = () => {
                     <option value="" hidden>
                       Select Assignee
                     </option>
-                    {(field === "assignedBy" ? assignedByOptions : assignedToOptions).map((user) => (
+                    {(field === "assignedTo" && assignedToOptions).map((user) => (
                       <option key={user._id} value={user._id}>
                         {user.name}
                       </option>
@@ -389,9 +394,17 @@ const CreateTaskUI: React.FC = () => {
               <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
               <div className="flex-1">
                 <label className="block text-gray-700 font-medium mb-2">SOW Document URL</label>
-                <input type="text" name="sowUrls" value={task.sowUrls[0] || ""} 
-  onChange={(e) => setTask({...task, sowUrls: [e.target.value]})} 
-  placeholder="Enter SOW Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
+                <input type="text" name="sowUrls" value={task.sowUrls[0] || ""}
+                  // CreatTask.tsx: Replace the existing onChange with this for both sowUrls and inputUrls
+                  onChange={(e) => {
+                    // 💡 FIX: Ensure the state update is clean. inputUrls should only contain the new value.
+                    const url = e.target.value.trim();
+                    setTask(prev => ({
+                      ...prev,
+                      sowUrls: url ? [url] : [] // Store the URL as a single-element array, or an empty array if blank
+                    }));
+                  }}
+                  placeholder="Enter SOW Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
                 {renderError("sowUrls")}
               </div>
             </div>
@@ -405,10 +418,42 @@ const CreateTaskUI: React.FC = () => {
               <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
               <div className="flex-1">
                 <label className="block text-gray-700 font-medium mb-2">Input Document URL</label>
-               <input type="text" name="inputUrls" value={task.inputUrls[0] || ""} 
-  onChange={(e) => setTask({...task, inputUrls: [e.target.value]})}
-  placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
+                <input type="text" name="inputUrls" value={task.inputUrls[0] || ""}
+                  // CreatTask.tsx: Replace the existing onChange with this for both sowUrls and inputUrls
+                  onChange={(e) => {
+                    // 💡 FIX: Ensure the state update is clean. inputUrls should only contain the new value.
+                    const url = e.target.value.trim();
+                    setTask(prev => ({
+                      ...prev,
+                      inputUrls: url ? [url] : [] // Store the URL as a single-element array, or an empty array if blank
+                    }));
+                  }}
+                  placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
                 {renderError("inputUrls")}
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
+              <div className="flex-1">
+                <label className="block text-gray-700 font-medium mb-2">Client Sample Schema Document File <span className="text-red-500">*</span></label>
+                {renderFileDropArea(task.clientSampleSchemaFiles, "clientSampleSchemaFiles", "Client Sample Schema File")}
+             
+              </div>
+              <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
+              <div className="flex-1">
+                <label className="block text-gray-700 font-medium mb-2">Client Sample Schema  Document URL</label>
+                <input type="text" name="clientSampleSchemaUrls" value={task.clientSampleSchemaUrls?.[0] || ""}
+                  // CreatTask.tsx: Replace the existing onChange with this for both sowUrls and inputUrls
+                  onChange={(e) => {
+                    // 💡 FIX: Ensure the state update is clean. inputUrls should only contain the new value.
+                    const url = e.target.value.trim();
+                    setTask(prev => ({
+                      ...prev,
+                      clientSampleSchemaUrls: url ? [url] : [] // Store the URL as a single-element array, or an empty array if blank
+                    }));
+                  }}
+                  placeholder="Enter clientSampleSchema Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
+               
               </div>
             </div>
 

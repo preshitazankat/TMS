@@ -105,6 +105,47 @@ function normalizeStatus(status) {
   return status.toLowerCase().trim();
 }
 
+const safeParseArray = (value) => {
+  if (!value) return [];
+
+  let parsedArray = [];
+
+  // 1. If it's already an array, use it.
+  if (Array.isArray(value)) {
+    parsedArray = value;
+  }
+  // 2. If it's a string, try to JSON parse it.
+  else if (typeof value === "string") {
+    try {
+      // Attempt to parse it as a JSON array (e.g., '["url1", "url2"]')
+      const jsonParsed = JSON.parse(value);
+      if (Array.isArray(jsonParsed)) {
+        parsedArray = jsonParsed;
+      } else {
+        // If parsing didn't result in an array, treat the original string as a single item.
+        parsedArray = [value];
+      }
+    } catch (e) {
+      // If JSON parsing failed, treat the original string as a single item.
+      parsedArray = [value];
+    }
+  }
+
+  // 3. Flatten and clean the resulting array:
+  //    - Filter out non-strings.
+  //    - Trim whitespace.
+  //    - Filter out empty strings.
+  //    - Ensure uniqueness (using Set).
+  const cleaned = Array.from(new Set(
+    parsedArray
+      .filter(item => typeof item === 'string')
+      .map(item => item.trim())
+      .filter(item => item !== "")
+  ));
+
+  return cleaned;
+};
+
 
 /* ------------------ Controllers ------------------ */
 
@@ -114,23 +155,34 @@ export const createTask = async (req, res) => {
     const raw = req.body || {};
     const developers = encodeDevelopers(raw.developers);
 
-    const safeParseArray = (value) => {
-        if (Array.isArray(value)) return value;
-        if (typeof value === "string" && value.trim().startsWith("[")) {
-            try {
-                return JSON.parse(value);
-            } catch (e) {
-                console.warn(`Failed to JSON.parse value: ${value}. Treating as single item array.`);
-            }
-        }
-        // If it's a single URL string, wrap it in an array.
-        if (typeof value === "string" && value.trim() !== "") return [value];
-        
-        return [];
-    };
-    
+    /* ------------------ Helpers ------------------ */
+
+    let assignedByUserId;
+
+    // Check common places where middleware stores the user's ID/object
+    if (req.user && req.user._id) {
+      assignedByUserId = req.user._id;
+    } else if (req.userId) {
+      assignedByUserId = req.userId;
+    }
+    // Fallback: Check if the decoded token object was attached directly to req
+    else if (req.user && req.user.id) {
+      assignedByUserId = req.user.id;
+    }
+
+
+    if (!assignedByUserId) {
+      // This means the user is not authenticated or the session is invalid
+      return res.status(401).json({ error: "Unauthorized: User session is invalid or missing." });
+    }
+
+
+
+
+
     let sowUrls = safeParseArray(raw.sowUrls);
     let inputUrls = safeParseArray(raw.inputUrls);
+    let clientSampleSchemaUrls = safeParseArray(raw.clientSampleSchemaUrls);
 
     let domain = raw.domain;
     if (typeof domain === "string") {
@@ -160,8 +212,12 @@ export const createTask = async (req, res) => {
         req.files?.sowFile?.map((f) => `uploads/${f.filename}`) || [],
       inputFiles:
         req.files?.inputFile?.map((f) => `uploads/${f.filename}`) || [],
-      sowUrls: sowUrls, 
+      clientSampleSchemaFiles:
+        req.files?.clientSampleSchemaFiles?.map((f) => `uploads/${f.filename}`) || [],
+      sowUrls: sowUrls,
       inputUrls: inputUrls,
+      clientSampleSchemaUrls: clientSampleSchemaUrls,
+      assignedBy: assignedByUserId,
     };
 
     const task = new Task(taskData);
@@ -178,10 +234,16 @@ export const createTask = async (req, res) => {
   }
 };
 
+// UPDATE TASK
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = cleanBody(req.body);
+
+    if (body.sowUrls !== undefined) task.sowUrls = safeParseArray(body.sowUrls);
+    if (body.inputUrls !== undefined) task.inputUrls = safeParseArray(body.inputUrls);
+    if (body.outputUrls !== undefined) task.outputUrls = safeParseArray(body.outputUrls);
+    if (body.clientSampleSchemaUrls !== undefined) task.clientSampleSchemaUrls = safeParseArray(body.clientSampleSchemaUrls);
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: "Task not found" });
@@ -199,9 +261,10 @@ export const updateTask = async (req, res) => {
       "status",
       "typeOfDelivery",
       "typeOfPlatform",
-      "sowUrls", 
+      "sowUrls",
       "inputUrls",
       "outputUrls",
+      "clientSampleSchemaUrls",
     ];
 
     fields.forEach((f) => {
@@ -270,21 +333,26 @@ export const updateTask = async (req, res) => {
     }
 
     // ---------- 4️⃣ Handle file uploads ----------
-    ["sowFile", "inputFile", "outputFile"].forEach((key) => {
+    ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].forEach((key) => {
       if (req.files?.[key]?.length) {
         const fieldName =
           key === "sowFile"
             ? "sowFiles"
             : key === "inputFile"
               ? "inputFiles"
-              : "outputFiles";
+              : key === "outputFile"
+                ? "outputFiles"
+                : "clientSampleSchemaFiles"; // 👈 new field added
+
         console.log("Files received:", req.files);
 
+        // taskController.js (Original/Current logic for files)
 
-        const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
-
-        // Append new uploads to existing array
-        task[fieldName] = [...(task[fieldName] || []), ...filePaths];
+    // ...
+    const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
+    // Append new uploads to existing array
+    task[fieldName] = [...(task[fieldName] || []), ...filePaths]; // THIS IS THE PROBLEM
+    // ...
       }
     });
 
@@ -302,7 +370,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-
+// SUBMIT TASK
 export const submitTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -436,7 +504,7 @@ export const submitTask = async (req, res) => {
   } catch (err) { console.error("SubmitTask Error:", err); res.status(500).json({ error: err.message || "Server error" }); }
 };
 
-
+// get all tasks
 export const getTask = async (req, res) => {
   try {
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
@@ -455,7 +523,7 @@ export const getTask = async (req, res) => {
     /* ---------------- Match before lookups ---------------- */
     const match = {};
     if (role === "Developer" && userId) {
-      match["domains.developers"] = mongoose.Types.ObjectId(userId);
+      match["domains.developers"] = new mongoose.Types.ObjectId(userId);
     }
 
     if (status) {
@@ -570,7 +638,6 @@ export const getTask = async (req, res) => {
     res.status(500).json({ error: err.message || "Server error" });
   }
 };
-
 
 // GET SINGLE TASK
 export const getSingleTask = async (req, res) => {
