@@ -997,15 +997,25 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     if (date) {
                       setSubmission({
                         ...submission,
-                        lastCheckedDate: format(date, "yyyy-MM-dd"),
+                        lastCheckedDate: date ? format(date, "yyyy-MM-dd") : "",
                       });
                     }
                   }}
                   dateFormat="yyyy-MM-dd"
                   placeholderText="YYYY-MM-DD"
                   maxDate={new Date()}
+
                   name="lastCheckedDate"
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800"
+                  customInput={
+        <input 
+            type="text" 
+            readOnly={true} // This prevents the user from typing
+            value={submission.lastCheckedDate}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
+            placeholder="Select Date"
+        />
+    }
                 />
                 {errors.lastCheckedDate && (
                   <p className="text-red-400 text-sm mt-1">
@@ -1064,18 +1074,49 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     Attach Output Document{" "}
                     <span className="text-red-500 ml-1">*</span>
                   </label>
-                  <input
-                    type="file"
-                    name="outputfiles"
-                    onChange={handleChange}
-                    multiple
-                    placeholder="Choose output file(s)"
-                    className="w-full p-3 rounded-md  border border-gray-600 text-gray-600
-                 focus:outline-none focus:ring-2 focus:ring-blue-500
-                 file:mr-4 file:py-2 file:px-4 file:rounded-md
-                 file:border-0 file:text-sm file:font-semibold
-                 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-                  />
+                  {submission.outputfiles && submission.outputfiles.length > 0 ? (
+      // Show list of files with remove button
+      <ul className="space-y-2 mb-2 p-2 border rounded-md bg-gray-50">
+        {submission.outputfiles.map((file: File, index: number) => (
+          <li
+            key={file.name + index}
+            className="flex items-center justify-between text-sm py-1 px-2 border-b last:border-b-0"
+          >
+            <span className="truncate pr-2">{file.name}</span>
+            <button
+              type="button"
+              onClick={() => {
+                // Remove the file at the specific index
+                setSubmission((prev) => ({
+                  ...prev,
+                  outputfiles: prev.outputfiles.filter(
+                    (_: File, i: number) => i !== index
+                  ),
+                }));
+              }}
+              className="text-red-500 hover:text-red-700 font-bold p-1 transition"
+              aria-label={` ${file.name}`}
+            >
+              ❌ 
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      // Show the file input when no files are selected
+      <input
+        type="file"
+        name="outputfiles"
+        onChange={handleChange} // Ensure handleChange correctly appends files
+        multiple
+        placeholder="Choose output file(s)"
+        className="w-full p-3 rounded-md border border-gray-600 text-gray-600
+         focus:outline-none focus:ring-2 focus:ring-blue-500
+         file:mr-4 file:py-2 file:px-4 file:rounded-md
+         file:border-0 file:text-sm file:font-semibold
+         file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+      />
+    )}
                   {errors.sowUrl && (
                     <p className="text-red-400 text-sm mt-1">{errors.sowUrl}</p>
                   )}

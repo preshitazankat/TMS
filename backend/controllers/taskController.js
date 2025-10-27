@@ -201,6 +201,7 @@ export const createTask = async (req, res) => {
 
     const taskData = {
       ...raw,
+
       projectCode,
       developers,
       domains: domain ? (Array.isArray(domain) ? domain : [domain]).map(d => ({ name: d })) : [],
@@ -463,6 +464,8 @@ export const updateTask = async (req, res) => {
       "assignedBy",
       "assignedTo",
       "description",
+      "sampleFileRequired",
+      "requiredValumeOfSampleFile",
       "taskAssignedDate",
       "targetDate",
       "completeDate",
@@ -482,6 +485,44 @@ export const updateTask = async (req, res) => {
     if (body.typeOfPlatform)
       task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
 
+     // ---------- 3️⃣ Assign developers ----------
+    if (body.developers) {
+      const devObj =
+        typeof body.developers === "string" ? JSON.parse(body.developers) : body.developers;
+
+      const assignedDevelopers = new Set();
+
+      task.domains = task.domains.map((domain) => {
+        const devsForDomain = devObj[domain.name] || [];
+        const uniqueDevs = [];
+
+        for (const dev of devsForDomain) {
+          const devId = typeof dev === "object" ? dev._id : dev;
+          if (mongoose.Types.ObjectId.isValid(devId) && !assignedDevelopers.has(String(devId))) {
+            uniqueDevs.push(devId);
+            assignedDevelopers.add(String(devId));
+          }
+        }
+
+        return {
+          ...domain.toObject(),
+          developers: uniqueDevs,
+          status:
+            domain.status === "submitted" // if already submitted, keep it
+              ? "submitted"
+              : uniqueDevs.length > 0
+                ? "in-progress"
+                : "pending",
+        };
+      });
+
+      // Update task status if any developer is assigned
+      const hasAnyDev = Object.values(devObj).some(
+        (arr) => Array.isArray(arr) && arr.length > 0
+      );
+      if (hasAnyDev) task.status = "in-progress";
+    }
+    
     await task.save();
     res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {

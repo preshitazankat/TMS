@@ -14,6 +14,7 @@ interface Task {
 
   assignedTo: string;
   description: string;
+  sampleFileRequired?: boolean;
   taskAssignedDate: string;
   targetDate: string;
   completeDate: string;
@@ -55,6 +56,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     title: "",
     assignedTo: "",
     description: "",
+    sampleFileRequired: false,
     taskAssignedDate: "",
     targetDate: "",
     completeDate: "",
@@ -193,12 +195,12 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     }
 
     // Input Validation (check array length and first item validity)
-    const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
-    if ((task.inputFile || []).length === 0 && !hasInputUrls) {
-      newErrors.inputFile = "Input Document (file or URL) is required";
-    } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
-      newErrors.inputUrls = "Invalid Input URL"; // 🔥 Use plural key
-    }
+    // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+    // if ((task.inputFile || []).length === 0 && !hasInputUrls) {
+    //   newErrors.inputFile = "Input Document (file or URL) is required";
+    // } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
+    //   newErrors.inputUrls = "Invalid Input URL ()"; // 🔥 Use plural key
+    // }
 
     // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
     // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
@@ -478,8 +480,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 }
 
 
-
-
         // Handle multiple file arrays
         else if (["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].includes(key)) {
           (value as File[]).forEach((file) => {
@@ -511,6 +511,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
         return;
       }
+
+      console.log("Data",data);
+      
 
       toast.success("✅ Task updated successfully!");
       setTimeout(() => navigate("/tasks"), 1500);
@@ -855,26 +858,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
               <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Platform <span className="text-red-500">*</span>
               </label>
-
-              <div className="flex gap-3 mb-4 flex-wrap">
-                <input
-                  type="text"
-                  value={domainInput}
-                  onChange={(e) => setDomainInput(e.target.value)}
-                  placeholder="https://www.example.com"
-                  className="flex-1 rounded-lg border border-gray-600  p-3 dark:text-white/90"
-                />
-                <button
-                  type="button"
-                  onClick={handleDomainAdd}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-                >
-                  Add
-                </button>
-              </div>
-
-              {errors.domains && <p className="text-red-500">{errors.domains}</p>}
-
               {task.domains.map((d) => (
                 <div key={d.name} className="bg-gray-50 dark:bg-white/[0.05] p-4 rounded-lg mb-3 border border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between items-center mb-2">
@@ -906,7 +889,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                       onClick={() => handleDeveloperAdd(d.name)}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                     >
-                      Add Dev
+                      Add Developer
                     </button>
                   </div>
 
@@ -929,6 +912,27 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   </ul>
                 </div>
               ))}
+
+              <div className="flex gap-3 mb-4 flex-wrap">
+                <input
+                  type="text"
+                  value={domainInput}
+                  onChange={(e) => setDomainInput(e.target.value)}
+                  placeholder="https://www.example.com"
+                  className="flex-1 rounded-lg border border-gray-600  p-3 dark:text-white/90"
+                />
+                <button
+                  type="button"
+                  onClick={handleDomainAdd}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                >
+                  Add
+                </button>
+              </div>
+
+              {errors.domains && <p className="text-red-500">{errors.domains}</p>}
+
+              
 
 
 
@@ -954,8 +958,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
             <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <input
                 type="checkbox"
-                name="sempleFile"
-                checked={task.sempleFile}
+                name="sampleFileRequired"
+                
+                checked={task.sampleFileRequired}
                 onChange={handleChange}
               />
               Sample File Required?

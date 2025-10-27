@@ -13,6 +13,8 @@ interface TaskType {
 
   assignedTo: string;
   description: string;
+  sampleFileRequired: boolean;
+  riquiredValumeOfSampleFile?: number;
   taskAssignedDate: string;
   targetDate: string;
   completeDate: string;
@@ -45,6 +47,8 @@ const CreateTaskUI: React.FC = () => {
 
     assignedTo: "",
     description: "",
+    sampleFileRequired: false,
+    riquiredValumeOfSampleFile: undefined,
     taskAssignedDate: format(today, "yyyy-MM-dd"),
     targetDate: format(twoDaysLater, "yyyy-MM-dd"),
     completeDate: "",
@@ -52,7 +56,7 @@ const CreateTaskUI: React.FC = () => {
     typeOfDelivery: "",
     typeOfPlatform: "",
     status: "pending",
-    sempleFile: false,
+    
     sowFile: [],
     sowUrls: [],
     inputFile: [],
@@ -159,6 +163,10 @@ const CreateTaskUI: React.FC = () => {
     if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
     if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
+    if (task.sampleFileRequired && !task.riquiredValumeOfSampleFile) {
+        newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
+    }
+
 
     const hasSowUrls = (task.sowUrls || []).some(url => url && url.trim() !== "");
 
@@ -166,11 +174,11 @@ const CreateTaskUI: React.FC = () => {
       newErrors.sowFile = "SOW Document (file or URL) is required";
     else if (!task.sowFile && task.sowUrls && !isValidDocumentUrl(task.sowUrls[0])) newErrors.sowUrl = "Invalid SOW URL";
 
-    const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+   // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
 
-    if ((task.inputFile || []).length === 0 && !hasInputUrls)
-      newErrors.inputFile = "Input Document (file or URL) is required";
-    else if (!task.inputFile && task.inputUrls && !isValidDocumentUrl(task.inputUrls[0])) newErrors.inputUrl = "Invalid Input URL";
+    // if ((task.inputFile || []).length === 0 && !hasInputUrls)
+    //   newErrors.inputFile = "Input Document (file or URL) is required";
+    // else if (!task.inputFile && task.inputUrls && !isValidDocumentUrl(task.inputUrls[0])) newErrors.inputUrl = "Invalid Input URL";
 
     if (task.domain.length === 0) newErrors.domain = "At least one Platform is required";
 
@@ -351,7 +359,7 @@ const CreateTaskUI: React.FC = () => {
 
             {/* Title */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Project <span className="text-red-500">*</span></label>
+              <label className="block text-gray-700 font-medium mb-2">Task Name <span className="text-red-500">*</span></label>
               <input type="text" name="title" value={task.title} onChange={handleChange}
                 className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
               {renderError("title")}
@@ -417,10 +425,29 @@ const CreateTaskUI: React.FC = () => {
             {/* Sample File */}
             <div className="flex gap-6 flex-wrap">
               <label className="flex items-center gap-2 text-gray-900">
-                <input type="checkbox" name="sempleFile" checked={task.sempleFile}
-                  onChange={(e) => setTask({ ...task, sempleFile: e.target.checked })} className="h-4 w-4" />
+                <input type="checkbox" name="sampleFileRequired" checked={task.sampleFileRequired}
+                  onChange={(e) => setTask({ ...task, sampleFileRequired: e.target.checked })} className="h-4 w-4" />
                 Sample File Required?
               </label>
+              {task.sampleFileRequired && (
+                    <div className="flex-1">
+                        <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
+                        <select
+                            name="requiredVolume" 
+                            value={task.riquiredValumeOfSampleFile}
+                            onChange={handleChange}
+                            className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
+                        >
+                            <option value="" hidden>Select Volume</option>
+                            {["20", "50", "100", "500", "1000"].map((volume) => (
+                                <option key={volume} value={volume}>
+                                    {volume}
+                                </option>
+                            ))}
+                        </select>
+                        {renderError("riquiredValumeOfSampleFile")}
+                    </div>
+                )}
             </div>
 
             {/* Type of Delivery & Platform */}
@@ -490,7 +517,7 @@ const CreateTaskUI: React.FC = () => {
                     }));
                   }}
                   placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
-                {renderError("inputUrls")}
+                
               </div>
             </div>
 

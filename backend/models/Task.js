@@ -33,6 +33,8 @@ const taskSchema = new mongoose.Schema(
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     description: { type: String, required: true },
+    sampleFileRequired: { type: Boolean, default: false },
+    requiredValumeOfSampleFile: { type: Number, enum: [20, 50, 100, 500, 1000] },
     taskAssignedDate: { type: Date, required: true },
     targetDate: { type: Date, required: true },
     completeDate: { type: Date },
