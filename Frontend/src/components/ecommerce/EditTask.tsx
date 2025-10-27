@@ -278,32 +278,66 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     }
   }, [taskData, id, users]);
 
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  //   const { name, files, value, type, checked } = e.target as HTMLInputElement;
+
+  //   if (type === "checkbox") {
+  //     setTask((prev) => ({ ...prev, [name]: checked }));
+  //     return;
+  //   }
+
+  //   if (files && files.length > 0) {
+  //     const selectedFiles = Array.from(files);
+  //     setTask((prev) => ({
+  //       ...prev,
+  //       [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
+  //     }));
+  //   } else {
+  //     // URL validation
+  //     if (name.endsWith("Url") && value) {
+  //       if (!isValidDocumentUrl(value)) {
+  //         alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
+  //         return;
+  //       }
+  //     }
+  //     setTask((prev) => ({ ...prev, [name]: value }));
+  //   }
+  // };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    // Note: We cast to HTMLInputElement here for files/type, but we still handle text/textarea/select
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
 
     if (type === "checkbox") {
-      setTask((prev) => ({ ...prev, [name]: checked }));
-      return;
+        setTask((prev) => ({ ...prev, [name]: checked }));
+        return;
     }
 
     if (files && files.length > 0) {
-      const selectedFiles = Array.from(files);
-      setTask((prev) => ({
-        ...prev,
-        [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
-      }));
+        // User successfully selected one or more files (APPENDING)
+        const selectedFiles = Array.from(files);
+        setTask((prev) => ({
+            ...prev,
+            [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
+        }));
     } else {
-      // URL validation
-      if (name.endsWith("Url") && value) {
-        if (!isValidDocumentUrl(value)) {
-          alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
-          return;
+        // 🔑 CRITICAL FIX: If the element is a file input AND files.length is 0,
+        // it means the user clicked 'Cancel'. Ignore the event and return.
+        // We check if 'files' is defined to confirm it's a file input event.
+        if (files) {
+            return; 
         }
-      }
-      setTask((prev) => ({ ...prev, [name]: value }));
-    }
-  };
 
+        // Handle regular text, textarea, or select input logic (REPLACING value)
+        if (name.endsWith("Url") && value) {
+            if (!isValidDocumentUrl(value)) {
+                alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
+                return;
+            }
+        }
+        setTask((prev) => ({ ...prev, [name]: value }));
+    }
+};
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof Task) => {
     e.preventDefault();
@@ -435,17 +469,14 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
           formData.append("domains", JSON.stringify(value));
         }
         else if (["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(key)) {
-  const existing = Array.isArray(originalTask?.[key]) ? originalTask[key] : [];
-  const current = Array.isArray(value)
-    ? value
-    : typeof value === "string"
+  const arr = Array.isArray(value)
+    ? value.filter(Boolean)
+    : typeof value === "string" && value
     ? [value]
     : [];
-
-  const merged = Array.from(new Set([...existing, ...current].filter(Boolean)));
-  console.log("Merged URLs for", key, merged);
-  formData.append(key, JSON.stringify(merged));
+  formData.append(key, JSON.stringify(arr)); // ✅ send only what’s currently in UI
 }
+
 
 
 
@@ -544,7 +575,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   >
                     📄 {fileName}
                   </a>
-                  {/* <button
+                  <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -557,7 +588,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                     title="Remove file"
                   >
                     ❌
-                  </button> */}
+                  </button>
                 </div>
               );
             })}
@@ -726,14 +757,14 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 >
                   🔗 {url.length > 50 ? "..." + url.slice(-47) : url}
                 </a>
-                {/* <button
+                <button
                   type="button"
                   onClick={() => handleRemoveUrl(i)}
                   className="text-red-500 hover:text-red-700 font-bold"
                   title="Remove URL"
                 >
                   ❌
-                </button> */}
+                </button>
               </div>
             ))}
           </div>

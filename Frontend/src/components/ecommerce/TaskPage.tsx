@@ -407,7 +407,12 @@ const TaskPage: React.FC = () => {
             type="text"
             placeholder="Search by project, code, or developer"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={(e) => {
+    // 1. Update the search term
+    setSearchText(e.target.value);
+    // 2. 🔥 CRITICAL FIX: Reset the page to 1 whenever search text is modified
+    setPage(1); 
+  }}
             autoFocus={true}
             className="flex-grow w-full md:w-80 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           />
@@ -646,7 +651,8 @@ const TaskPage: React.FC = () => {
           </button>
         </div>
       </div>
-      {statusModalOpen && (
+      
+{statusModalOpen && currentTask && currentDomain && currentDomain.status.toLowerCase() !== 'submitted' && (
   <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
     <div className="bg-white rounded-lg p-6 w-96">
       <h2 className="text-lg font-semibold mb-4">Update Status</h2>
@@ -654,14 +660,11 @@ const TaskPage: React.FC = () => {
       <div className="mb-4">
         <label className="block mb-1 font-medium">New Status</label>
         
-        {/* REPLACED SELECT WITH A READ-ONLY DISPLAY */}
+        {/* The status is already set to 'in-R&D' in openStatusModal */}
         <h3 className="w-full p-2 border rounded bg-gray-100 text-gray-800 font-semibold">
           in-R&D
         </h3>
         
-        {/* IMPORTANT: Remove the useEffect that sets the status, and ensure 
-            'newStatus' state is initialized to 'in-R&D' when the modal is shown 
-            or when 'openStatusModal' is called. */}
       </div>
 
       <div className="mb-4">

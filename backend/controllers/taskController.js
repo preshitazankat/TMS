@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import User from "../models/User.js";
 import mongoose from "mongoose";
 import { jwtDecode } from "jwt-decode";
+import fs from "fs";
 
 /* ------------------ Helpers ------------------ */
 
@@ -232,26 +233,232 @@ export const createTask = async (req, res) => {
 };
 
 // UPDATE TASK
+// export const updateTask = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const body = cleanBody(req.body);
+
+//     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
+
+//     // Apply safeParseArray to convert the JSON string arrays (from FormData) 
+//     // back into JavaScript arrays in the body object.
+//     urlFields.forEach(field => {
+//       if (body[field] !== undefined) {
+//         body[field] = safeParseArray(body[field]);
+//       }
+//     });
+
+//     const task = await Task.findById(id);
+//     if (!task) return res.status(404).json({ error: "Task not found" });
+
+//     // ---------- 1️⃣ Update basic fields ----------
+//     const fields = [
+//       "title",
+//       "assignedBy",
+//       "assignedTo",
+//       "description",
+//       "taskAssignedDate",
+//       "targetDate",
+//       "completeDate",
+//       "complexity",
+//       "status",
+//       "typeOfDelivery",
+//       "typeOfPlatform",
+//       "sowUrls",
+//       "inputUrls",
+//       "outputUrls",
+//       "clientSampleSchemaUrls",
+//     ];
+
+//     const urlFieldsToMark = new Set([
+//       "sowUrls",
+//       "inputUrls",
+//       "outputUrls",
+//       "clientSampleSchemaUrls",
+//     ]);
+
+//     fields.forEach((f) => {
+//       if (body[f] !== undefined) {
+//         if (urlFieldsToMark.has(f)) {
+//           const existing = Array.isArray(task[f]) ? task[f] : [];
+//           const incoming = Array.isArray(body[f]) ? body[f] : [];
+//           task[f] = Array.from(new Set([...existing, ...incoming].filter(Boolean)));
+//           task.markModified(f);
+//         } else {
+//           task[f] = body[f];
+//         }
+//       }
+//     });
+
+
+
+//     // Normalize delivery/platform to lowercase
+//     if (body.typeOfDelivery) task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
+//     if (body.typeOfPlatform) task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
+
+//     // ---------- 2️⃣ Merge domains ----------
+//     let incomingDomains = [];
+//     if (body.domains) {
+//       incomingDomains =
+//         typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
+//     }
+
+//     const existingDomainNames = task.domains.map((d) => d.name);
+//     incomingDomains.forEach((d) => {
+//       if (!existingDomainNames.includes(d.name)) {
+//         task.domains.push({
+//           name: d.name,
+//           status: "pending",
+//           developers: [],
+//           submission: { files: [], outputUrl: "" },
+//         });
+//       }
+//     });
+
+//     // ---------- 3️⃣ Assign developers ----------
+//     if (body.developers) {
+//       const devObj =
+//         typeof body.developers === "string" ? JSON.parse(body.developers) : body.developers;
+
+//       const assignedDevelopers = new Set();
+
+//       task.domains = task.domains.map((domain) => {
+//         const devsForDomain = devObj[domain.name] || [];
+//         const uniqueDevs = [];
+
+//         for (const dev of devsForDomain) {
+//           const devId = typeof dev === "object" ? dev._id : dev;
+//           if (mongoose.Types.ObjectId.isValid(devId) && !assignedDevelopers.has(String(devId))) {
+//             uniqueDevs.push(devId);
+//             assignedDevelopers.add(String(devId));
+//           }
+//         }
+
+//         return {
+//           ...domain.toObject(),
+//           developers: uniqueDevs,
+//           status:
+//             domain.status === "submitted" // if already submitted, keep it
+//               ? "submitted"
+//               : uniqueDevs.length > 0
+//                 ? "in-progress"
+//                 : "pending",
+//         };
+//       });
+
+//       // Update task status if any developer is assigned
+//       const hasAnyDev = Object.values(devObj).some(
+//         (arr) => Array.isArray(arr) && arr.length > 0
+//       );
+//       if (hasAnyDev) task.status = "in-progress";
+//     }
+
+//     // ---------- 4️⃣ Handle file uploads ----------
+//     ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].forEach((key) => {
+//       if (req.files?.[key]?.length) {
+//         const fieldName =
+//           key === "sowFile"
+//             ? "sowFiles"
+//             : key === "inputFile"
+//               ? "inputFiles"
+//               : key === "outputFile"
+//                 ? "outputFiles"
+//                 : "clientSampleSchemaFiles"; // 👈 new field added
+
+//         console.log("Files received:", req.files);
+
+//         // taskController.js (Original/Current logic for files)
+
+//         // ...
+//         const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
+//         // Append new uploads to existing array
+//         task[fieldName] = [...(task[fieldName] || []), ...filePaths]; // THIS IS THE PROBLEM
+//         // ...
+//       }
+//     });
+
+
+//     // ---------- 5️⃣ Save task ----------
+//     await task.save();
+
+//     const taskObj = task.toObject();
+//     taskObj.submissions = decodeSubmissions(taskObj.submissions || {});
+
+//     res.json(taskObj);
+//   } catch (err) {
+//     console.error("UpdateTask Error:", err);
+//     res.status(500).json({ error: err.message || "Server error while updating task" });
+//   }
+// };
+
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = cleanBody(req.body);
 
     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
+    const fileFields = ["sowFiles", "inputFiles", "outputFiles", "clientSampleSchemaFiles"];
 
-    // Apply safeParseArray to convert the JSON string arrays (from FormData) 
-    // back into JavaScript arrays in the body object.
-    urlFields.forEach(field => {
-        if (body[field] !== undefined) {
-            body[field] = safeParseArray(body[field]);
-        }
+    // Parse incoming stringified arrays (from FormData)
+    urlFields.forEach((field) => {
+      if (body[field] !== undefined) {
+        body[field] = safeParseArray(body[field]);
+      }
     });
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: "Task not found" });
 
-    // ---------- 1️⃣ Update basic fields ----------
-    const fields = [
+    // ---------- Handle URL Updates ----------
+    for (const field of urlFields) {
+      if (Array.isArray(body[field])) {
+        // Only keep what’s currently sent from frontend
+        task[field] = body[field].filter(Boolean);
+      }
+    }
+
+    // ---------- Handle File Uploads ----------
+    for (const key of ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"]) {
+      if (req.files?.[key]?.length) {
+        const fieldName =
+          key === "sowFile"
+            ? "sowFiles"
+            : key === "inputFile"
+            ? "inputFiles"
+            : key === "outputFile"
+            ? "outputFiles"
+            : "clientSampleSchemaFiles";
+
+        const uploadedPaths = req.files[key].map((f) => `uploads/${f.filename}`);
+
+        // Merge with existing files
+        task[fieldName] = [...(task[fieldName] || []), ...uploadedPaths];
+      }
+    }
+
+    // ---------- Handle File Deletions ----------
+    for (const field of fileFields) {
+      if (body[field] !== undefined && Array.isArray(body[field])) {
+        // Only keep what the frontend sent
+        const keptFiles = new Set(body[field]);
+        const removedFiles = (task[field] || []).filter((f) => !keptFiles.has(f));
+
+        // Delete removed files from disk
+        for (const f of removedFiles) {
+          try {
+            fs.unlinkSync(f);
+          } catch (err) {
+            console.warn("⚠️ Failed to delete file:", f, err.message);
+          }
+        }
+
+        // Update DB field
+        task[field] = Array.from(keptFiles);
+      }
+    }
+
+    // ---------- Update Other Fields ----------
+    const fieldsToUpdate = [
       "title",
       "assignedBy",
       "assignedTo",
@@ -263,132 +470,26 @@ export const updateTask = async (req, res) => {
       "status",
       "typeOfDelivery",
       "typeOfPlatform",
-      "sowUrls",
-      "inputUrls",
-      "outputUrls",
-      "clientSampleSchemaUrls",
     ];
 
-    const urlFieldsToMark = new Set([
-        "sowUrls",
-        "inputUrls",
-        "outputUrls",
-        "clientSampleSchemaUrls",
-    ]);
-
-    fields.forEach((f) => {
-  if (body[f] !== undefined) {
-    if (urlFieldsToMark.has(f)) {
-      const existing = Array.isArray(task[f]) ? task[f] : [];
-      const incoming = Array.isArray(body[f]) ? body[f] : [];
-      task[f] = Array.from(new Set([...existing, ...incoming].filter(Boolean)));
-      task.markModified(f);
-    } else {
-      task[f] = body[f];
-    }
-  }
-});
-
-
-
-    // Normalize delivery/platform to lowercase
-    if (body.typeOfDelivery) task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
-    if (body.typeOfPlatform) task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
-
-    // ---------- 2️⃣ Merge domains ----------
-    let incomingDomains = [];
-    if (body.domains) {
-      incomingDomains =
-        typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
-    }
-
-    const existingDomainNames = task.domains.map((d) => d.name);
-    incomingDomains.forEach((d) => {
-      if (!existingDomainNames.includes(d.name)) {
-        task.domains.push({
-          name: d.name,
-          status: "pending",
-          developers: [],
-          submission: { files: [], outputUrl: "" },
-        });
-      }
+    fieldsToUpdate.forEach((f) => {
+      if (body[f] !== undefined) task[f] = body[f];
     });
 
-    // ---------- 3️⃣ Assign developers ----------
-    if (body.developers) {
-      const devObj =
-        typeof body.developers === "string" ? JSON.parse(body.developers) : body.developers;
+    // Normalize Delivery/Platform
+    if (body.typeOfDelivery)
+      task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
+    if (body.typeOfPlatform)
+      task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
 
-      const assignedDevelopers = new Set();
-
-      task.domains = task.domains.map((domain) => {
-        const devsForDomain = devObj[domain.name] || [];
-        const uniqueDevs = [];
-
-        for (const dev of devsForDomain) {
-          const devId = typeof dev === "object" ? dev._id : dev;
-          if (mongoose.Types.ObjectId.isValid(devId) && !assignedDevelopers.has(String(devId))) {
-            uniqueDevs.push(devId);
-            assignedDevelopers.add(String(devId));
-          }
-        }
-
-        return {
-          ...domain.toObject(),
-          developers: uniqueDevs,
-          status:
-            domain.status === "submitted" // if already submitted, keep it
-              ? "submitted"
-              : uniqueDevs.length > 0
-                ? "in-progress"
-                : "pending",
-        };
-      });
-
-      // Update task status if any developer is assigned
-      const hasAnyDev = Object.values(devObj).some(
-        (arr) => Array.isArray(arr) && arr.length > 0
-      );
-      if (hasAnyDev) task.status = "in-progress";
-    }
-
-    // ---------- 4️⃣ Handle file uploads ----------
-    ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].forEach((key) => {
-      if (req.files?.[key]?.length) {
-        const fieldName =
-          key === "sowFile"
-            ? "sowFiles"
-            : key === "inputFile"
-              ? "inputFiles"
-              : key === "outputFile"
-                ? "outputFiles"
-                : "clientSampleSchemaFiles"; // 👈 new field added
-
-        console.log("Files received:", req.files);
-
-        // taskController.js (Original/Current logic for files)
-
-    // ...
-    const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
-    // Append new uploads to existing array
-    task[fieldName] = [...(task[fieldName] || []), ...filePaths]; // THIS IS THE PROBLEM
-    // ...
-      }
-    });
-
-
-    // ---------- 5️⃣ Save task ----------
     await task.save();
-
-    const taskObj = task.toObject();
-    taskObj.submissions = decodeSubmissions(taskObj.submissions || {});
-
-    res.json(taskObj);
+    res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {
     console.error("UpdateTask Error:", err);
     res.status(500).json({ error: err.message || "Server error while updating task" });
   }
 };
+
 
 // SUBMIT TASK
 export const submitTask = async (req, res) => {
@@ -431,6 +532,8 @@ export const submitTask = async (req, res) => {
     const submissionOutputFiles = task.outputFiles || [];
     const submissionOutputUrls = task.outputUrls || [];
 
+    const getScalar = (v) => (Array.isArray(v) ? v[0] : v);
+
     const submissionData = {
       platform: body.platform,
       typeOfDelivery: normalizeEnum(body.typeOfDelivery, ["api", "data as a service", "both(api & data as a service)"]),
@@ -439,15 +542,15 @@ export const submitTask = async (req, res) => {
       userLogin: body.userLogin === true || body.userLogin === "true",
       proxyUsed: body.proxyUsed === true || body.proxyUsed === "true",
       country: body.country,
-      feasibleFor: body.feasibleFor,
-      approxVolume: body.approxVolume,
-      method: body.method,
-      apiName: body.apiName,
-      proxyName: body.proxyName,
-      perRequestCredit: body.perRequestCredit,
-      totalRequest: body.totalRequest,
-      lastCheckedDate: body.lastCheckedDate,
-      githubLink: body.githubLink,
+      feasibleFor: getScalar(body.feasibleFor),
+      approxVolume: getScalar(body.approxVolume),
+      method: getScalar(body.method),
+      apiName: getScalar(body.apiName),
+      proxyName: getScalar(body.proxyName),
+      perRequestCredit: Number(getScalar(body.perRequestCredit)),
+      totalRequest: Number(getScalar(body.totalRequest)),
+      lastCheckedDate: getScalar(body.lastCheckedDate),
+      githubLink: getScalar(body.githubLink),
       outputFiles: submissionOutputFiles,
       outputUrls: submissionOutputUrls,
       loginType: body.loginType,

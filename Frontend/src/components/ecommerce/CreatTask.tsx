@@ -262,13 +262,15 @@ const CreateTaskUI: React.FC = () => {
         `Drag & Drop ${label} here or click to upload`
       )}
       
-      <input
-        type="file"
-        name={name}
-        multiple
-        onChange={handleChange}
-        className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
-      />
+      {(!files || files.length === 0) && (
+    <input
+      type="file"
+      name={name}
+      multiple
+      onChange={handleChange}
+      className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
+    />
+  )}
      
     </div>
   );
