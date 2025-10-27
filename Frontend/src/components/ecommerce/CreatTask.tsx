@@ -14,7 +14,7 @@ interface TaskType {
   assignedTo: string;
   description: string;
  sampleFileRequired: boolean;
-  riquiredValumeOfSampleFile?: number;
+  requiredValumeOfSampleFile?: number;
   taskAssignedDate: string;
   targetDate: string;
   completeDate: string;
@@ -48,7 +48,7 @@ const CreateTaskUI: React.FC = () => {
     assignedTo: "",
     description: "",
     sampleFileRequired: false,
-    riquiredValumeOfSampleFile: undefined,
+   requiredValumeOfSampleFile: undefined,
     taskAssignedDate: format(today, "yyyy-MM-dd"),
     targetDate: format(twoDaysLater, "yyyy-MM-dd"),
     completeDate: "",
@@ -163,7 +163,7 @@ const CreateTaskUI: React.FC = () => {
     if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
     if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
-    if (task.sampleFileRequired && !task.riquiredValumeOfSampleFile) {
+    if (task.sampleFileRequired && !task.requiredValumeOfSampleFile) {
         newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
     }
 
@@ -433,12 +433,12 @@ const CreateTaskUI: React.FC = () => {
                   onChange={(e) => setTask({ ...task, sampleFileRequired: e.target.checked })} className="h-4 w-4" />
                 Sample File Required?
               </label>
-              {task.sampleFileRequired && (
+              {task.sampleFileRequired  && (
                     <div className="flex-1">
                         <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
                         <select
-                            name="riquiredValumeOfSampleFile"
-                            value={task.riquiredValumeOfSampleFile}
+                            name="requiredValumeOfSampleFile"
+                            value={task.requiredValumeOfSampleFile}
                             onChange={handleChange}
                             className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
                         >
@@ -449,7 +449,7 @@ const CreateTaskUI: React.FC = () => {
                                 </option>
                             ))}
                         </select>
-                        {renderError("riquiredValumeOfSampleFile")}
+                        {renderError("requiredValumeOfSampleFile")}
                     </div>
                 )}
             </div>

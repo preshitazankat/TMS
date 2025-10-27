@@ -58,6 +58,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     assignedTo: "",
     description: "",
     sampleFileRequired: false,
+    requiredValumeOfSampleFile: 0,
     taskAssignedDate: "",
     targetDate: "",
     completeDate: "",
@@ -205,6 +206,10 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
     // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
     // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
+
+    if (task.sampleFileRequired && !task.requiredValumeOfSampleFile) {
+      newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
+    }
 
     if (!task.domains || task.domains.length === 0) newErrors.domains = "At least one Platform is required";
 
@@ -966,6 +971,25 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
               />
               Sample File Required?
             </label>
+            {task.sampleFileRequired && (
+                    <div className="flex-1">
+                        <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
+                        <select
+                            name=" requiredValumeOfSampleFile"
+                            value={task. requiredValumeOfSampleFile}
+                            onChange={handleChange}
+                            className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
+                        >
+                            <option value="" hidden>Select Volume</option>
+                            {["20", "50", "100", "500", "1000"].map((volume) => (
+                                <option key={volume} value={volume}>
+                                    {volume}
+                                </option>
+                            ))}
+                        </select>
+                     
+                    </div>
+                )}
 
             {/* Type of Delivery & Platform */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
