@@ -13,7 +13,7 @@ interface TaskType {
 
   assignedTo: string;
   description: string;
-  sampleFileRequired: boolean;
+ sampleFileRequired: boolean;
   riquiredValumeOfSampleFile?: number;
   taskAssignedDate: string;
   targetDate: string;
@@ -197,6 +197,10 @@ const CreateTaskUI: React.FC = () => {
           value.forEach((v) => formData.append(key, v));
         } else if (key === "sowUrls" || key === "inputUrls" || key === "clientSampleSchemaUrl" || key === "domain") {
           formData.append(key, JSON.stringify(value));
+        }
+        else if (typeof value === 'boolean') {
+            // Convert boolean to string 'true' or 'false'
+            formData.append(key, value ? 'true' : 'false');
         }
         else {
           formData.append(key, value as any);
@@ -433,7 +437,7 @@ const CreateTaskUI: React.FC = () => {
                     <div className="flex-1">
                         <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
                         <select
-                            name="requiredVolume" 
+                            name="riquiredValumeOfSampleFile"
                             value={task.riquiredValumeOfSampleFile}
                             onChange={handleChange}
                             className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"

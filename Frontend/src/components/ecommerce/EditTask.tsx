@@ -15,6 +15,7 @@ interface Task {
   assignedTo: string;
   description: string;
   sampleFileRequired?: boolean;
+  requiredValumeOfSampleFile?: number;
   taskAssignedDate: string;
   targetDate: string;
   completeDate: string;
