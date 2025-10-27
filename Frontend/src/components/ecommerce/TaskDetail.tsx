@@ -166,7 +166,7 @@ const TaskDetail: React.FC = () => {
 
               {displayedDomain && (
                 <>
-                  <span className="text-3xl font-bold">{" >> "}</span>
+                  <span className="text-3xl font-bold">{" > "}</span>
                   <h1 className="text-3xl font-bold ">{displayedDomain}</h1>
                 </>
               )}
@@ -177,9 +177,9 @@ const TaskDetail: React.FC = () => {
             <div className="flex gap-2">
               {displayedDomain ? (
                 <>
-                  <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-sm font-semibold">
+                  {/* <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-sm font-semibold">
                     {displayedDomain}
-                  </span>
+                  </span> */}
                   <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-sm font-semibold">
                     {task.domains?.find((d) => d.name === displayedDomain)?.status || task.status || "No status"}
                   </span>

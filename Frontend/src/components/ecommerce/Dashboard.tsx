@@ -110,18 +110,25 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const token = getCookie("token");
-    if (!token) return navigate("/login");
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      setUserRole(payload.role);
-      fetchStats(token);
-      fetchDevelopers(token);
-      // if (payload.role === "Manager") fetchDevelopers(token);
-    } catch (err) {
-      console.error("Invalid token", err);
+    if (!token) {
       navigate("/login");
+      return;
     }
+
+    const init = async () => {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserRole(payload.role);
+        await fetchStats(token);
+        await fetchDevelopers(token);
+        // if (payload.role === "Manager") fetchDevelopers(token);
+      } catch (err) {
+        console.error("Invalid token", err);
+        navigate("/login");
+      }
+    };
+
+    init();
   }, []);
 
 

@@ -30,7 +30,7 @@ interface Task {
   outputFiles: File[] | null;
   outputUrls: string[];
   clientSampleSchemaFiles: File[] | null;
-  clientSampleSchemaUrl: string[];
+  clientSampleSchemaUrls: string[];
 }
 
 interface Domain {
@@ -71,7 +71,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     outputFiles: [],
     outputUrls: [],
     clientSampleSchemaFiles: [],
-    clientSampleSchemaUrl: [],
+    clientSampleSchemaUrls: [],
   });
 
   const [domainInput, setDomainInput] = useState("");
@@ -79,6 +79,12 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [originalTask, setOriginalTask] = useState<Task | null>(null);
+  const [urlInputs, setUrlInputs] = useState<Record<string, string>>({
+    sowUrls: "",
+    inputUrls: "",
+    outputUrls: "",
+    clientSampleSchemaUrls: "",
+  });
 
   const [users, setUsers] = useState<{ _id: string; name: string; role: string }[]>([]);
 
@@ -243,12 +249,10 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       sowUrls: toArray(data.sowUrls),
       inputUrls: toArray(data.inputUrls),
       outputUrls: toArray(data.outputUrls),
-      clientSampleSchemaUrl: toArray(data.clientSampleSchemaUrls),
+      clientSampleSchemaUrls: toArray(data.clientSampleSchemaUrls),
 
     };
   };
-
-
 
   useEffect(() => {
     if (!users.length || !id) return;
@@ -259,8 +263,11 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         credentials: "include",
       })
         .then(res => res.json())
-
-        .then(data => setTask(normalizeTaskData(data)))
+        .then(data => {
+          const normalized = normalizeTaskData(data);
+          setTask(normalized);
+          setOriginalTask(normalized); // ✅ both set correctly
+        })
 
         .catch(console.error);
 
@@ -346,6 +353,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       return;
     }
 
+
+
     setTask(prev => ({
       ...prev,
       developers: {
@@ -354,6 +363,40 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       },
     }));
     setDeveloperInput(prev => ({ ...prev, [domainName]: "" }));
+  };
+
+  // Place this near your other handler functions (e.g., after handleChange)
+
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUrlInputs(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleUrlAdd = (name: keyof Task) => {
+    const url = (urlInputs as any)[name]?.trim();
+    if (!url) return;
+
+    // You will need a global function 'isValidDocumentUrl' or define its logic here
+    // if (!isValidDocumentUrl(url)) { 
+    //   toast.error("Invalid URL format.");
+    //   return;
+    // }
+
+    // Add the valid URL to the task's array
+    setTask(prev => ({
+      ...prev,
+      [name]: [...(prev[name as keyof Task] as string[] || []), url],
+    }));
+
+    // Clear the input field
+    setUrlInputs(prev => ({ ...prev, [name]: "" }));
+  };
+
+  const handleUrlRemove = (name: keyof Task, index: number) => {
+    setTask(prev => ({
+      ...prev,
+      [name]: (prev[name as keyof Task] as string[]).filter((_, i) => i !== index),
+    }));
   };
 
   const handleDeveloperRemove = (domainName: string, devId: string) => {
@@ -392,9 +435,19 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
           formData.append("domains", JSON.stringify(value));
         }
         else if (["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(key)) {
-          // Convert single URL into array for backend consistency
-          formData.append(key + "s", JSON.stringify([value]));
-        }
+  const existing = Array.isArray(originalTask?.[key]) ? originalTask[key] : [];
+  const current = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+    ? [value]
+    : [];
+
+  const merged = Array.from(new Set([...existing, ...current].filter(Boolean)));
+  console.log("Merged URLs for", key, merged);
+  formData.append(key, JSON.stringify(merged));
+}
+
+
 
         // Handle multiple file arrays
         else if (["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].includes(key)) {
@@ -491,7 +544,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   >
                     📄 {fileName}
                   </a>
-                  <button
+                  {/* <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -504,7 +557,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                     title="Remove file"
                   >
                     ❌
-                  </button>
+                  </button> */}
                 </div>
               );
             })}
@@ -514,6 +567,182 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     );
   };
 
+  // --------------------------- URL INPUT COMPONENT -----------------------------
+
+  // const renderUrlInputArea = (
+  //   name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
+  //   label: string
+  // ) => {
+  //   // 1. Get the current value from the state. It will be a string containing all URLs.
+  //   const currentUrlsString = (task[name] as string[] || []).join(', ');
+
+  //   // 2. Parse the string into an array for display.
+  //   // We use .filter(Boolean) to remove any empty strings resulting from extra commas.
+  //   const urlList = currentUrlsString.split(',').map(url => url.trim()).filter(Boolean);
+
+  //   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //     const value = e.target.value;
+
+  //     // Split the input string by comma, trim whitespace, and update the task state with the new array.
+  //     const newUrlArray = value.split(',').map(url => url.trim()).filter(Boolean);
+
+  //     setTask(prev => ({
+  //       ...prev,
+  //       [name]: newUrlArray, // The state is updated as an array of strings
+  //     }));
+  //   };
+
+  //   // This helper function handles removal from the displayed list by editing the string in state.
+  //   const handleRemove = (indexToRemove: number) => {
+  //     // 1. Filter out the URL to be removed from the list array.
+  //     const newUrlArray = urlList.filter((_, i) => i !== indexToRemove);
+
+  //     // 2. Join the remaining URLs back into a comma-separated string to update the input/state.
+  //     setTask(prev => ({
+  //       ...prev,
+  //       [name]: newUrlArray,
+  //     }));
+  //   };
+
+  //   return (
+  //     <div className="flex-1 mb-4">
+  //       <label className="block font-medium mb-2">{label}</label>
+  //       <input
+  //         type="text"
+  //         name={name}
+  //         value={currentUrlsString}
+  //         // The input value is the comma-separated string
+  //         onChange={handleUrlChange}
+  //         placeholder={`Enter ${label} URL`}
+  //         className="flex-1 w-full p-3 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
+  //       />
+
+  //       {/* List of added URLs (Shown below the input) */}
+  //       {urlList.length > 0 && (
+  //         <div className="mt-3 flex flex-col gap-2">
+  //           {urlList.map((url, i) => (
+  //             <div
+  //               key={i}
+  //               className="flex items-center justify-between bg-gray-100 p-2 rounded"
+  //             >
+  //               <a
+  //                 href={url}
+  //                 target="_blank"
+  //                 rel="noreferrer"
+  //                 className="text-blue-600 underline truncate max-w-[80%]"
+  //               >
+  //                 🔗 {url.length > 50 ? "..." + url.slice(-47) : url}
+  //               </a>
+  //               <button
+  //                 type="button"
+  //                 onClick={() => handleRemove(i)}
+  //                 className="text-red-500 hover:text-red-700 font-bold"
+  //                 title="Remove URL"
+  //               >
+  //                 ❌
+  //               </button>
+  //             </div>
+  //           ))}
+  //         </div>
+  //       )}
+
+  //       {/* Single Input for All URLs - User must separate URLs with a comma */}
+
+  //       {/* Assuming errors state exists */}
+  //       {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
+  //     </div>
+  //   );
+  // };
+
+
+  const renderUrlInputArea = (
+    name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
+    label: string
+  ) => {
+    // Get all existing URLs for this field
+    const urlList = (task[name] as string[] || []).filter(Boolean);
+
+    // Temporary input for new URL entry
+    const [newUrl, setNewUrl] = useState("");
+
+    const handleAddUrl = () => {
+      const trimmed = newUrl.trim();
+      if (!trimmed) return;
+      if (!/^https?:\/\//i.test(trimmed)) {
+        toast.error("Invalid URL — must start with http:// or https://");
+        return;
+      }
+
+      // Add to task state
+      setTask((prev) => ({
+        ...prev,
+        [name]: [...(prev[name] as string[] || []), trimmed],
+      }));
+      setNewUrl(""); // clear input
+    };
+
+    const handleRemoveUrl = (index: number) => {
+      setTask((prev) => ({
+        ...prev,
+        [name]: (prev[name] as string[]).filter((_, i) => i !== index),
+      }));
+    };
+
+    return (
+      <div className="flex-1 mb-4">
+        <label className="block font-medium mb-2">{label}</label>
+
+        {/* Empty input only for adding new URL */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            placeholder={`Enter new ${label}`}
+            className="flex-1 w-full p-3 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
+          />
+          <button
+            type="button"
+            onClick={handleAddUrl}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            Add
+          </button>
+        </div>
+
+        {/* List of existing URLs */}
+        {urlList.length > 0 && (
+          <div className="mt-3 flex flex-col gap-2">
+            {urlList.map((url, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between bg-gray-100 p-2 rounded"
+              >
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 underline truncate max-w-[80%]"
+                >
+                  🔗 {url.length > 50 ? "..." + url.slice(-47) : url}
+                </a>
+                {/* <button
+                  type="button"
+                  onClick={() => handleRemoveUrl(i)}
+                  className="text-red-500 hover:text-red-700 font-bold"
+                  title="Remove URL"
+                >
+                  ❌
+                </button> */}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
+      </div>
+    );
+  };
 
 
   // --------------------------- RENDER -----------------------------
@@ -753,7 +982,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 {errors.sowFile && <p className="text-red-500 text-sm mt-1">{errors.sowFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              <div className="flex-1 h-18">
+              {/* <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">SOW Document URL</label>
                 <input type="text" name="sowUrls" // 🔥 Changed to plural
                   value={task.sowUrls?.[0] || ""}
@@ -761,7 +990,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   placeholder="Enter SOW Document URL"
                   className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {errors.sowUrls && <p className="text-red-500 text-sm mt-1">{errors.sowUrls}</p>}
-              </div>
+              </div> */}
+              {renderUrlInputArea("sowUrls", "SOW Document URL(s)")}
             </div>
 
             {/* Input File / URL */}
@@ -772,29 +1002,31 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 {errors.inputFile && <p className="text-red-500 text-sm mt-1">{errors.inputFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              <div className="flex-1 h-18">
+              {/* <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">Input Document URL</label>
                 <input type="text" name="inputUrls"
                   value={task.inputUrls?.[0] || ""}
                   onChange={(e) => setTask({ ...task, inputUrls: [e.target.value] })} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {errors.inputUrl && <p className="text-red-500 text-sm mt-1">{errors.inputUrl}</p>}
-              </div>
+              </div> */}
+              {renderUrlInputArea("inputUrls", "Input Document URL(s)")}
             </div>
-            
-             <div className="flex flex-col md:flex-row gap-4 w-full ">
+
+            <div className="flex flex-col md:flex-row gap-4 w-full ">
               <div className="flex-1">
                 <label className="block  font-medium mb-2">Client Sample Schema Document File</label>
                 {renderFileDropArea(task.clientSampleSchemaFiles, "clientSampleSchemaFiles", "Client Sample Schema File")}
-                
+
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              <div className="flex-1 h-18">
+              {/* <div className="flex-1 h-18">
                 <label className="block  font-medium mb-2">Client Sample Schema Document URL</label>
                 <input type="text" name="clientSampleSchemaUrls"
                   value={task.clientSampleSchemaUrls?.[0] || ""}
                   onChange={(e) => setTask({ ...task, clientSampleSchemaUrls: [e.target.value] })} placeholder="Enter Client Sample Schema Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 
-              </div>
+              </div> */}
+              {renderUrlInputArea("clientSampleSchemaUrls", "Client Sample Schema URL(s)")}
             </div>
 
 

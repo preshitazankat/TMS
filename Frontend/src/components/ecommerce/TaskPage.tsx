@@ -99,7 +99,7 @@ const TaskPage: React.FC = () => {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
 
-  const [newStatus, setNewStatus] = useState("");
+  const [newStatus, setNewStatus] = useState("in-R&D");
   const [statusReason, setStatusReason] = useState("");
 
   const normalizedFilter = statusFilter
@@ -120,7 +120,7 @@ const TaskPage: React.FC = () => {
       setCurrentDomain(null);
     }
     // prefer domain.status if provided, else fallback to task.status
-    setNewStatus(domain?.status || task.status || "Pending");
+    setNewStatus( "in-R&D");
     setStatusReason("");
     setStatusModalOpen(true);
   };
@@ -647,60 +647,59 @@ const TaskPage: React.FC = () => {
         </div>
       </div>
       {statusModalOpen && (
-        <div className="fixed inset-0  bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-lg font-semibold mb-4">Update Status</h2>
+  <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
+    <div className="bg-white rounded-lg p-6 w-96">
+      <h2 className="text-lg font-semibold mb-4">Update Status</h2>
 
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">New Status</label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="w-full p-2 border rounded"
-              >
-                {["Pending", "In-Progress", "Completed", "in-R&D"].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="mb-4">
+        <label className="block mb-1 font-medium">New Status</label>
+        
+        {/* REPLACED SELECT WITH A READ-ONLY DISPLAY */}
+        <h3 className="w-full p-2 border rounded bg-gray-100 text-gray-800 font-semibold">
+          in-R&D
+        </h3>
+        
+        {/* IMPORTANT: Remove the useEffect that sets the status, and ensure 
+            'newStatus' state is initialized to 'in-R&D' when the modal is shown 
+            or when 'openStatusModal' is called. */}
+      </div>
 
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Reason</label>
-              <textarea
-                value={statusReason}
-                onChange={(e) => setStatusReason(e.target.value)}
-                className="w-full p-2 border rounded"
-                placeholder="Enter reason for status change"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Upload File</label>
-              <input
-                type="file"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="border rounded p-1 w-full"
-              />
-            </div>
+      <div className="mb-4">
+        <label className="block mb-1 font-medium">Reason</label>
+        <textarea
+          value={statusReason}
+          onChange={(e) => setStatusReason(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Enter reason for status change"
+        />
+      </div>
+      <div className="mb-4">
+        <label className="block mb-1 font-medium">Upload File</label>
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="border rounded p-1 w-full"
+        />
+      </div>
 
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={handleStatusUpdate}
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Update
-              </button>
-              <button
-                onClick={closeStatusModal}
-                className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={handleStatusUpdate}
+          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+        >
+          Update
+        </button>
+        <button
+          onClick={closeStatusModal}
+          className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       {showAssignDevPopup && (
         <div className="fixed inset-0  bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
           <div className="bg-white rounded-lg p-6 w-80 text-center shadow-lg">

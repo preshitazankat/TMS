@@ -261,6 +261,7 @@ const CreateTaskUI: React.FC = () => {
       ) : (
         `Drag & Drop ${label} here or click to upload`
       )}
+      
       <input
         type="file"
         name={name}
@@ -268,9 +269,67 @@ const CreateTaskUI: React.FC = () => {
         onChange={handleChange}
         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
       />
+     
     </div>
   );
 
+// const renderFileDropArea = (
+//   files: File[] | null,
+//   name: keyof TaskType,
+//   label: string
+// ) => (
+//   // Use a fragment or container div to hold both parts
+//   <>
+//     {/* 1. DROP AREA: Contains only the prompt and the hidden file input */}
+//     <div
+//       onDrop={(e) => handleDrop(e, name)}
+//       onDragOver={handleDragOver}
+//       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
+//     >
+//       {/* Prompt Text */}
+//       <div>
+//         Drag & Drop {label} here or click to upload
+//       </div>
+
+//       {/* Hidden File Input (Covers only the drop area) */}
+//       <input
+//         type="file"
+//         name={name}
+//         multiple
+//         onChange={handleChange}
+//         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
+//       />
+//     </div>
+
+//     {/* 2. FILE LIST: Rendered BELOW the drop area, ensuring clicks do not trigger the file input */}
+//     {files && files.length > 0 && (
+//       <ul className="w-full mt-1 border border-gray-300 rounded-md p-2 bg-white">
+//         {files.map((file, index) => (
+//           <li
+//             key={index}
+//             className="flex justify-between items-center py-1 px-2 border-b last:border-b-0"
+//           >
+//             <span>{file.name}</span>
+//             <button
+//               type="button"
+//               onClick={(e) => {
+//                 // The structural change ensures this button is outside the file input's influence
+//                 e.stopPropagation();
+//                 setTask((prev) => ({
+//                   ...prev,
+//                   [name]: prev[name].filter((_: any, i: number) => i !== index),
+//                 }));
+//               }}
+//               className="text-red-500 hover:text-red-700 font-bold"
+//             >
+//               ❌
+//             </button>
+//           </li>
+//         ))}
+//       </ul>
+//     )}
+//   </>
+// );
 
   return (
     <>

@@ -36,7 +36,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     icon:  <FiGrid className="w-6 h-6" />,
-    name: "dashboard",
+    name: "Home",
     path: "/",
   },
 

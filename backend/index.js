@@ -39,8 +39,7 @@ const PORT = 5000;
 app.use(cors({
   origin: [
     'http://localhost:5000',      // React dev server 
-    'http://172.28.148.82:3000',
-    
+    'http://172.28.148.150:3000',
   ],
   credentials: true
 }));

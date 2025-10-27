@@ -177,9 +177,6 @@ export const createTask = async (req, res) => {
     }
 
 
-
-
-
     let sowUrls = safeParseArray(raw.sowUrls);
     let inputUrls = safeParseArray(raw.inputUrls);
     let clientSampleSchemaUrls = safeParseArray(raw.clientSampleSchemaUrls);
@@ -240,10 +237,15 @@ export const updateTask = async (req, res) => {
     const { id } = req.params;
     const body = cleanBody(req.body);
 
-    if (body.sowUrls !== undefined) task.sowUrls = safeParseArray(body.sowUrls);
-    if (body.inputUrls !== undefined) task.inputUrls = safeParseArray(body.inputUrls);
-    if (body.outputUrls !== undefined) task.outputUrls = safeParseArray(body.outputUrls);
-    if (body.clientSampleSchemaUrls !== undefined) task.clientSampleSchemaUrls = safeParseArray(body.clientSampleSchemaUrls);
+    const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
+
+    // Apply safeParseArray to convert the JSON string arrays (from FormData) 
+    // back into JavaScript arrays in the body object.
+    urlFields.forEach(field => {
+        if (body[field] !== undefined) {
+            body[field] = safeParseArray(body[field]);
+        }
+    });
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: "Task not found" });
@@ -267,9 +269,27 @@ export const updateTask = async (req, res) => {
       "clientSampleSchemaUrls",
     ];
 
+    const urlFieldsToMark = new Set([
+        "sowUrls",
+        "inputUrls",
+        "outputUrls",
+        "clientSampleSchemaUrls",
+    ]);
+
     fields.forEach((f) => {
-      if (body[f] !== undefined) task[f] = body[f];
-    });
+  if (body[f] !== undefined) {
+    if (urlFieldsToMark.has(f)) {
+      const existing = Array.isArray(task[f]) ? task[f] : [];
+      const incoming = Array.isArray(body[f]) ? body[f] : [];
+      task[f] = Array.from(new Set([...existing, ...incoming].filter(Boolean)));
+      task.markModified(f);
+    } else {
+      task[f] = body[f];
+    }
+  }
+});
+
+
 
     // Normalize delivery/platform to lowercase
     if (body.typeOfDelivery) task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
@@ -727,6 +747,7 @@ export const getDomainStats = async (req, res) => {
   }
 };
 
+// GET DEVELOPERS DOMAIN STATUS
 export const getDevelopersDomainStatus = async (req, res) => {
   try {
     // Fetch all tasks and populate the developer names
