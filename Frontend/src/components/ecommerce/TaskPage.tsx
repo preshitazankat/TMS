@@ -259,6 +259,7 @@ const TaskPage: React.FC = () => {
 
   const expandedRows = useMemo(() => {
     const rows: any[] = [];
+
     tasks.forEach((task) => {
       if (task.domainName) {
         const domainObj =
@@ -420,7 +421,7 @@ const TaskPage: React.FC = () => {
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {setStatusFilter(e.target.value); setPage(1)} }
             className="w-full md:w-48 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           >
             {statuses.map((s) => (
@@ -505,7 +506,7 @@ const TaskPage: React.FC = () => {
                     </td>
                     {/* Assigned Date → task.createdAt */}
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {formatDate(row.task.createdAt)}
+                      {formatDate(row.task.taskAssignedDate)}
                     </td>
 
                     {/* Completion Date → domain completeDate */}

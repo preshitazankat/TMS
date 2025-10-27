@@ -717,7 +717,7 @@ export const getTask = async (req, res) => {
           title: 1,
           projectCode: 1,
           description: 1,
-          createdAt: 1,
+          taskAssignedDate: 1,
           completeDate: {
             $ifNull: ["$domains.completeDate", "$completeDate"],
           },
@@ -735,7 +735,7 @@ export const getTask = async (req, res) => {
         },
       },
 
-      { $sort: { createdAt: -1 } },
+      { $sort: { taskAssignedDate: -1 } },
 
       /* ------------- Pagination ------------- */
       {

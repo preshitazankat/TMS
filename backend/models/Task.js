@@ -38,7 +38,7 @@ const taskSchema = new mongoose.Schema(
     completeDate: { type: Date },
     typeOfDelivery: { type: String, enum: ["api", "data as a service","both(api & data as a service)"] },
     typeOfPlatform: { type: String, enum: ["web", "app", "both (app & web)"] },
-
+   
     
 
     // NEW: domain-wise array
