@@ -119,12 +119,24 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   const DeliveryTypes = ["API", "Data as a Service", "Both(API & Data As A Service)"];
   const PlatformTypes = ["Web", "App", "Both (App & Web)"];
 
-  const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+  const allowedExtensions = ["pdf", "doc", "docs", "docx", "xls", "xlsx", "ppt", "pptx"];
 
   const isValidDocumentUrl = (url: string) => {
-    const pattern = new RegExp(`^https?:\\/\\/.*\\.(${allowedExtensions.join("|")})(\\?.*)?$`, "i");
-    return pattern.test(url);
-  };
+  // Pattern 1: URL must end with an allowed extension (for PDFs, DOCXs, etc.)
+  const fileExtensionPattern = new RegExp(
+    `^https?:\\/\\/.*\\.(${allowedExtensions.join("|")})(\\?.*)?$`,
+    "i"
+  );
+  
+  // Pattern 2: Must be a recognizable Google Docs/Drive URL (for non-direct links)
+  const googleDocsPattern = new RegExp(
+    "^https?:\\/\\/docs\\.google\\.com\\/(document|spreadsheets|presentation)\\/d\\/.*$",
+    "i"
+  );
+
+  return fileExtensionPattern.test(url) || googleDocsPattern.test(url);
+};
+
 
   const getCookie = (name: string): string | null => {
     const value = `; ${document.cookie}`;
@@ -193,7 +205,13 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     if ((task.sowFile || []).length === 0 && !hasSowUrls) {
       newErrors.sowFile = "SOW Document (file or URL) is required";
     } else if (hasSowUrls && !isValidDocumentUrl(task.sowUrls[0])) {
-      newErrors.sowUrls = "Invalid SOW URL"; // 🔥 Use plural key
+      newErrors.sowUrls = "Invalid SOW URL ,url must be start with http or https";
+    }
+
+    const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+
+    if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
+      newErrors.inputUrls = "Invalid Input URL,url must be start with http or https ";
     }
 
     // Input Validation (check array length and first item validity)
@@ -201,7 +219,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     // if ((task.inputFile || []).length === 0 && !hasInputUrls) {
     //   newErrors.inputFile = "Input Document (file or URL) is required";
     // } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
-    //   newErrors.inputUrls = "Invalid Input URL ()"; // 🔥 Use plural key
+    //   newErrors.inputUrls = "Invalid Input URL ()"; 
     // }
 
     // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
@@ -219,6 +237,46 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
   // --------------------------- HANDLERS -----------------------------
 
+  // const validateForm = () => {
+  //   const newErrors: Record<string, string> = {};
+
+  //   if (!task.title.trim()) newErrors.title = "Project title is required";
+
+  //   if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
+  //   if (!task.description.trim()) newErrors.description = "Description is required";
+  //   if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
+  //   if (!task.targetDate) newErrors.targetDate = "Target Date is required";
+  //   if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
+  //   if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
+
+  //   const hasSowUrls = (task.sowUrls || []).some(url => url && url.trim() !== "");
+  //   console.log("iucaisojico", hasSowUrls)
+  //   if ((task.sowFile || []).length === 0 && !hasSowUrls) {
+  //     newErrors.sowFile = "SOW Document (file or URL) is required";
+  //   } else if (hasSowUrls && !isValidDocumentUrl(task.sowUrls[0])) {
+  //     newErrors.sowUrls = "Invalid SOW URL"; // 🔥 Use plural key
+  //   }
+
+  //   // Input Validation (check array length and first item validity)
+  //   // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+  //   // if ((task.inputFile || []).length === 0 && !hasInputUrls) {
+  //   //   newErrors.inputFile = "Input Document (file or URL) is required";
+  //   // } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
+  //   //   newErrors.inputUrls = "Invalid Input URL ()"; // 🔥 Use plural key
+  //   // }
+
+  //   // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
+  //   // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
+
+  //   if (task.sampleFileRequired && !task.requiredValumeOfSampleFile) {
+  //     newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
+  //   }
+
+  //   if (!task.domains || task.domains.length === 0) newErrors.domains = "At least one Platform is required";
+
+  //   setErrors(newErrors);
+  //   return Object.keys(newErrors).length === 0;
+  // };
   const normalizeTaskData = (data: any): Task => {
     const toArray = (val: any): string[] =>
       Array.isArray(val) ? val : val ? [val] : [];
@@ -250,7 +308,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       // FIX HERE — Always arrays
       sowFile: toArray(data.sowFiles),
       inputFile: toArray(data.inputFiles),
-      outputFile: toArray(data.outputFiles),
+      outputFiles: toArray(data.outputFiles),
       clientSampleSchemaFiles: toArray(data.clientSampleSchemaFiles),
 
       // Keep URLs safe
@@ -286,66 +344,41 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     }
   }, [taskData, id, users]);
 
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  //   const { name, files, value, type, checked } = e.target as HTMLInputElement;
-
-  //   if (type === "checkbox") {
-  //     setTask((prev) => ({ ...prev, [name]: checked }));
-  //     return;
-  //   }
-
-  //   if (files && files.length > 0) {
-  //     const selectedFiles = Array.from(files);
-  //     setTask((prev) => ({
-  //       ...prev,
-  //       [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
-  //     }));
-  //   } else {
-  //     // URL validation
-  //     if (name.endsWith("Url") && value) {
-  //       if (!isValidDocumentUrl(value)) {
-  //         alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
-  //         return;
-  //       }
-  //     }
-  //     setTask((prev) => ({ ...prev, [name]: value }));
-  //   }
-  // };
+  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    // Note: We cast to HTMLInputElement here for files/type, but we still handle text/textarea/select
+   
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
+    setErrors((prev) => ({ ...prev, [name]: "" }));
 
     if (type === "checkbox") {
-        setTask((prev) => ({ ...prev, [name]: checked }));
-        return;
+      setTask((prev) => ({ ...prev, [name]: checked }));
+      return;
     }
-
+setErrors((prev) => ({ ...prev, [name]: "" }));
     if (files && files.length > 0) {
-        // User successfully selected one or more files (APPENDING)
-        const selectedFiles = Array.from(files);
-        setTask((prev) => ({
-            ...prev,
-            [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
-        }));
+      // User successfully selected one or more files (APPENDING)
+      const selectedFiles = Array.from(files);
+      setTask((prev) => ({
+        ...prev,
+        [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
+      }));
     } else {
-        // 🔑 CRITICAL FIX: If the element is a file input AND files.length is 0,
-        // it means the user clicked 'Cancel'. Ignore the event and return.
-        // We check if 'files' is defined to confirm it's a file input event.
-        if (files) {
-            return; 
-        }
+      
+      if (files) {
+        return;
+      }
 
-        // Handle regular text, textarea, or select input logic (REPLACING value)
-        if (name.endsWith("Url") && value) {
-            if (!isValidDocumentUrl(value)) {
-                alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
-                return;
-            }
+      
+      if (name.endsWith("Url") && value) {
+        if (!isValidDocumentUrl(value)) {
+          alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
+          return;
         }
-        setTask((prev) => ({ ...prev, [name]: value }));
+      }
+      setTask((prev) => ({ ...prev, [name]: value }));
     }
-};
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof Task) => {
     e.preventDefault();
@@ -469,29 +502,39 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         ])
       );
 
+      const fieldMap: Record<string, string> = {
+  sowFile: "sowFile",
+  inputFile: "inputFile",
+  outputFiles: "outputFiles", // ✅ singular to match backend
+  clientSampleSchemaFiles: "clientSampleSchemaFile",
+};
+      
+
       Object.entries(task).forEach(([key, value]) => {
         if (value === null || value === undefined || value === "") return;
+        
         if (key === "developers") {
           formData.append("developers", JSON.stringify(developersForBackend));
         } else if (key === "domains") {
           formData.append("domains", JSON.stringify(value));
         }
         else if (["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(key)) {
-  const arr = Array.isArray(value)
-    ? value.filter(Boolean)
-    : typeof value === "string" && value
-    ? [value]
-    : [];
-  formData.append(key, JSON.stringify(arr)); // ✅ send only what’s currently in UI
-}
+          const arr = Array.isArray(value)
+            ? value.filter(Boolean)
+            : typeof value === "string" && value
+              ? [value]
+              : [];
+          formData.append(key, JSON.stringify(arr)); // ✅ send only what’s currently in UI
+        }
 
 
         // Handle multiple file arrays
-        else if (["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].includes(key)) {
-          (value as File[]).forEach((file) => {
-            formData.append(key, file);
-          });
-        }
+       else if (["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"].includes(key)) {
+  const backendField = fieldMap[key] || key;
+  (value as File[]).forEach((file) => {
+    formData.append(backendField, file);
+  });
+}
         else {
           formData.append(key, value as any);
         }
@@ -518,8 +561,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
         return;
       }
 
-      console.log("Data",data);
-      
+      console.log("Data", data);
+
 
       toast.success("✅ Task updated successfully!");
       setTimeout(() => navigate("/tasks"), 1500);
@@ -607,94 +650,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     );
   };
 
-  // --------------------------- URL INPUT COMPONENT -----------------------------
-
-  // const renderUrlInputArea = (
-  //   name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
-  //   label: string
-  // ) => {
-  //   // 1. Get the current value from the state. It will be a string containing all URLs.
-  //   const currentUrlsString = (task[name] as string[] || []).join(', ');
-
-  //   // 2. Parse the string into an array for display.
-  //   // We use .filter(Boolean) to remove any empty strings resulting from extra commas.
-  //   const urlList = currentUrlsString.split(',').map(url => url.trim()).filter(Boolean);
-
-  //   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //     const value = e.target.value;
-
-  //     // Split the input string by comma, trim whitespace, and update the task state with the new array.
-  //     const newUrlArray = value.split(',').map(url => url.trim()).filter(Boolean);
-
-  //     setTask(prev => ({
-  //       ...prev,
-  //       [name]: newUrlArray, // The state is updated as an array of strings
-  //     }));
-  //   };
-
-  //   // This helper function handles removal from the displayed list by editing the string in state.
-  //   const handleRemove = (indexToRemove: number) => {
-  //     // 1. Filter out the URL to be removed from the list array.
-  //     const newUrlArray = urlList.filter((_, i) => i !== indexToRemove);
-
-  //     // 2. Join the remaining URLs back into a comma-separated string to update the input/state.
-  //     setTask(prev => ({
-  //       ...prev,
-  //       [name]: newUrlArray,
-  //     }));
-  //   };
-
-  //   return (
-  //     <div className="flex-1 mb-4">
-  //       <label className="block font-medium mb-2">{label}</label>
-  //       <input
-  //         type="text"
-  //         name={name}
-  //         value={currentUrlsString}
-  //         // The input value is the comma-separated string
-  //         onChange={handleUrlChange}
-  //         placeholder={`Enter ${label} URL`}
-  //         className="flex-1 w-full p-3 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
-  //       />
-
-  //       {/* List of added URLs (Shown below the input) */}
-  //       {urlList.length > 0 && (
-  //         <div className="mt-3 flex flex-col gap-2">
-  //           {urlList.map((url, i) => (
-  //             <div
-  //               key={i}
-  //               className="flex items-center justify-between bg-gray-100 p-2 rounded"
-  //             >
-  //               <a
-  //                 href={url}
-  //                 target="_blank"
-  //                 rel="noreferrer"
-  //                 className="text-blue-600 underline truncate max-w-[80%]"
-  //               >
-  //                 🔗 {url.length > 50 ? "..." + url.slice(-47) : url}
-  //               </a>
-  //               <button
-  //                 type="button"
-  //                 onClick={() => handleRemove(i)}
-  //                 className="text-red-500 hover:text-red-700 font-bold"
-  //                 title="Remove URL"
-  //               >
-  //                 ❌
-  //               </button>
-  //             </div>
-  //           ))}
-  //         </div>
-  //       )}
-
-  //       {/* Single Input for All URLs - User must separate URLs with a comma */}
-
-  //       {/* Assuming errors state exists */}
-  //       {errors[name] && <p className="text-red-500 text-sm mt-1">{errors[name]}</p>}
-  //     </div>
-  //   );
-  // };
-
-
+  
   const renderUrlInputArea = (
     name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
     label: string
@@ -784,7 +740,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     );
   };
 
-
+const showOutputSection = task.domains.some(domain => domain.status === 'submitted');
   // --------------------------- RENDER -----------------------------
   return (
     <>
@@ -821,7 +777,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
             {/* Title */}
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Project <span className="text-red-500">*</span>
+                Task Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -918,8 +874,11 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                   </ul>
                 </div>
               ))}
-
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+               Add New Platform 
+              </label>
               <div className="flex gap-3 mb-4 flex-wrap">
+
                 <input
                   type="text"
                   value={domainInput}
@@ -938,7 +897,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
               {errors.domains && <p className="text-red-500">{errors.domains}</p>}
 
-              
+
 
 
 
@@ -965,31 +924,31 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
               <input
                 type="checkbox"
                 name="sampleFileRequired"
-                
+
                 checked={task.sampleFileRequired}
                 onChange={handleChange}
               />
               Sample File Required?
             </label>
             {task.sampleFileRequired && (
-                    <div className="flex-1">
-                        <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
-                        <select
-                            name=" requiredValumeOfSampleFile"
-                            value={task. requiredValumeOfSampleFile}
-                            onChange={handleChange}
-                            className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
-                        >
-                            <option value="" hidden>Select Volume</option>
-                            {["20", "50", "100", "500", "1000"].map((volume) => (
-                                <option key={volume} value={volume}>
-                                    {volume}
-                                </option>
-                            ))}
-                        </select>
-                     
-                    </div>
-                )}
+              <div className="flex-1">
+                <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
+                <select
+                  name=" requiredValumeOfSampleFile"
+                  value={task.requiredValumeOfSampleFile}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
+                >
+                  <option value="" hidden>Select Volume</option>
+                  {["20", "50", "100", "500", "1000"].map((volume) => (
+                    <option key={volume} value={volume}>
+                      {volume}
+                    </option>
+                  ))}
+                </select>
+
+              </div>
+            )}
 
             {/* Type of Delivery & Platform */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -1092,8 +1051,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
 
             {/* Output File / URL */}
-            <div className="flex flex-col md:flex-row gap-4 w-full">
-              {/* File Section */}
+            {/* <div className="flex flex-col md:flex-row gap-4 w-full">
+             
               <div className="flex-1">
                 <label className="block  font-medium mb-2">
                   Output Document File
@@ -1104,41 +1063,64 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 {errors.outputFile && <p className="text-red-500 text-sm mt-1">{errors.outputFile}</p>}
               </div>
 
-              {/* OR Divider */}
+              
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
 
-              {/* URL Section */}
+              
               <div className="flex-1">
                 <label className="block  font-medium mb-2">
                   Output Document URL
                 </label>
 
-                {/* Show already saved URL */}
-                {task.outputUrl && (
-                  <div className="mb-2">
-                    <a
-                      href={task.outputUrls?.[0]}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-green-400 underline"
-                    >
-                      View Output URL
-                    </a>
-                  </div>
-                )}
+                
 
 
                 <input
                   type="text"
-                  name="outputUrls" // 🔥 Changed to plural
-                  value={task.outputUrls} // 🔥 Access first element
+                  name="outputUrls" 
+                  value={task.outputUrls} 
                   onChange={(e) => setTask({ ...task, outputUrls: [e.target.value] })}
                   placeholder="Enter Output Document URL"
                   className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
                 />
                 {errors.outputUrl && <p className="text-red-500 text-sm mt-1">{errors.outputUrl}</p>}
               </div>
-            </div>
+            </div> */}
+            {showOutputSection && (
+              <div className="flex flex-col md:flex-row gap-4 w-full">
+                {/* File Section */}
+                <div className="flex-1">
+                  <label className="block  font-medium mb-2">
+                    Output Document File
+                  </label>
+
+
+                  {renderFileDropArea(task.outputFiles, "outputFiles", "Output File")}
+                  {errors.outputFile && <p className="text-red-500 text-sm mt-1">{errors.outputFile}</p>}
+                </div>
+
+                {/* OR Divider */}
+                <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
+
+                {/* URL Section */}
+                <div className="flex-1">
+                  <label className="block  font-medium mb-2">
+                    Output Document URL
+                  </label>
+
+                  <input
+                    type="text"
+                    name="outputUrls" 
+                    value={task.outputUrls?.[0] || ""} 
+                    onChange={(e) => setTask({ ...task, outputUrls: [e.target.value] })}
+                    placeholder="Enter Output Document URL"
+                    className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
+                  />
+                  {errors.outputUrl && <p className="text-red-500 text-sm mt-1">{errors.outputUrl}</p>}
+                </div>
+              </div>
+            )}
+
             {/* Submit */}
             <div>
               <button

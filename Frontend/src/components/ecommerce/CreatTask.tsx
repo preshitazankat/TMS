@@ -13,7 +13,7 @@ interface TaskType {
 
   assignedTo: string;
   description: string;
- sampleFileRequired: boolean;
+  sampleFileRequired: boolean;
   requiredValumeOfSampleFile?: number;
   taskAssignedDate: string;
   targetDate: string;
@@ -48,7 +48,7 @@ const CreateTaskUI: React.FC = () => {
     assignedTo: "",
     description: "",
     sampleFileRequired: false,
-   requiredValumeOfSampleFile: undefined,
+    requiredValumeOfSampleFile: undefined,
     taskAssignedDate: format(today, "yyyy-MM-dd"),
     targetDate: format(twoDaysLater, "yyyy-MM-dd"),
     completeDate: "",
@@ -56,7 +56,7 @@ const CreateTaskUI: React.FC = () => {
     typeOfDelivery: "",
     typeOfPlatform: "",
     status: "pending",
-    
+
     sowFile: [],
     sowUrls: [],
     inputFile: [],
@@ -71,6 +71,7 @@ const CreateTaskUI: React.FC = () => {
   const [assignedToOptions, setAssignedToOptions] = useState<UserOption[]>([]);
 
   const apiUrl = import.meta.env.VITE_API_URL;
+
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
 
   useEffect(() => {
@@ -102,20 +103,64 @@ const CreateTaskUI: React.FC = () => {
     return pattern.test(url);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, files } = e.target as any;
-    if (files) {
-      const newFiles = Array.from(files);
-      setTask((prev) => ({
-        ...prev,
-        [name]: [...(prev[name] || []), ...newFiles], // append files
-      }));
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  //   const { name, value, files } = e.target as any;
+  //   if (files) {
+  //     const newFiles = Array.from(files);
+  //     setTask((prev) => ({
+  //       ...prev,
+  //       [name]: [...(prev[name] || []), ...newFiles], // append files
+  //     }));
+  //   }
+  //   else {
+  //     const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name === "clientSampleSchemaUrl" ? "clientSampleSchemaUrls" : name;
+
+  //     let finalValue: any = value;
+  //     if (name === 'requiredValumeOfSampleFile') {
+
+  //       finalValue = value ? Number(value) : undefined;
+  //     }
+  //     setTask({ ...task, [mappedName]: finalValue });
+  //   }
+  // };
+
+  
+const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+) => {
+  const { name, value, files } = e.target as any;
+
+  if (files) {
+    const newFiles = Array.from(files);
+    setTask((prev) => ({
+      ...prev,
+      [name]: [...(prev[name] || []), ...newFiles], // append files
+    }));
+
+    // ✅ clear error when user selects files
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  } else {
+    const mappedName =
+      name === "sowUrl"
+        ? "sowUrls"
+        : name === "inputUrl"
+        ? "inputUrls"
+        : name === "clientSampleSchemaUrl"
+        ? "clientSampleSchemaUrls"
+        : name;
+
+    let finalValue: any = value;
+
+    if (name === "requiredValumeOfSampleFile") {
+      finalValue = value ? Number(value) : undefined;
     }
-    else {
-      const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name === "clientSampleSchemaUrl" ? "clientSampleSchemaUrls" : name;
-      setTask({ ...task, [mappedName]: value });
-    }
-  };
+
+    setTask((prev) => ({ ...prev, [mappedName]: finalValue }));
+
+    // ✅ clear error dynamically when user fixes input
+    setErrors((prev) => ({ ...prev, [mappedName]: "" }));
+  }
+};
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof TaskType) => {
     e.preventDefault();
@@ -164,7 +209,7 @@ const CreateTaskUI: React.FC = () => {
     if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
 
     if (task.sampleFileRequired && !task.requiredValumeOfSampleFile) {
-        newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
+      newErrors.requiredValumeOfSampleFile = "Required volume is mandatory when sample file is required";
     }
 
 
@@ -174,7 +219,7 @@ const CreateTaskUI: React.FC = () => {
       newErrors.sowFile = "SOW Document (file or URL) is required";
     else if (!task.sowFile && task.sowUrls && !isValidDocumentUrl(task.sowUrls[0])) newErrors.sowUrl = "Invalid SOW URL";
 
-   // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
+    // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
 
     // if ((task.inputFile || []).length === 0 && !hasInputUrls)
     //   newErrors.inputFile = "Input Document (file or URL) is required";
@@ -193,14 +238,17 @@ const CreateTaskUI: React.FC = () => {
     try {
       const formData = new FormData();
       Object.entries(task).forEach(([key, value]) => {
+        if (value === undefined || value === null) {
+          return;
+        }
         if (Array.isArray(value)) {
           value.forEach((v) => formData.append(key, v));
         } else if (key === "sowUrls" || key === "inputUrls" || key === "clientSampleSchemaUrl" || key === "domain") {
           formData.append(key, JSON.stringify(value));
         }
         else if (typeof value === 'boolean') {
-            // Convert boolean to string 'true' or 'false'
-            formData.append(key, value ? 'true' : 'false');
+          // Convert boolean to string 'true' or 'false'
+          formData.append(key, value ? 'true' : 'false');
         }
         else {
           formData.append(key, value as any);
@@ -273,77 +321,77 @@ const CreateTaskUI: React.FC = () => {
       ) : (
         `Drag & Drop ${label} here or click to upload`
       )}
-      
+
       {(!files || files.length === 0) && (
-    <input
-      type="file"
-      name={name}
-      multiple
-      onChange={handleChange}
-      className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
-    />
-  )}
-     
+        <input
+          type="file"
+          name={name}
+          multiple
+          onChange={handleChange}
+          className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
+        />
+      )}
+
     </div>
   );
 
-// const renderFileDropArea = (
-//   files: File[] | null,
-//   name: keyof TaskType,
-//   label: string
-// ) => (
-//   // Use a fragment or container div to hold both parts
-//   <>
-//     {/* 1. DROP AREA: Contains only the prompt and the hidden file input */}
-//     <div
-//       onDrop={(e) => handleDrop(e, name)}
-//       onDragOver={handleDragOver}
-//       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
-//     >
-//       {/* Prompt Text */}
-//       <div>
-//         Drag & Drop {label} here or click to upload
-//       </div>
+  // const renderFileDropArea = (
+  //   files: File[] | null,
+  //   name: keyof TaskType,
+  //   label: string
+  // ) => (
+  //   // Use a fragment or container div to hold both parts
+  //   <>
+  //     {/* 1. DROP AREA: Contains only the prompt and the hidden file input */}
+  //     <div
+  //       onDrop={(e) => handleDrop(e, name)}
+  //       onDragOver={handleDragOver}
+  //       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
+  //     >
+  //       {/* Prompt Text */}
+  //       <div>
+  //         Drag & Drop {label} here or click to upload
+  //       </div>
 
-//       {/* Hidden File Input (Covers only the drop area) */}
-//       <input
-//         type="file"
-//         name={name}
-//         multiple
-//         onChange={handleChange}
-//         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
-//       />
-//     </div>
+  //       {/* Hidden File Input (Covers only the drop area) */}
+  //       <input
+  //         type="file"
+  //         name={name}
+  //         multiple
+  //         onChange={handleChange}
+  //         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
+  //       />
+  //     </div>
 
-//     {/* 2. FILE LIST: Rendered BELOW the drop area, ensuring clicks do not trigger the file input */}
-//     {files && files.length > 0 && (
-//       <ul className="w-full mt-1 border border-gray-300 rounded-md p-2 bg-white">
-//         {files.map((file, index) => (
-//           <li
-//             key={index}
-//             className="flex justify-between items-center py-1 px-2 border-b last:border-b-0"
-//           >
-//             <span>{file.name}</span>
-//             <button
-//               type="button"
-//               onClick={(e) => {
-//                 // The structural change ensures this button is outside the file input's influence
-//                 e.stopPropagation();
-//                 setTask((prev) => ({
-//                   ...prev,
-//                   [name]: prev[name].filter((_: any, i: number) => i !== index),
-//                 }));
-//               }}
-//               className="text-red-500 hover:text-red-700 font-bold"
-//             >
-//               ❌
-//             </button>
-//           </li>
-//         ))}
-//       </ul>
-//     )}
-//   </>
-// );
+  //     {/* 2. FILE LIST: Rendered BELOW the drop area, ensuring clicks do not trigger the file input */}
+  //     {files && files.length > 0 && (
+  //       <ul className="w-full mt-1 border border-gray-300 rounded-md p-2 bg-white">
+  //         {files.map((file, index) => (
+  //           <li
+  //             key={index}
+  //             className="flex justify-between items-center py-1 px-2 border-b last:border-b-0"
+  //           >
+  //             <span>{file.name}</span>
+  //             <button
+  //               type="button"
+  //               onClick={(e) => {
+  //                 // The structural change ensures this button is outside the file input's influence
+  //                 e.stopPropagation();
+  //                 setTask((prev) => ({
+  //                   ...prev,
+  //                   [name]: prev[name].filter((_: any, i: number) => i !== index),
+  //                 }));
+  //               }}
+  //               className="text-red-500 hover:text-red-700 font-bold"
+  //             >
+  //               ❌
+  //             </button>
+  //           </li>
+  //         ))}
+  //       </ul>
+  //     )}
+  //   </>
+  // );
 
   return (
     <>
@@ -427,31 +475,31 @@ const CreateTaskUI: React.FC = () => {
             </div>
 
             {/* Sample File */}
-            <div className="flex gap-6 flex-wrap">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
               <label className="flex items-center gap-2 text-gray-900">
                 <input type="checkbox" name="sampleFileRequired" checked={task.sampleFileRequired}
-                  onChange={(e) => setTask({ ...task, sampleFileRequired: e.target.checked })} className="h-4 w-4" />
+                  onChange={(e) => setTask({ ...task, sampleFileRequired: e.target.checked, requiredValumeOfSampleFile: e.target.checked ? task.requiredValumeOfSampleFile : undefined })} className="h-4 w-4" />
                 Sample File Required?
               </label>
-              {task.sampleFileRequired  && (
-                    <div className="flex-1">
-                        <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
-                        <select
-                            name="requiredValumeOfSampleFile"
-                            value={task.requiredValumeOfSampleFile}
-                            onChange={handleChange}
-                            className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
-                        >
-                            <option value="" hidden>Select Volume</option>
-                            {["20", "50", "100", "500", "1000"].map((volume) => (
-                                <option key={volume} value={volume}>
-                                    {volume}
-                                </option>
-                            ))}
-                        </select>
-                        {renderError("requiredValumeOfSampleFile")}
-                    </div>
-                )}
+              {task.sampleFileRequired && (
+                <div className="flex-1">
+                  <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
+                  <select
+                    name="requiredValumeOfSampleFile"
+                    value={task.requiredValumeOfSampleFile}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
+                  >
+                    <option value="" hidden>Select Volume</option>
+                    {["20", "50", "100", "500", "1000"].map((volume) => (
+                      <option key={volume} value={volume}>
+                        {volume}
+                      </option>
+                    ))}
+                  </select>
+                  {renderError("requiredValumeOfSampleFile")}
+                </div>
+              )}
             </div>
 
             {/* Type of Delivery & Platform */}
@@ -487,13 +535,13 @@ const CreateTaskUI: React.FC = () => {
               <div className="flex-1">
                 <label className="block text-gray-700 font-medium mb-2">SOW Document URL</label>
                 <input type="text" name="sowUrls" value={task.sowUrls[0] || ""}
-                  // CreatTask.tsx: Replace the existing onChange with this for both sowUrls and inputUrls
+
                   onChange={(e) => {
-                    // 💡 FIX: Ensure the state update is clean. inputUrls should only contain the new value.
+
                     const url = e.target.value.trim();
                     setTask(prev => ({
                       ...prev,
-                      sowUrls: url ? [url] : [] // Store the URL as a single-element array, or an empty array if blank
+                      sowUrls: url ? [url] : []
                     }));
                   }}
                   placeholder="Enter SOW Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
@@ -503,7 +551,7 @@ const CreateTaskUI: React.FC = () => {
 
             <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
               <div className="flex-1">
-                <label className="block text-gray-700 font-medium mb-2">Input Document File <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Input Document File </label>
                 {renderFileDropArea(task.inputFile, "inputFile", "Input File")}
                 {renderError("inputFile")}
               </div>
@@ -521,15 +569,15 @@ const CreateTaskUI: React.FC = () => {
                     }));
                   }}
                   placeholder="Enter Input Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
-                
+
               </div>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 w-full items-stretch">
               <div className="flex-1">
-                <label className="block text-gray-700 font-medium mb-2">Client Sample Schema Document File <span className="text-red-500">*</span></label>
+                <label className="block text-gray-700 font-medium mb-2">Client Sample Schema Document File </label>
                 {renderFileDropArea(task.clientSampleSchemaFiles, "clientSampleSchemaFiles", "Client Sample Schema File")}
-             
+
               </div>
               <div className="flex items-center font-bold text-gray-500 px-2">OR</div>
               <div className="flex-1">
@@ -545,7 +593,7 @@ const CreateTaskUI: React.FC = () => {
                     }));
                   }}
                   placeholder="Enter clientSampleSchema Document URL" className="w-full h-18 p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900" />
-               
+
               </div>
             </div>
 

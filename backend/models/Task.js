@@ -4,7 +4,7 @@ const domainSchema = new mongoose.Schema({
   name: { type: String, required: true }, // e.g., "web", "app", "both"
   status: {
     type: String,
-    enum: ["pending", "in-progress", "delayed", "submitted", "in-R&D"],
+    enum: ["pending","in-progress", "delayed", "submitted","in-R&D"],
     default: "pending",
   }, 
   statusKey: { type: String, lowercase: true, trim: true },
@@ -34,7 +34,7 @@ const taskSchema = new mongoose.Schema(
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     description: { type: String, required: true },
     sampleFileRequired: { type: Boolean, default: false },
-    requiredValumeOfSampleFile: { type: Number, enum: [20, 50, 100, 500, 1000] },
+    requiredValumeOfSampleFile: { type: Number, enum: [20, 50, 100, 500, 1000], default: null },
     taskAssignedDate: { type: Date, required: true },
     targetDate: { type: Date, required: true },
     completeDate: { type: Date },
@@ -51,12 +51,12 @@ const taskSchema = new mongoose.Schema(
     loginType: { type: String, enum: ["Free login", "Paid login"], },
     credentials: { type: String },
 
-    country: { type: String },
+    country: { type: [String] },
     feasibleFor: { type: String },
     approxVolume: { type: String },
     method: { type: String },
     apiName:{type:String},
-    proxyUsed: { type: Boolean,},
+    proxyUsed: { type: Boolean},
     proxyName: { type: String },
     perRequestCredit: { type: Number },
     totalRequest: { type: Number },

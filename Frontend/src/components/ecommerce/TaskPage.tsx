@@ -120,7 +120,7 @@ const TaskPage: React.FC = () => {
       setCurrentDomain(null);
     }
     // prefer domain.status if provided, else fallback to task.status
-    setNewStatus( "in-R&D");
+    setNewStatus("in-R&D");
     setStatusReason("");
     setStatusModalOpen(true);
   };
@@ -242,6 +242,12 @@ const TaskPage: React.FC = () => {
 
       const data = await res.json();
       setTasks(data.tasks || []);
+//       setTasks(prev =>
+//   prev.map(t =>
+//     t._id === updatedTask._id ? { ...t, ...updatedTask } : t
+//   )
+// );
+
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
@@ -374,7 +380,7 @@ const TaskPage: React.FC = () => {
     );
   }
 
-  
+
 
 
   return (
@@ -409,11 +415,11 @@ const TaskPage: React.FC = () => {
             placeholder="Search by project, code, or developer"
             value={searchText}
             onChange={(e) => {
-    // 1. Update the search term
-    setSearchText(e.target.value);
-    // 2. 🔥 CRITICAL FIX: Reset the page to 1 whenever search text is modified
-    setPage(1); 
-  }}
+
+              setSearchText(e.target.value);
+
+              setPage(1);
+            }}
             autoFocus={true}
             className="flex-grow w-full md:w-80 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           />
@@ -421,7 +427,7 @@ const TaskPage: React.FC = () => {
 
           <select
             value={statusFilter}
-            onChange={(e) => {setStatusFilter(e.target.value); setPage(1)} }
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
             className="w-full md:w-48 p-2 rounded-lg border border-gray-300 bg-white text-gray-800"
           >
             {statuses.map((s) => (
@@ -486,7 +492,9 @@ const TaskPage: React.FC = () => {
 
                 return (
                   <tr
-                    key={`${row.task.srNo}-${row.domainName ?? "none"}-${idx}`}
+                    //key={`${row.task.srNo}-${row.domainName ?? "none"}-${idx}`}
+                    key={`${row.task._id}-${row.domainName ?? "none"}`}
+
                     className="hover:bg-gray-100 transition-colors"
                   >
                     <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
@@ -652,57 +660,57 @@ const TaskPage: React.FC = () => {
           </button>
         </div>
       </div>
-      
-{statusModalOpen && currentTask && currentDomain && currentDomain.status.toLowerCase() !== 'submitted' && (
-  <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
-    <div className="bg-white rounded-lg p-6 w-96">
-      <h2 className="text-lg font-semibold mb-4">Update Status</h2>
 
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">New Status</label>
-        
-        {/* The status is already set to 'in-R&D' in openStatusModal */}
-        <h3 className="w-full p-2 border rounded bg-gray-100 text-gray-800 font-semibold">
-          in-R&D
-        </h3>
-        
-      </div>
+      {statusModalOpen && currentTask && currentDomain && currentDomain.status.toLowerCase() !== 'submitted' && (
+        <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h2 className="text-lg font-semibold mb-4">Update Status</h2>
 
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">Reason</label>
-        <textarea
-          value={statusReason}
-          onChange={(e) => setStatusReason(e.target.value)}
-          className="w-full p-2 border rounded"
-          placeholder="Enter reason for status change"
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block mb-1 font-medium">Upload File</label>
-        <input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="border rounded p-1 w-full"
-        />
-      </div>
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">New Status</label>
 
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={handleStatusUpdate}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-        >
-          Update
-        </button>
-        <button
-          onClick={closeStatusModal}
-          className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              {/* The status is already set to 'in-R&D' in openStatusModal */}
+              <h3 className="w-full p-2 border rounded bg-gray-100 text-gray-800 font-semibold">
+                in-R&D
+              </h3>
+
+            </div>
+
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Reason</label>
+              <textarea
+                value={statusReason}
+                onChange={(e) => setStatusReason(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder="Enter reason for status change"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Upload File</label>
+              <input
+                type="file"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="border rounded p-1 w-full"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleStatusUpdate}
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Update
+              </button>
+              <button
+                onClick={closeStatusModal}
+                className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAssignDevPopup && (
         <div className="fixed inset-0  bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">

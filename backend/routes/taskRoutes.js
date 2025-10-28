@@ -57,7 +57,7 @@ const upload = multer({ storage });
 router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
   { name: "sowFile", maxCount: 10 },
   { name: "inputFile", maxCount: 10 },
-  { name: "clientSampleSchemaFiles", maxCount: 20 },
+  { name: "clientSampleSchemaFile", maxCount: 20 },
 ]), createTask);
 
 router.put(
@@ -70,7 +70,7 @@ router.put("/tasks/:id", authorize(['Admin','Sales','TL','Manager']), upload.fie
   { name: "sowFile", maxCount: 10 },
   { name: "inputFile", maxCount: 10 },
   { name: "clientSampleSchemaFiles", maxCount: 20 },
-  { name: "outputFile", maxCount: 10 },
+  { name: "outputFiles", maxCount: 10 },
 ]), updateTask);
 
 
@@ -78,7 +78,7 @@ router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer','Manager'])
   { name: "sowFile", maxCount: 10},
   { name: "inputFile", maxCount: 10 },
   { name: "clientSampleSchemaFiles", maxCount: 20 },
-  { name: "outputFile", maxCount: 20 },
+  { name: "outputFiles", maxCount: 20 },
 ]), submitTask);
 router.get("/tasks/developers", authorize(['Manager','Admin']), getDevelopersDomainStatus);
 router.get("/tasks/stats", authorize(['Admin','Sales','TL','Developer','Manager']), getDomainStats);

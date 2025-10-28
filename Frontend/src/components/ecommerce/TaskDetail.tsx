@@ -19,11 +19,16 @@ interface Submission {
   totalRequest?: number;
   complexity?: string;
   githubLink?: string;
+  outputFiles?: string[];
+  outputUrls?: string[];
   remarks?: string;
+
   submittedAt?: string;
 }
 
+
 interface Task {
+  sampleFileRequired: boolean;
   id: string;
   projectCode: string;
   title: string;
@@ -43,7 +48,6 @@ interface Task {
   inputUrl?: string;
   clientSampleSchemaFiles?: string;
   clientSampleSchemaUrl?: string;
-  
   domains?: Domain[];
   submissions?: Record<string, Submission>;
   reason?: string;
@@ -70,7 +74,6 @@ const TaskDetail: React.FC = () => {
           headers: { "Content-Type": "application/json" },
         });
         const data: Task = await res.json();
-
         setTask(data);
       } catch (err) {
         console.error(err);
@@ -80,7 +83,7 @@ const TaskDetail: React.FC = () => {
     };
     fetchTask();
   }, [id, apiUrl]);
- 
+
   const buildFileUrl = (fileUrl?: string) => {
     if (!fileUrl) return "";
     if (fileUrl.startsWith("http")) return fileUrl;
@@ -102,9 +105,13 @@ const TaskDetail: React.FC = () => {
   if (!task) return <div className="p-6 text-gray-800">Loading task details...</div>;
 
   let domainObj: any = null;
+  console.log("123", domainObj);
+
   let showDomainDetails = false;
   let displayedDomain: string | null = domainParam;
   let submission: Submission | null = null;
+  console.log("sub", task);
+
 
   if (task.domains && task.domains.length > 0) {
     // 1️⃣ If URL param ?domain=something is present
@@ -126,7 +133,13 @@ const TaskDetail: React.FC = () => {
     showDomainDetails =
       domainObj && domainObj.status && domainObj.status.toLowerCase() === "in-r&d";
   }
+  const rawOutputUrls = submission?.outputUrls;
 
+  const urlsToDisplay: string[] = Array.isArray(rawOutputUrls)
+    ? rawOutputUrls.filter(Boolean) // Keep only non-empty strings if it's already an array
+    : typeof rawOutputUrls === "string" && rawOutputUrls.trim() !== ""
+      ? [rawOutputUrls] // Convert the single string URL into an array
+      : []; // Default to an empty array
 
   const getDomainName = (url: string) => {
     try {
@@ -145,6 +158,7 @@ const TaskDetail: React.FC = () => {
       </div>
     );
   }
+
 
   return (
     <>
@@ -173,6 +187,16 @@ const TaskDetail: React.FC = () => {
             </div>
 
             {task.description && <p className="text-gray-700">{task.description}</p>}
+            <div className="grid md:grid-cols-3 gap-6">
+              <Detail label="Sample File Required" value={task.
+                sampleFileRequired ? "Yes" : "No" || "-"} />
+              {task.sampleFileRequired && (
+                <Detail
+                  label="Required valume of Sample File"
+                  value={task.requiredValumeOfSampleFile || "-"}
+                />
+              )}
+            </div>
             {/* Show only selected domain */}
             <div className="flex gap-2">
               {displayedDomain ? (
@@ -190,6 +214,7 @@ const TaskDetail: React.FC = () => {
                 </span>
               )}
             </div>
+
             {showDomainDetails && (
               <div className="mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
                 {domainObj.remarks && (
@@ -222,7 +247,7 @@ const TaskDetail: React.FC = () => {
                   <div className="mb-4">
                     <label className="block text-[14px] text-gray-800 mb-1">Sample Output Data</label>
                     {submission.outputFiles && submission.outputFiles.length > 0 ? (
-                      <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto">
+                      <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto list-none">
                         {(Array.isArray(submission.outputFiles) ? submission.outputFiles : [submission.outputFiles]).map((file, idx) => (
                           <li key={idx}>
                             Version.{idx + 1}:-
@@ -253,15 +278,15 @@ const TaskDetail: React.FC = () => {
                     </label>
 
                     {/* Check if the outputUrls array exists and has at least one element */}
-                    {submission.outputUrls && submission.outputUrls.length > 0 ? (
+                    {task.outputUrls && task.outputUrls.length > 0 ? (
                       <div className="space-y-1">
-                        {submission.outputUrls.map((url, index) => (
+                        {task.outputUrls.map((url, index) => (
                           // Only render if the URL string is not empty
                           url.trim() && (
                             <div key={index} className="flex">
                               Version.{index + 1}:-
                               <a
-                                // Construct the full URL for the href attribute
+                                
                                 href={
                                   url.startsWith("http")
                                     ? url
@@ -271,7 +296,7 @@ const TaskDetail: React.FC = () => {
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                {/* Display the URL and its index */}
+                                
                                 View URL
                               </a>
                             </div>
@@ -281,6 +306,31 @@ const TaskDetail: React.FC = () => {
                     ) : (
                       <p className="text-gray-500">No output document URL provided</p>
                     )}
+                    {/* <div className="mb-4">
+
+                      <div className="space-y-2">
+
+                        {urlsToDisplay.length > 0 ? (
+                          urlsToDisplay.map((url, index) => (
+                            <div className="flex">
+                              Version.{index + 1}:-
+                              <a
+                                key={index}
+                                href={url.startsWith("http") ? url : `https://${url}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block text-blue-600 underline break-all"
+                              >
+                                View URL
+                              </a>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-900 font-medium">-</p>
+                        )}
+                      </div>
+                    </div> */}
+
                   </div>
 
                   <Detail label="Platform" value={displayedDomain || "-"} />
@@ -296,8 +346,8 @@ const TaskDetail: React.FC = () => {
                     <Detail label="API Name" value={submission.apiName || "-"} />
                   )}
 
-                  <Detail label="User Login" value={submission.userLogin ? "Yes" : "No"} />
-                  <Detail label="Proxy Used" value={submission.proxyUsed ? "Yes" : "No"} />
+                  <Detail label="User Login" value={submission.userLogin == "true"? "Yes" : "No"} />
+                  <Detail label="Proxy Used" value={submission.proxyUsed == "true" ? "Yes" : "No"} />
 
                   {submission.proxyUsed && (
                     <>

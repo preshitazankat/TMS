@@ -9,6 +9,7 @@ import { options } from "@fullcalendar/core/preact.js";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getNames } from "country-list";
 
 interface SubmitTaskProps {
   taskData?: any;
@@ -53,214 +54,25 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     "pptx",
   ];
 
-  const allCountries = [
-    { value: "Afghanistan", label: "Afghanistan" },
-    { value: "Albania", label: "Albania" },
-    { value: "Algeria", label: "Algeria" },
-    { value: "Algeria", label: "Algeria" },
-    { value: "Andorra", label: "Andorra" },
-    { value: "Angola", label: "Angola" },
-    { value: "Antigua and Barbuda", label: "Antigua and Barbuda" },
-    { value: "Argentina", label: "Argentina" },
-    { value: "Armenia", label: "Armenia" },
-    { value: "Australia", label: "Australia" },
-    { value: "Austria", label: "Austria" },
-    { value: "Azerbaijan", label: "Azerbaijan" },
-    { value: "Bahamas", label: "Bahamas" },
-    { value: "Bahrain", label: "Bahrain" },
-    { value: "Bangladesh", label: "Bangladesh" },
-    { value: "Barbados", label: "Barbados" },
-    { value: "Belarus", label: "Belarus" },
-    { value: "Belgium", label: "Belgium" },
-    { value: "Belize", label: "Belize" },
-    { value: "Benin", label: "Benin" },
-    { value: "Bhutan", label: "Bhutan" },
-    { value: "Bolivia", label: "Bolivia" },
-    { value: "Bosnia and Herzegovina", label: "Bosnia and Herzegovina" },
-    { value: "Botswana", label: "Botswana" },
-    { value: "Brazil", label: "Brazil" },
-    { value: "Brunei", label: "Brunei" },
-    { value: "Bulgaria", label: "Bulgaria" },
-    { value: "Burkina Faso", label: "Burkina Faso" },
-    { value: "Burundi", label: "Burundi" },
-    { value: "Cabo Verde", label: "Cabo Verde" },
-    { value: "Cambodia", label: "Cambodia" },
-    { value: "Cameroon", label: "Cameroon" },
-    { value: "Canada", label: "Canada" },
-    { value: "Central African Republic", label: "Central African Republic" },
-    { value: "Chad", label: "Chad" },
-    { value: "Chile", label: "Chile" },
-    { value: "China", label: "China" },
-    { value: "Colombia", label: "Colombia" },
-    { value: "Comoros", label: "Comoros" },
-    { value: "Congo", label: "Congo" },
-    { value: "Costa Rica", label: "Costa Rica" },
-    { value: "Croatia", label: "Croatia" },
-    { value: "Cuba", label: "Cuba" },
-    { value: "Cyprus", label: "Cyprus" },
-    { value: "Czechia", label: "Czechia" },
-    { value: "Denmark", label: "Denmark" },
-    { value: "Djibouti", label: "Djibouti" },
-    { value: "Dominica", label: "Dominica" },
-    { value: "Dominican Republic", label: "Dominican Republic" },
-    { value: "Ecuador", label: "Ecuador" },
-    { value: "Egypt", label: "Egypt" },
-    { value: "El Salvador", label: "El Salvador" },
-    { value: "Equatorial Guinea", label: "Equatorial Guinea" },
-    { value: "Eritrea", label: "Eritrea" },
-    { value: "Estonia", label: "Estonia" },
-    { value: "Eswatini", label: "Eswatini" },
-    { value: "Ethiopia", label: "Ethiopia" },
-    { value: "Fiji", label: "Fiji" },
-    { value: "Finland", label: "Finland" },
-    { value: "France", label: "France" },
-    { value: "Gabon", label: "Gabon" },
-    { value: "Gambia", label: "Gambia" },
-    { value: "Georgia", label: "Georgia" },
-    { value: "Germany", label: "Germany" },
-    { value: "Ghana", label: "Ghana" },
-    { value: "Greece", label: "Greece" },
-    { value: "Grenada", label: "Grenada" },
-    { value: "Guatemala", label: "Guatemala" },
-    { value: "Guinea", label: "Guinea" },
-    { value: "Guinea-Bissau", label: "Guinea-Bissau" },
-    { value: "Guyana", label: "Guyana" },
-    { value: "Haiti", label: "Haiti" },
-    { value: "Honduras", label: "Honduras" },
-    { value: "Hungary", label: "Hungary" },
-    { value: "Iceland", label: "Iceland" },
-    { value: "India", label: "India" },
-    { value: "Indonesia", label: "Indonesia" },
-    { value: "Iran", label: "Iran" },
-    { value: "Iraq", label: "Iraq" },
-    { value: "Ireland", label: "Ireland" },
-    { value: "Israel", label: "Israel" },
-    { value: "Italy", label: "Italy" },
-    { value: "Jamaica", label: "Jamaica" },
-    { value: "Japan", label: "Japan" },
-    { value: "Jordan", label: "Jordan" },
-    { value: "Kazakhstan", label: "Kazakhstan" },
-    { value: "Kenya", label: "Kenya" },
-    { value: "Kiribati", label: "Kiribati" },
-    { value: "Kuwait", label: "Kuwait" },
-    { value: "Kyrgyzstan", label: "Kyrgyzstan" },
-    { value: "Laos", label: "Laos" },
-    { value: "Latvia", label: "Latvia" },
-    { value: "Lebanon", label: "Lebanon" },
-    { value: "Lesotho", label: "Lesotho" },
-    { value: "Liberia", label: "Liberia" },
-    { value: "Libya", label: "Libya" },
-    { value: "Liechtenstein", label: "Liechtenstein" },
-    { value: "Lithuania", label: "Lithuania" },
-    { value: "Luxembourg", label: "Luxembourg" },
-    { value: "Madagascar", label: "Madagascar" },
-    { value: "Malawi", label: "Malawi" },
-    { value: "Malaysia", label: "Malaysia" },
-    { value: "Maldives", label: "Maldives" },
-    { value: "Mali", label: "Mali" },
-    { value: "Malta", label: "Malta" },
-    { value: "Marshall Islands", label: "Marshall Islands" },
-    { value: "Mauritania", label: "Mauritania" },
-    { value: "Mauritius", label: "Mauritius" },
-    { value: "Mexico", label: "Mexico" },
-    { value: "Micronesia", label: "Micronesia" },
-    { value: "Moldova", label: "Moldova" },
-    { value: "Monaco", label: "Monaco" },
-    { value: "Mongolia", label: "Mongolia" },
-    { value: "Montenegro", label: "Montenegro" },
-    { value: "Morocco", label: "Morocco" },
-    { value: "Mozambique", label: "Mozambique" },
-    { value: "Myanmar", label: "Myanmar" },
-    { value: "Namibia", label: "Namibia" },
-    { value: "Nauru", label: "Nauru" },
-    { value: "Nepal", label: "Nepal" },
-    { value: "Netherlands", label: "Netherlands" },
-    { value: "New Zealand", label: "New Zealand" },
-    { value: "Nicaragua", label: "Nicaragua" },
-    { value: "Niger", label: "Niger" },
-    { value: "Nigeria", label: "Nigeria" },
-    { value: "North Korea", label: "North Korea" },
-    { value: "North Macedonia", label: "North Macedonia" },
-    { value: "Norway", label: "Norway" },
-    { value: "Oman", label: "Oman" },
-    { value: "Pakistan", label: "Pakistan" },
-    { value: "Palau", label: "Palau" },
-    { value: "Palestine", label: "Palestine" },
-    { value: "Panama", label: "Panama" },
-    { value: "Papua New Guinea", label: "Papua New Guinea" },
-    { value: "Paraguay", label: "Paraguay" },
-    { value: "Peru", label: "Peru" },
-    { value: "Philippines", label: "Philippines" },
-    { value: "Poland", label: "Poland" },
-    { value: "Portugal", label: "Portugal" },
-    { value: "Qatar", label: "Qatar" },
-    { value: "Romania", label: "Romania" },
-    { value: "Russia", label: "Russia" },
-    { value: "Rwanda", label: "Rwanda" },
-    { value: "Saint Kitts and Nevis", label: "Saint Kitts and Nevis" },
-    { value: "Saint Lucia", label: "Saint Lucia" },
-    {
-      value: "Saint Vincent and the Grenadines",
-      label: "Saint Vincent and the Grenadines",
-    },
-    { value: "Samoa", label: "Samoa" },
-    { value: "San Marino", label: "San Marino" },
-    { value: "Sao Tome and Principe", label: "Sao Tome and Principe" },
-    { value: "Saudi Arabia", label: "Saudi Arabia" },
-    { value: "Senegal", label: "Senegal" },
-    { value: "Serbia", label: "Serbia" },
-    { value: "Seychelles", label: "Seychelles" },
-    { value: "Sierra Leone", label: "Sierra Leone" },
-    { value: "Singapore", label: "Singapore" },
-    { value: "Slovakia", label: "Slovakia" },
-    { value: "Slovenia", label: "Slovenia" },
-    { value: "Solomon Islands", label: "Solomon Islands" },
-    { value: "Somalia", label: "Somalia" },
-    { value: "South Africa", label: "South Africa" },
-    { value: "South Korea", label: "South Korea" },
-    { value: "South Sudan", label: "South Sudan" },
-    { value: "Spain", label: "Spain" },
-    { value: "Sri Lanka", label: "Sri Lanka" },
-    { value: "Sudan", label: "Sudan" },
-    { value: "Suriname", label: "Suriname" },
-    { value: "Sweden", label: "Sweden" },
-    { value: "Switzerland", label: "Switzerland" },
-    { value: "Syria", label: "Syria" },
-    { value: "Taiwan", label: "Taiwan" },
-    { value: "Tajikistan", label: "Tajikistan" },
-    { value: "Tanzania", label: "Tanzania" },
-    { value: "Thailand", label: "Thailand" },
-    { value: "Timor-Leste", label: "Timor-Leste" },
-    { value: "Togo", label: "Togo" },
-    { value: "Tonga", label: "Tonga" },
-    { value: "Trinidad and Tobago", label: "Trinidad and Tobago" },
-    { value: "Tunisia", label: "Tunisia" },
-    { value: "Turkey", label: "Turkey" },
-    { value: "Turkmenistan", label: "Turkmenistan" },
-    { value: "Tuvalu", label: "Tuvalu" },
-    { value: "Uganda", label: "Uganda" },
-    { value: "Ukraine", label: "Ukraine" },
-    { value: "United Arab Emirates", label: "United Arab Emirates" },
-    { value: "United Kingdom", label: "United Kingdom" },
-    { value: "United States", label: "United States" },
-    { value: "Uruguay", label: "Uruguay" },
-    { value: "Uzbekistan", label: "Uzbekistan" },
-    { value: "Vanuatu", label: "Vanuatu" },
-    { value: "Vatican City", label: "Vatican City" },
-    { value: "Venezuela", label: "Venezuela" },
-    { value: "Vietnam", label: "Vietnam" },
-    { value: "Yemen", label: "Yemen" },
-    { value: "Zambia", label: "Zambia" },
-    { value: "Zimbabwe", label: "Zimbabwe" },
-  ];
+  const allCountries = getNames().map((name) => ({
+    value: name,
+    label: name,
+  }));
 
   const isValidDocumentUrl = (url: string) => {
-    // Must start with http/https and end with allowed extension
-    const pattern = new RegExp(
+    // Pattern 1: URL must end with an allowed extension (for PDFs, DOCXs, etc.)
+    const fileExtensionPattern = new RegExp(
       `^https?:\\/\\/.*\\.(${allowedExtensions.join("|")})(\\?.*)?$`,
       "i"
     );
-    return pattern.test(url);
+
+    // Pattern 2: Must be a recognizable Google Docs/Drive URL (for non-direct links)
+    const googleDocsPattern = new RegExp(
+      "^https?:\\/\\/docs\\.google\\.com\\/(document|spreadsheets|presentation)\\/d\\/.*$",
+      "i"
+    );
+
+    return fileExtensionPattern.test(url) || googleDocsPattern.test(url);
   };
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -492,9 +304,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       Object.entries(submission).forEach(([key, value]) => {
         if (value === null || value === undefined || value === "") return;
 
-        // ... other array/file handling
 
-        // 🔥 Handle plural URL arrays by JSON stringifying them
+
         if (key === "outputUrls") {
           formData.append(key, JSON.stringify(value));
         }
@@ -585,19 +396,20 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
           { title: "Submit" },
         ]}
       />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+
       <div className="min-h-screen w-full   flex justify-center py-10 px-4">
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
         <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
 
           <h2 className="text-3xl text-center text-[#3903a0] font-semibold mb-8">
@@ -784,9 +596,9 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700 ">
-                  
+
                   Approx Volume
-                   <span className="text-red-500">*</span>
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -903,7 +715,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   )}
                 </div>
                 {submission.userLogin &&
-                  submission.loginType === "Purchased login" && (
+                  submission.loginType === "Paid login" && (
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Credentials
@@ -954,6 +766,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   <input
                     type="number"
                     name="perRequestCredit"
+                    min={0}
                     value={submission.perRequestCredit}
                     onChange={handleChange}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800  "
@@ -972,6 +785,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   <input
                     type="number"
                     value={submission.totalRequest}
+                    min={0}
                     name="totalRequest"
                     onChange={handleChange}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800"
@@ -993,30 +807,32 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                 </label>
                 <DatePicker
                   selected={new Date(submission.lastCheckedDate)}
-                  onChange={(date: Date | null) => {
+                  onChange={(date: Date | null, e: any) => {
+                    const value = e?.target?.value;
+
+                    // If manually typing
+                    if (value && typeof value === "string") {
+                      const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(value);
+                      if (!isValidDate) {
+                        toast.error("❌ Please enter date in YYYY-MM-DD format");
+                        return;
+                      }
+                    }
+
                     if (date) {
                       setSubmission({
                         ...submission,
-                        lastCheckedDate: date ? format(date, "yyyy-MM-dd") : "",
+                        lastCheckedDate: format(date, "yyyy-MM-dd"),
                       });
                     }
                   }}
                   dateFormat="yyyy-MM-dd"
                   placeholderText="YYYY-MM-DD"
                   maxDate={new Date()}
-
                   name="lastCheckedDate"
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800"
-                  customInput={
-        <input 
-            type="text" 
-            readOnly={true} // This prevents the user from typing
-            value={submission.lastCheckedDate}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 h-15"
-            placeholder="Select Date"
-        />
-    }
                 />
+
                 {errors.lastCheckedDate && (
                   <p className="text-red-400 text-sm mt-1">
                     {errors.lastCheckedDate}
@@ -1033,10 +849,10 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                   onChange={handleChange}
                   className="w-full rounded-lg border border-gray-600 p-3"
                 >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Very High">Very High</option>
+                  <option value="Low">🟢Low</option>
+                  <option value="Medium">🟡 Medium</option>
+                  <option value="High">🟠 High</option>
+                  <option value="Very High">🔴 Very High</option>
                 </select>
                 {errors.complexity && (
                   <p className="text-red-400 text-sm mt-1">
@@ -1075,48 +891,48 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     <span className="text-red-500 ml-1">*</span>
                   </label>
                   {submission.outputfiles && submission.outputfiles.length > 0 ? (
-      // Show list of files with remove button
-      <ul className="space-y-2 mb-2 p-2 border rounded-md bg-gray-50">
-        {submission.outputfiles.map((file: File, index: number) => (
-          <li
-            key={file.name + index}
-            className="flex items-center justify-between text-sm py-1 px-2 border-b last:border-b-0"
-          >
-            <span className="truncate pr-2">{file.name}</span>
-            <button
-              type="button"
-              onClick={() => {
-                // Remove the file at the specific index
-                setSubmission((prev) => ({
-                  ...prev,
-                  outputfiles: prev.outputfiles.filter(
-                    (_: File, i: number) => i !== index
-                  ),
-                }));
-              }}
-              className="text-red-500 hover:text-red-700 font-bold p-1 transition"
-              aria-label={` ${file.name}`}
-            >
-              ❌ 
-            </button>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      // Show the file input when no files are selected
-      <input
-        type="file"
-        name="outputfiles"
-        onChange={handleChange} // Ensure handleChange correctly appends files
-        multiple
-        placeholder="Choose output file(s)"
-        className="w-full p-3 rounded-md border border-gray-600 text-gray-600
+                    // Show list of files with remove button
+                    <ul className="space-y-2 mb-2 p-2 border rounded-md bg-gray-50">
+                      {submission.outputfiles.map((file: File, index: number) => (
+                        <li
+                          key={file.name + index}
+                          className="flex items-center justify-between text-sm py-1 px-2 border-b last:border-b-0"
+                        >
+                          <span className="truncate pr-2">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Remove the file at the specific index
+                              setSubmission((prev) => ({
+                                ...prev,
+                                outputfiles: prev.outputfiles.filter(
+                                  (_: File, i: number) => i !== index
+                                ),
+                              }));
+                            }}
+                            className="text-red-500 hover:text-red-700 font-bold p-1 transition"
+                            aria-label={` ${file.name}`}
+                          >
+                            ❌
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    // Show the file input when no files are selected
+                    <input
+                      type="file"
+                      name="outputfiles"
+                      onChange={handleChange} // Ensure handleChange correctly appends files
+                      multiple
+                      placeholder="Choose output file(s)"
+                      className="w-full p-3 rounded-md border border-gray-600 text-gray-600
          focus:outline-none focus:ring-2 focus:ring-blue-500
          file:mr-4 file:py-2 file:px-4 file:rounded-md
          file:border-0 file:text-sm file:font-semibold
          file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-      />
-    )}
+                    />
+                  )}
                   {errors.sowUrl && (
                     <p className="text-red-400 text-sm mt-1">{errors.sowUrl}</p>
                   )}
@@ -1150,7 +966,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
 
                 </div>
-              </div> 
+              </div>
             </div>
 
             {/* Remark */}

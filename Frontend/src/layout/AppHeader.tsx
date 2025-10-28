@@ -83,10 +83,10 @@ const AppHeader: React.FC = () => {
             {/* Cross Icon */}
           </button>
 
-          <Link to="/" className="lg:hidden">
+          <Link to="/" className="lg:hidden flex items-center justify-center ">
             <img
               className="dark:hidden"
-              src="./images/logo/logo.svg"
+              src={icon}
               alt="Logo"
             />
             <div className="flex flex-row items-center gap-2">
@@ -96,7 +96,7 @@ const AppHeader: React.FC = () => {
                 
                 alt="Logo"
               />
-              <h1 className="text-white text-3xl font-semibold">Actowiz</h1>
+              <h1 className=" text-3xl font-semibold">Actowiz</h1>
             </div>
 
           </Link>

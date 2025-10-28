@@ -2,7 +2,7 @@
   "name": "tailadmin-react",
   "private": true,
   "version": "2.0.2",
-  "type": "module", 
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -20,6 +20,7 @@
     "@react-jvectormap/world": "^1.1.2",
     "apexcharts": "^4.1.0",
     "clsx": "^2.1.1",
+    "country-list": "^2.4.1",
     "date-fns": "^4.1.0",
     "flatpickr": "^4.6.13",
     "js-cookie": "^3.0.5",

@@ -396,6 +396,8 @@ export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = cleanBody(req.body);
+    console.log("🧩 Multer received files:", Object.keys(req.files || {}));
+
 
     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
     const fileFields = ["sowFiles", "inputFiles", "outputFiles", "clientSampleSchemaFiles"];
@@ -419,16 +421,29 @@ export const updateTask = async (req, res) => {
     }
 
     // ---------- Handle File Uploads ----------
-    for (const key of ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"]) {
+    for (const key of ["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"]) {
       if (req.files?.[key]?.length) {
+        console.log("📂 Files received in updateTask:", Object.keys(req.files));
         const fieldName =
           key === "sowFile"
             ? "sowFiles"
             : key === "inputFile"
-            ? "inputFiles"
-            : key === "outputFile"
-            ? "outputFiles"
-            : "clientSampleSchemaFiles";
+              ? "inputFiles"
+              : key === "outputFiles"
+                ? "outputFiles"
+                : "clientSampleSchemaFiles";
+
+                if (req.files?.outputFiles?.length) {
+  const uploadedPaths = req.files.outputFiles.map((f) => `uploads/${f.filename}`);
+
+  if (task.domains && Array.isArray(task.domains)) {
+    task.domains.forEach((domain) => {
+      if (!domain.submission) domain.submission = {};
+      if (!Array.isArray(domain.submission.outputFiles)) domain.submission.outputFiles = [];
+      domain.submission.outputFiles.push(...uploadedPaths);
+    });
+  }
+}
 
         const uploadedPaths = req.files[key].map((f) => `uploads/${f.filename}`);
 
@@ -466,9 +481,14 @@ export const updateTask = async (req, res) => {
       "description",
       "sampleFileRequired",
       "requiredValumeOfSampleFile",
-      "taskAssignedDate",
-      "targetDate",
-      "completeDate",
+      //"taskAssignedDate",
+      // "targetDate",
+       //"completeDate",
+       "sowFiles",
+      "inputFiles",
+      "outputFiles",
+      "outputUrls",
+      "clientSampleSchemaFiles",
       "complexity",
       "status",
       "typeOfDelivery",
@@ -485,7 +505,26 @@ export const updateTask = async (req, res) => {
     if (body.typeOfPlatform)
       task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
 
-     // ---------- 3️⃣ Assign developers ----------
+    //     // ---------- 2️⃣ Merge domains ----------
+    let incomingDomains = [];
+    if (body.domains) {
+      incomingDomains =
+        typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
+    }
+
+    const existingDomainNames = task.domains.map((d) => d.name);
+    incomingDomains.forEach((d) => {
+      if (!existingDomainNames.includes(d.name)) {
+        task.domains.push({
+          name: d.name,
+          status: "pending",
+          developers: [],
+          submission: { files: [], outputUrl: "" },
+        });
+      }
+    });
+
+    // ---------- 3️⃣ Assign developers ----------
     if (body.developers) {
       const devObj =
         typeof body.developers === "string" ? JSON.parse(body.developers) : body.developers;
@@ -522,7 +561,7 @@ export const updateTask = async (req, res) => {
       );
       if (hasAnyDev) task.status = "in-progress";
     }
-    
+
     await task.save();
     res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {
@@ -574,6 +613,46 @@ export const submitTask = async (req, res) => {
     const submissionOutputUrls = task.outputUrls || [];
 
     const getScalar = (v) => (Array.isArray(v) ? v[0] : v);
+    const getArray = (v) => {
+  if (v === undefined || v === null) return [];
+  
+  // 1. If it's already an array, flatten it and process elements
+  if (Array.isArray(v)) {
+    let result = [];
+    v.forEach(item => {
+      // Recursively process array items to handle nested arrays/strings
+      result = result.concat(getArray(item));
+    });
+    // Remove duplicates
+    return [...new Set(result.filter(Boolean))];
+  }
+
+  // 2. If it's a string, first attempt JSON parsing (for array strings from FormData)
+  if (typeof v === 'string') {
+    try {
+      const parsed = JSON.parse(v);
+      // If parsing yields an array, recursively process it
+      if (Array.isArray(parsed)) {
+          return getArray(parsed);
+      }
+    } catch (e) {
+      // JSON parsing failed, assume it's a simple string.
+    }
+
+    // 3. Check for comma-separated values (the root cause of "Afghanistan,Anguilla")
+    // This splits the string only if it contains a comma.
+    if (v.includes(',')) {
+      // Split by comma, trim whitespace from each part, and filter out empty strings
+      return v.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    }
+
+    // 4. Otherwise, return the single string value wrapped in an array
+    return [v];
+  }
+  
+  // 5. Default: return single non-array, non-string value in an array
+  return [v];
+};
 
     const submissionData = {
       platform: body.platform,
@@ -582,11 +661,17 @@ export const submitTask = async (req, res) => {
       complexity: normalizeEnum(body.complexity, ["Low", "Medium", "High", "Very High"]),
       userLogin: body.userLogin === true || body.userLogin === "true",
       proxyUsed: body.proxyUsed === true || body.proxyUsed === "true",
-      country: body.country,
+      country: getArray(body.country),
       feasibleFor: getScalar(body.feasibleFor),
       approxVolume: getScalar(body.approxVolume),
       method: getScalar(body.method),
+      userLogin: getScalar(body.userLogin),
+      loginType: getScalar(body.loginType),
+      complexity: getScalar(body.complexity),
+      //typeOfDelivery: getScalar(body.typeOfDelivery),
+      //typeOfPlatform: getScalar(body.typeOfPlatform),
       apiName: getScalar(body.apiName),
+      proxyUsed: getScalar(body.proxyUsed),
       proxyName: getScalar(body.proxyName),
       perRequestCredit: Number(getScalar(body.perRequestCredit)),
       totalRequest: Number(getScalar(body.totalRequest)),
@@ -594,7 +679,7 @@ export const submitTask = async (req, res) => {
       githubLink: getScalar(body.githubLink),
       outputFiles: submissionOutputFiles,
       outputUrls: submissionOutputUrls,
-      loginType: body.loginType,
+      loginType: getScalar(body.loginType),
       credentials: body.credentials,
 
 
@@ -773,12 +858,13 @@ export const getTask = async (req, res) => {
               in: { $ifNull: ["$$dev.name", "Unknown"] },
             },
           },
+          createdAt: 1,
         },
       },
 
-      { $sort: { taskAssignedDate: -1 } },
+      { $sort: { createdAt: -1 } },
 
-      /* ------------- Pagination ------------- */
+
       {
         $facet: {
           metadata: [{ $count: "total" }],
@@ -789,7 +875,7 @@ export const getTask = async (req, res) => {
 
     const tasksData = tasksAggregate[0]?.data || [];
     const total = tasksAggregate[0]?.metadata[0]?.total || 0;
-
+    console.log("dioshicojs", tasksData)
     res.json({
       tasks: tasksData,
       total,
