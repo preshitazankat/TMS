@@ -6,12 +6,12 @@ import { format } from "date-fns";
 import PageBreadcrumb from "../common/PageBreadCrumb";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useRef } from "react";
 
 
 interface Task {
   title: string;
   projectCode?: string;
-
   assignedTo: string;
   description: string;
   sampleFileRequired?: boolean;
@@ -29,9 +29,8 @@ interface Task {
   sowUrls: string[];
   inputFile: File[] | null;
   inputUrls: string[];
-  outputFiles: File[] | null;
-  outputUrls: string[];
-  clientSampleSchemaFiles: File[] | null;
+
+  clientSampleSchemaFile: File[] | null;
   clientSampleSchemaUrls: string[];
 }
 
@@ -40,8 +39,8 @@ interface Domain {
   status: string;
   developers?: string[];
   submission?: {
-    files?: string[];
-    outputUrl?: string | null;
+    outputFiles?: File[] | null;
+    outputUrl?: string[] | null;
   };
 }
 
@@ -73,10 +72,11 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     inputFile: [],
     outputUrls: [],
     outputFiles: [],
-    outputUrls: [],
-    clientSampleSchemaFiles: [],
+
+    clientSampleSchemaFile: [],
     clientSampleSchemaUrls: [],
   });
+  console.log("helooo " , task)
 
   const [domainInput, setDomainInput] = useState("");
   const [developerInput, setDeveloperInput] = useState<Record<string, string>>({});
@@ -121,21 +121,23 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
 
   const allowedExtensions = ["pdf", "doc", "docs", "docx", "xls", "xlsx", "ppt", "pptx"];
 
-  const isValidDocumentUrl = (url: string) => {
-  // Pattern 1: URL must end with an allowed extension (for PDFs, DOCXs, etc.)
-  const fileExtensionPattern = new RegExp(
-    `^https?:\\/\\/.*\\.(${allowedExtensions.join("|")})(\\?.*)?$`,
-    "i"
-  );
-  
-  // Pattern 2: Must be a recognizable Google Docs/Drive URL (for non-direct links)
-  const googleDocsPattern = new RegExp(
-    "^https?:\\/\\/docs\\.google\\.com\\/(document|spreadsheets|presentation)\\/d\\/.*$",
-    "i"
-  );
 
-  return fileExtensionPattern.test(url) || googleDocsPattern.test(url);
-};
+
+  const isValidDocumentUrl = (url: string) => {
+    // Pattern 1: URL must end with an allowed extension (for PDFs, DOCXs, etc.)
+    const fileExtensionPattern = new RegExp(
+      `^https?:\\/\\/.*\\.(${allowedExtensions.join("|")})(\\?.*)?$`,
+      "i"
+    );
+
+    // Pattern 2: Must be a recognizable Google Docs/Drive URL (for non-direct links)
+    const googleDocsPattern = new RegExp(
+      "^https?:\\/\\/docs\\.google\\.com\\/(document|spreadsheets|presentation)\\/d\\/.*$",
+      "i"
+    );
+
+    return fileExtensionPattern.test(url) || googleDocsPattern.test(url);
+  };
 
 
   const getCookie = (name: string): string | null => {
@@ -235,48 +237,9 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // --------------------------- HANDLERS -----------------------------
 
-  // const validateForm = () => {
-  //   const newErrors: Record<string, string> = {};
 
-  //   if (!task.title.trim()) newErrors.title = "Project title is required";
 
-  //   if (!task.assignedTo) newErrors.assignedTo = "Assigned To is required";
-  //   if (!task.description.trim()) newErrors.description = "Description is required";
-  //   if (!task.taskAssignedDate) newErrors.taskAssignedDate = "Assigned Date is required";
-  //   if (!task.targetDate) newErrors.targetDate = "Target Date is required";
-  //   if (!task.typeOfDelivery) newErrors.typeOfDelivery = "Type of Delivery is required";
-  //   if (!task.typeOfPlatform) newErrors.typeOfPlatform = "Type of Platform is required";
-
-  //   const hasSowUrls = (task.sowUrls || []).some(url => url && url.trim() !== "");
-  //   console.log("iucaisojico", hasSowUrls)
-  //   if ((task.sowFile || []).length === 0 && !hasSowUrls) {
-  //     newErrors.sowFile = "SOW Document (file or URL) is required";
-  //   } else if (hasSowUrls && !isValidDocumentUrl(task.sowUrls[0])) {
-  //     newErrors.sowUrls = "Invalid SOW URL"; // 🔥 Use plural key
-  //   }
-
-  //   // Input Validation (check array length and first item validity)
-  //   // const hasInputUrls = (task.inputUrls || []).some(url => url && url.trim() !== "");
-  //   // if ((task.inputFile || []).length === 0 && !hasInputUrls) {
-  //   //   newErrors.inputFile = "Input Document (file or URL) is required";
-  //   // } else if (hasInputUrls && !isValidDocumentUrl(task.inputUrls[0])) {
-  //   //   newErrors.inputUrls = "Invalid Input URL ()"; // 🔥 Use plural key
-  //   // }
-
-  //   // if (!task.outputFile && !task.outputUrl) newErrors.outputFile = "Output Document (file or URL) is required";
-  //   // else if (task.outputUrl && !isValidDocumentUrl(task.outputUrl)) newErrors.outputUrl = "Invalid Output URL";
-
-  //   if (task.sampleFileRequired && !task.requiredValumeOfSampleFile) {
-  //     newErrors.requiredVolume = "Required volume is mandatory when sample file is required";
-  //   }
-
-  //   if (!task.domains || task.domains.length === 0) newErrors.domains = "At least one Platform is required";
-
-  //   setErrors(newErrors);
-  //   return Object.keys(newErrors).length === 0;
-  // };
   const normalizeTaskData = (data: any): Task => {
     const toArray = (val: any): string[] =>
       Array.isArray(val) ? val : val ? [val] : [];
@@ -309,7 +272,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       sowFile: toArray(data.sowFiles),
       inputFile: toArray(data.inputFiles),
       outputFiles: toArray(data.outputFiles),
-      clientSampleSchemaFiles: toArray(data.clientSampleSchemaFiles),
+      clientSampleSchemaFile: toArray(data.clientSampleSchemaFile),
 
       // Keep URLs safe
       sowUrls: toArray(data.sowUrls),
@@ -344,10 +307,11 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     }
   }, [taskData, id, users]);
 
-  
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-   
+
     const { name, files, value, type, checked } = e.target as HTMLInputElement;
     setErrors((prev) => ({ ...prev, [name]: "" }));
 
@@ -355,7 +319,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       setTask((prev) => ({ ...prev, [name]: checked }));
       return;
     }
-setErrors((prev) => ({ ...prev, [name]: "" }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
     if (files && files.length > 0) {
       // User successfully selected one or more files (APPENDING)
       const selectedFiles = Array.from(files);
@@ -364,12 +328,12 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
         [name]: [...(prev[name as keyof Task] as File[] || []), ...selectedFiles],
       }));
     } else {
-      
+
       if (files) {
         return;
       }
 
-      
+
       if (name.endsWith("Url") && value) {
         if (!isValidDocumentUrl(value)) {
           alert(`❌ ${name} must be a valid document link (PDF/DOC/DOCX/XLSX/PPT)`);
@@ -484,17 +448,21 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // --------------------------- FILE DROP COMPONENT -----------------------------
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     if (!validateForm()) return;
+    setLoading(true);
+
     try {
       const formData = new FormData();
 
-      // Convert developer names → IDs before sending
+      // 🔹 Convert developer names → IDs before sending
       const developersForBackend = Object.fromEntries(
-        Object.entries(task.developers).map(([domains, devs]) => [
-          domains,
+        Object.entries(task.developers).map(([domain, devs]) => [
+          domain,
           devs.map((d) => {
             const found = users.find((u) => u.name === d || u._id === d);
             return found ? found._id : d;
@@ -502,46 +470,86 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
         ])
       );
 
+      const fileKeys = ["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"];
       const fieldMap: Record<string, string> = {
-  sowFile: "sowFile",
-  inputFile: "inputFile",
-  outputFiles: "outputFiles", // ✅ singular to match backend
-  clientSampleSchemaFiles: "clientSampleSchemaFile",
-};
-      
+        sowFile: "sowFile",
+        inputFile: "inputFile",
+        outputFiles: "outputFiles",
+        clientSampleSchemaFiles: "clientSampleSchemaFile",
+      };
 
+      // ✅ 1️⃣ Handle kept (existing) file paths ONCE
+      fileKeys.forEach((key) => {
+        const files = task[key as keyof Task];
+        if (Array.isArray(files)) {
+          const keptPaths: string[] = files.filter((f) => typeof f === "string") as string[];
+          formData.append(`${key}Kept`, JSON.stringify(keptPaths));
+        }
+      });
+
+      // ✅ 2️⃣ Handle top-level fields
       Object.entries(task).forEach(([key, value]) => {
         if (value === null || value === undefined || value === "") return;
-        
+
         if (key === "developers") {
           formData.append("developers", JSON.stringify(developersForBackend));
         } else if (key === "domains") {
-          formData.append("domains", JSON.stringify(value));
-        }
-        else if (["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(key)) {
+          // handled later
+          return;
+        } else if (
+          ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrl"].includes(key)
+        ) {
           const arr = Array.isArray(value)
             ? value.filter(Boolean)
             : typeof value === "string" && value
               ? [value]
               : [];
-          formData.append(key, JSON.stringify(arr)); // ✅ send only what’s currently in UI
-        }
-
-
-        // Handle multiple file arrays
-       else if (["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"].includes(key)) {
-  const backendField = fieldMap[key] || key;
-  (value as File[]).forEach((file) => {
-    formData.append(backendField, file);
-  });
-}
-        else {
+          formData.append(key, JSON.stringify(arr));
+        } else if (fileKeys.includes(key)) {
+          // ✅ Only add *new uploads* here
+          (value as File[]).forEach((f) => {
+            if (f instanceof File) formData.append(fieldMap[key], f);
+          });
+        } else {
           formData.append(key, value as any);
         }
-
       });
 
+      // ✅ 3️⃣ Handle per-domain submissions
+      task.domains.forEach((domain) => {
+        formData.append("domainNames", domain.name);
 
+        // new uploaded files
+        if (domain.submission?.outputFiles?.length) {
+          domain.submission.outputFiles.forEach((file) => {
+            if (file instanceof File) {
+              formData.append("outputFiles", file);
+              formData.append("outputFileDomains", domain.name);
+            }
+          });
+        }
+
+        // kept output files
+        const keptFiles = domain.submission?.outputFiles?.filter(
+          (f) => typeof f === "string"
+        );
+        if (keptFiles?.length) {
+          formData.append(
+            "keptOutputFiles",
+            JSON.stringify({ [domain.name]: keptFiles })
+          );
+        }
+
+        // output URLs
+        if (domain.submission?.outputUrls?.length) {
+          formData.append(
+            "outputUrls",
+            JSON.stringify({ [domain.name]: domain.submission.outputUrls })
+          );
+        }
+      });
+
+      // ✅ 4️⃣ Format dates
       if (task.taskAssignedDate)
         formData.set("taskAssignedDate", format(new Date(task.taskAssignedDate), "yyyy-MM-dd"));
       if (task.targetDate)
@@ -549,6 +557,14 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
       if (task.completeDate)
         formData.set("completeDate", format(new Date(task.completeDate), "yyyy-MM-dd"));
 
+      console.log("📦 Final files before submit:", {
+        sowFile: task.sowFile,
+        inputFile: task.inputFile,
+        outputFiles: task.outputFiles,
+        clientSampleSchemaFile: task.clientSampleSchemaFile,
+      });
+
+      // ✅ 5️⃣ Submit to backend
       const res = await fetch(`${apiUrl}/tasks/${id}`, {
         method: "PUT",
         body: formData,
@@ -561,21 +577,196 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
         return;
       }
 
-      console.log("Data", data);
-
-
       toast.success("✅ Task updated successfully!");
       setTimeout(() => navigate("/tasks"), 1500);
-      navigate("/tasks");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error updating task:", err);
       toast.error("❌ Error updating task!");
     } finally {
       setLoading(false);
     }
   };
 
-  // --------------------------- FILE DROP COMPONENT -----------------------------
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!validateForm()) return;
+
+  //   setLoading(true);
+
+  //   try {
+  //     // 🧠 Ensure React state is up-to-date before reading
+  //     await new Promise((r) => setTimeout(r, 50)); // allows last setTask() to settle
+
+  //     console.log("🧠 Task before submit:", JSON.parse(JSON.stringify(task)));
+
+  //     const formData = new FormData();
+
+  //     // 🔹 Convert developer names → IDs before sending
+  //     const developersForBackend = Object.fromEntries(
+  //       Object.entries(task.developers || {}).map(([domain, devs]) => [
+  //         domain,
+  //         devs.map((d) => {
+  //           const found = users.find((u) => u.name === d || u._id === d);
+  //           return found ? found._id : d;
+  //         }),
+  //       ])
+  //     );
+
+  //     // 🔹 File field keys (match backend!)
+  //     const fileKeys = [
+  //       "sowFile",
+  //       "inputFile",
+  //       "outputFiles",
+  //       "clientSampleSchemaFiles",
+  //     ] as const;
+
+  //     const fieldMap: Record<string, string> = {
+  //       sowFile: "sowFile",
+  //       inputFile: "inputFile",
+  //       outputFiles: "outputFiles",
+  //       clientSampleSchemaFiles: "clientSampleSchemaFiles",
+  //     };
+
+  //     // ✅ 1️⃣ Append kept (string) file paths correctly
+  //     fileKeys.forEach((key) => {
+  //       const value = task[key];
+  //       if (Array.isArray(value)) {
+  //         // Filter out strings only → means existing (kept) files
+  //         const keptPaths = value.filter((f) => typeof f === "string");
+  //         formData.append(`${key}Kept`, JSON.stringify(keptPaths));
+  //       }
+  //     });
+
+  //     // ✅ 2️⃣ Append all other top-level fields
+  //     Object.entries(task).forEach(([key, value]) => {
+  //       if (value === null || value === undefined || value === "") return;
+
+  //       if (key === "developers") {
+  //         formData.append("developers", JSON.stringify(developersForBackend));
+  //       } else if (key === "domains") {
+  //         return; // handled separately
+  //       } else if (
+  //         ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(
+  //           key
+  //         )
+  //       ) {
+  //         const arr = Array.isArray(value)
+  //           ? value.filter(Boolean)
+  //           : typeof value === "string" && value
+  //             ? [value]
+  //             : [];
+  //         formData.append(key, JSON.stringify(arr));
+  //       } else if (fileKeys.includes(key as any)) {
+  //         // Append only *new uploads*
+  //         (value as any[]).forEach((f) => {
+  //           if (f instanceof File) formData.append(fieldMap[key], f);
+  //         });
+  //       } else {
+  //         formData.append(key, value as any);
+  //       }
+  //     });
+
+  //     // ✅ 3️⃣ Handle per-domain submissions
+  //     (task.domains || []).forEach((domain) => {
+  //       formData.append("domainNames", domain.name);
+
+  //       const outputFiles = domain.submission?.outputFiles || [];
+
+  //       // Append new uploaded files
+  //       outputFiles.forEach((file) => {
+  //         if (file instanceof File) {
+  //           formData.append("outputFiles", file);
+  //           formData.append("outputFileDomains", domain.name);
+  //         }
+  //       });
+
+  //       // Append kept (existing) files
+  //       const kept = outputFiles.filter((f) => typeof f === "string");
+  //       if (kept.length) {
+  //         formData.append(
+  //           "keptOutputFiles",
+  //           JSON.stringify({ [domain.name]: kept })
+  //         );
+  //       }
+
+  //       // Append output URLs
+  //       if (domain.submission?.outputUrls?.length) {
+  //         formData.append(
+  //           "outputUrls",
+  //           JSON.stringify({ [domain.name]: domain.submission.outputUrls })
+  //         );
+  //       }
+  //     });
+
+  //     // ✅ 4️⃣ Format dates properly
+  //     const fmt = (d: any) => format(new Date(d), "yyyy-MM-dd");
+  //     if (task.taskAssignedDate) formData.set("taskAssignedDate", fmt(task.taskAssignedDate));
+  //     if (task.targetDate) formData.set("targetDate", fmt(task.targetDate));
+  //     if (task.completeDate) formData.set("completeDate", fmt(task.completeDate));
+
+  //     // console.log("📦 Final FormData content:", {
+  //     //   sowFile: task.sowFile,
+  //     //   inputFile: task.inputFile,
+  //     //   outputFiles: task.outputFiles,
+  //     //   clientSampleSchemaFiles: task.clientSampleSchemaFiles,
+  //     // });
+
+  //     // ✅ 5️⃣ Submit
+  //     const res = await fetch(`${apiUrl}/tasks/${id}`, {
+  //       method: "PUT",
+  //       body: formData,
+  //       credentials: "include",
+  //     });
+
+  //     const data = await res.json();
+  //     if (!res.ok) {
+  //       toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
+  //       return;
+  //     }
+
+  //     toast.success("✅ Task updated successfully!");
+  //     setTimeout(() => navigate("/tasks"), 1500);
+  //   } catch (err) {
+  //     console.error("❌ Error updating task:", err);
+  //     toast.error("❌ Error updating task!");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+  const handleFileRemove = (name: keyof Task, index: number) => {
+    setTask((prev) => {
+      const updatedFiles = Array.isArray(prev[name])
+        ? [...(prev[name] as (File | string)[])]
+        : [];
+
+      // Revoke old object URL if File
+      const removedFile = updatedFiles[index];
+      if (removedFile instanceof File) {
+        URL.revokeObjectURL(removedFile as unknown as string);
+      }
+
+      updatedFiles.splice(index, 1);
+      return { ...prev, [name]: updatedFiles };
+    });
+
+    // Clear actual <input type="file"> element value
+    if (fileInputRefs.current[name]) {
+      fileInputRefs.current[name]!.value = "";
+    }
+  };
+
+
+  console.log("📦 Final files before update:", {
+    sowFile: task.sowFile,
+    inputFile: task.inputFile,
+    outputFiles: task.outputFiles,
+    clientSampleSchemaFile: task.clientSampleSchemaFile,
+  });
+
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
 
   const renderFileDropArea = (
     files: File[] | string[] | null,
@@ -586,6 +777,7 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
 
     return (
       <div className="mb-4">
+
         {/* 🔹 Drop area */}
         <div
           onDrop={(e) => handleDrop(e, name)}
@@ -600,6 +792,7 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
             type="file"
             name={name}
             multiple
+            ref={(el) => (fileInputRefs.current[name] = el)}
             onChange={handleChange}
             className="absolute w-full h-full opacity-0 cursor-pointer"
           />
@@ -631,11 +824,9 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setTask((prev) => ({
-                        ...prev,
-                        [name]: (prev[name] as any[]).filter((_, idx) => idx !== i),
-                      }));
+                      handleFileRemove(name, i);
                     }}
+
                     className="text-red-500 hover:text-red-700 font-bold"
                     title="Remove file"
                   >
@@ -650,7 +841,10 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
     );
   };
 
-  
+
+
+
+
   const renderUrlInputArea = (
     name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
     label: string
@@ -740,7 +934,68 @@ setErrors((prev) => ({ ...prev, [name]: "" }));
     );
   };
 
-const showOutputSection = task.domains.some(domain => domain.status === 'submitted');
+  const handleDomainOutputFileChange = (domainIndex: number, files: FileList | null) => {
+    if (!files) return;
+    const selectedFiles = Array.from(files);
+
+    setTask((prev) => {
+      const updatedDomains = [...prev.domains];
+      const domainCopy = { ...updatedDomains[domainIndex] };
+
+      domainCopy.submission = {
+        ...domainCopy.submission,
+        outputFiles: [
+          ...(domainCopy.submission?.outputFiles || []),
+          ...selectedFiles,
+        ],
+      };
+
+      updatedDomains[domainIndex] = domainCopy;
+      return { ...prev, domains: updatedDomains };
+    });
+  };
+
+  const handleDomainOutputUrlAdd = (domainIndex: number, url: string) => {
+    if (!url.trim()) return;
+
+    if (!/^https?:\/\//i.test(url.trim())) {
+      toast.error("Invalid URL — must start with http:// or https://");
+      return;
+    }
+
+    setTask((prev) => {
+      const updatedDomains = [...prev.domains];
+      const domainCopy = { ...updatedDomains[domainIndex] };
+
+      domainCopy.submission = {
+        ...domainCopy.submission,
+        outputUrls: [
+          ...(domainCopy.submission?.outputUrls || []),
+          url.trim(),
+        ],
+      };
+
+      updatedDomains[domainIndex] = domainCopy;
+      return { ...prev, domains: updatedDomains };
+    });
+  };
+
+  const handleDomainOutputUrlRemove = (domainIndex: number, index: number) => {
+    setTask((prev) => {
+      const updatedDomains = [...prev.domains];
+      const domainCopy = { ...updatedDomains[domainIndex] };
+      domainCopy.submission = {
+        ...domainCopy.submission,
+        outputUrls: domainCopy.submission?.outputUrls?.filter((_, i) => i !== index) || [],
+      };
+      updatedDomains[domainIndex] = domainCopy;
+      return { ...prev, domains: updatedDomains };
+    });
+  };
+
+
+
+  const showOutputSection = task.domains.some(domain => domain.status === 'submitted');
   // --------------------------- RENDER -----------------------------
   return (
     <>
@@ -875,7 +1130,7 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
                 </div>
               ))}
               <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-               Add New Platform 
+                Add New Platform
               </label>
               <div className="flex gap-3 mb-4 flex-wrap">
 
@@ -934,7 +1189,7 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
               <div className="flex-1">
                 <label className=" text-gray-700 font-medium mb-2 ">Required volume of sample file <span className="text-red-500">*</span></label>
                 <select
-                  name=" requiredValumeOfSampleFile"
+                  name="requiredValumeOfSampleFile"
                   value={task.requiredValumeOfSampleFile}
                   onChange={handleChange}
                   className="w-full p-3 rounded-md bg-gray-100 border border-gray-300 text-gray-900"
@@ -989,10 +1244,7 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
               </div>
             </div>
 
-            {/* File Uploads */}
-            {/* {renderFileDropWithURL("SOW", "sowFile", "sowUrl")}
-            {renderFileDropWithURL("Input", "inputFile", "inputUrl")}
-            {renderFileDropWithURL("Output", "outputFile", "outputUrl")} */}
+            
 
             {/* SOW File / URL */}
             <div className="flex flex-col md:flex-row gap-4 w-full ">
@@ -1002,15 +1254,7 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
                 {errors.sowFile && <p className="text-red-500 text-sm mt-1">{errors.sowFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              {/* <div className="flex-1 h-18">
-                <label className="block  font-medium mb-2">SOW Document URL</label>
-                <input type="text" name="sowUrls" // 🔥 Changed to plural
-                  value={task.sowUrls?.[0] || ""}
-                  onChange={(e) => setTask({ ...task, sowUrls: [e.target.value] })}
-                  placeholder="Enter SOW Document URL"
-                  className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                {errors.sowUrls && <p className="text-red-500 text-sm mt-1">{errors.sowUrls}</p>}
-              </div> */}
+              
               {renderUrlInputArea("sowUrls", "SOW Document URL(s)")}
             </div>
 
@@ -1022,13 +1266,7 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
                 {errors.inputFile && <p className="text-red-500 text-sm mt-1">{errors.inputFile}</p>}
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              {/* <div className="flex-1 h-18">
-                <label className="block  font-medium mb-2">Input Document URL</label>
-                <input type="text" name="inputUrls"
-                  value={task.inputUrls?.[0] || ""}
-                  onChange={(e) => setTask({ ...task, inputUrls: [e.target.value] })} placeholder="Enter Input Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                {errors.inputUrl && <p className="text-red-500 text-sm mt-1">{errors.inputUrl}</p>}
-              </div> */}
+             
               {renderUrlInputArea("inputUrls", "Input Document URL(s)")}
             </div>
 
@@ -1039,86 +1277,206 @@ const showOutputSection = task.domains.some(domain => domain.status === 'submitt
 
               </div>
               <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-              {/* <div className="flex-1 h-18">
-                <label className="block  font-medium mb-2">Client Sample Schema Document URL</label>
-                <input type="text" name="clientSampleSchemaUrls"
-                  value={task.clientSampleSchemaUrls?.[0] || ""}
-                  onChange={(e) => setTask({ ...task, clientSampleSchemaUrls: [e.target.value] })} placeholder="Enter Client Sample Schema Document URL" className="w-full p-3 h-18 rounded-md  border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                
-              </div> */}
+              
               {renderUrlInputArea("clientSampleSchemaUrls", "Client Sample Schema URL(s)")}
             </div>
 
 
-            {/* Output File / URL */}
-            {/* <div className="flex flex-col md:flex-row gap-4 w-full">
-             
-              <div className="flex-1">
-                <label className="block  font-medium mb-2">
-                  Output Document File
-                </label>
+
+            
+
+            {task?.domains && task.domains.length > 0 ? (
+              <div className="space-y-6">
+                {task.domains.map((domain, domainIndex) => {
+                  const submission = domain.submission;
+
+                  // Only show the domain if it has files/urls submitted
+                  const hasSubmissionData = (submission?.outputFiles && submission.outputFiles.length > 0) || (submission?.outputUrls && submission.outputUrls.length > 0);
+
+                  if (hasSubmissionData) {
+                    return (
+                      <div
+                        key={domainIndex}
+                        className="p-4 border border-gray-200 rounded-lg bg-gray-50 shadow-sm"
+                      >
+                        <h4 className="text-lg font-semibold text-indigo-700 mb-2 flex items-center justify-between">
+                          <span>Domain: {domain.name}</span>
+                          
+
+                        </h4>
+
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                         
+                          {/* ✅ Output Document File Upload per Domain */}
+                          <div className="flex-1">
+                            <label className="block font-medium mb-2">
+                              Output Document File
+                            </label>
+
+                            {/* Drop area & file input */}
+                            <div
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                handleDomainOutputFileChange(domainIndex, e.dataTransfer.files);
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-500 rounded-md p-6 cursor-pointer hover:border-blue-500 transition text-gray-700"
+                            >
+                              <span className="text-gray-700">
+                                Drag & Drop Submitted Output Files here or click to upload
+                              </span>
+
+                              <input
+                                type="file"
+                                multiple
+                                onChange={(e) => handleDomainOutputFileChange(domainIndex, e.target.files)}
+                                className="absolute w-full h-full opacity-0 cursor-pointer"
+                              />
+                            </div>
+
+                            {/* Show uploaded file list */}
+                            {domain.submission?.outputFiles?.length > 0 && (
+                              <div className="mt-3 flex flex-col gap-2">
+                                {domain.submission.outputFiles.map((file, i) => {
+                                  const fileName =
+                                    file instanceof File ? file.name : file.split("/").pop();
+                                  const fileUrl =
+                                    file instanceof File ? URL.createObjectURL(file) : file;
+
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="flex items-center justify-between bg-gray-100 p-2 rounded"
+                                    >
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-blue-600 underline truncate max-w-[80%]"
+                                      >
+                                        📄 {fileName}
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setTask((prev) => {
+                                            const updatedDomains = [...prev.domains];
+                                            const domainCopy = { ...updatedDomains[domainIndex] };
+                                            domainCopy.submission = {
+                                              ...domainCopy.submission,
+                                              outputFiles: domainCopy.submission?.outputFiles?.filter(
+                                                (_, idx) => idx !== i
+                                              ),
+                                            };
+                                            updatedDomains[domainIndex] = domainCopy;
+                                            return { ...prev, domains: updatedDomains };
+                                          });
+                                        }}
+                                        className="text-red-500 hover:text-red-700 font-bold"
+                                        title="Remove file"
+                                      >
+                                        ❌
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
 
 
-                {renderFileDropArea(task.outputFiles, "outputFiles", "Output File")}
-                {errors.outputFile && <p className="text-red-500 text-sm mt-1">{errors.outputFile}</p>}
+
+
+                          {/* Display Output URLs */}
+                        
+                          {/* ✅ Per-domain Output URL Input */}
+                          <div className="flex-1 ">
+                            <label className="block font-medium mb-2">
+                              Output Document URL(s)
+                            </label>
+
+                            {/* Input + Add button */}
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={domain.submission?.tempUrl || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setTask((prev) => {
+                                    const updatedDomains = [...prev.domains];
+                                    const domainCopy = { ...updatedDomains[domainIndex] };
+                                    domainCopy.submission = {
+                                      ...domainCopy.submission,
+                                      tempUrl: value, // temporary local field (not saved to backend)
+                                    };
+                                    updatedDomains[domainIndex] = domainCopy;
+                                    return { ...prev, domains: updatedDomains };
+                                  });
+                                }}
+                                placeholder="Enter output document URL"
+                                className="flex-1 p-3 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleDomainOutputUrlAdd(domainIndex, domain.submission?.tempUrl || "");
+                                  // clear tempUrl after add
+                                  setTask((prev) => {
+                                    const updatedDomains = [...prev.domains];
+                                    const domainCopy = { ...updatedDomains[domainIndex] };
+                                    domainCopy.submission = {
+                                      ...domainCopy.submission,
+                                      tempUrl: "",
+                                    };
+                                    updatedDomains[domainIndex] = domainCopy;
+                                    return { ...prev, domains: updatedDomains };
+                                  });
+                                }}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                              >
+                                Add
+                              </button>
+                            </div>
+
+                            {/* Show existing URLs */}
+                            {domain.submission?.outputUrls?.length > 0 && (
+                              <div className="mt-3 flex flex-col gap-2">
+                                {domain.submission.outputUrls.map((url, i) => (
+                                  <div
+                                    key={i}
+                                    className="flex items-center justify-between bg-gray-100 p-2 rounded"
+                                  >
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-blue-600 underline truncate max-w-[80%]"
+                                    >
+                                      🔗 {url.length > 60 ? url.slice(0, 57) + "..." : url}
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDomainOutputUrlRemove(domainIndex, i)}
+                                      className="text-red-500 hover:text-red-700 font-bold"
+                                    >
+                                      ❌
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null; // Don't render domains without submission data
+                })}
               </div>
-
-              
-              <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-
-              
-              <div className="flex-1">
-                <label className="block  font-medium mb-2">
-                  Output Document URL
-                </label>
-
-                
-
-
-                <input
-                  type="text"
-                  name="outputUrls" 
-                  value={task.outputUrls} 
-                  onChange={(e) => setTask({ ...task, outputUrls: [e.target.value] })}
-                  placeholder="Enter Output Document URL"
-                  className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
-                />
-                {errors.outputUrl && <p className="text-red-500 text-sm mt-1">{errors.outputUrl}</p>}
-              </div>
-            </div> */}
-            {showOutputSection && (
-              <div className="flex flex-col md:flex-row gap-4 w-full">
-                {/* File Section */}
-                <div className="flex-1">
-                  <label className="block  font-medium mb-2">
-                    Output Document File
-                  </label>
-
-
-                  {renderFileDropArea(task.outputFiles, "outputFiles", "Output File")}
-                  {errors.outputFile && <p className="text-red-500 text-sm mt-1">{errors.outputFile}</p>}
-                </div>
-
-                {/* OR Divider */}
-                <div className="flex items-center font-bold text-gray-400 px-2">OR</div>
-
-                {/* URL Section */}
-                <div className="flex-1">
-                  <label className="block  font-medium mb-2">
-                    Output Document URL
-                  </label>
-
-                  <input
-                    type="text"
-                    name="outputUrls" 
-                    value={task.outputUrls?.[0] || ""} 
-                    onChange={(e) => setTask({ ...task, outputUrls: [e.target.value] })}
-                    placeholder="Enter Output Document URL"
-                    className="w-full p-3 rounded-md text-gray-700 border border-gray-600  focus:outline-none focus:ring-2 focus:ring-blue-500 h-18"
-                  />
-                  {errors.outputUrl && <p className="text-red-500 text-sm mt-1">{errors.outputUrl}</p>}
-                </div>
-              </div>
+            ) : (
+              <p className="text-gray-500">No domains or output submissions found for this task.</p>
             )}
 
             {/* Submit */}

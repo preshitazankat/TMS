@@ -43,9 +43,9 @@ const storage = multer.diskStorage({
     let fileType = "file";
 
     if (file.fieldname === "inputFile") fileType = "inputfile";
-    else if (file.fieldname === "outputFile") fileType = "outputfile";
+    else if (file.fieldname === "outputFiles") fileType = "outputfile";
     else if (file.fieldname === "sowFile") fileType = "sowfile";
-    else if (file.fieldname === "clientSampleSchemaFiles") fileType = "clientSampleSchema";
+    else if (file.fieldname === "clientSampleSchemaFile") fileType = "clientSampleSchema";
 
     const newFileName = `${projectName}_${fileType}_${dateSuffix}${ext}`;
     cb(null, newFileName);
@@ -57,7 +57,7 @@ const upload = multer({ storage });
 router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
   { name: "sowFile", maxCount: 10 },
   { name: "inputFile", maxCount: 10 },
-  { name: "clientSampleSchemaFile", maxCount: 20 },
+  { name: "clientSampleSchemaFiles", maxCount: 20 },
 ]), createTask);
 
 router.put(
@@ -66,18 +66,22 @@ router.put(
   upload.single('file'), 
   updateTaskDomainStatus
 );
-router.put("/tasks/:id", authorize(['Admin','Sales','TL','Manager']), upload.fields([
-  { name: "sowFile", maxCount: 10 },
-  { name: "inputFile", maxCount: 10 },
-  { name: "clientSampleSchemaFiles", maxCount: 20 },
-  { name: "outputFiles", maxCount: 10 },
-]), updateTask);
+router.put(
+  "/tasks/:id",
+  authorize(['Admin','Sales','TL','Manager']),
+  upload.fields([
+    { name: "sowFile", maxCount: 10 },
+    { name: "inputFile", maxCount: 10 },
+    { name: "clientSampleSchemaFile", maxCount: 20 },
+    { name: "outputFiles", maxCount: 20 },
+  ]),
+  updateTask
+);
+
 
 
 router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer','Manager']), upload.fields([
-  { name: "sowFile", maxCount: 10},
-  { name: "inputFile", maxCount: 10 },
-  { name: "clientSampleSchemaFiles", maxCount: 20 },
+  
   { name: "outputFiles", maxCount: 20 },
 ]), submitTask);
 router.get("/tasks/developers", authorize(['Manager','Admin']), getDevelopersDomainStatus);

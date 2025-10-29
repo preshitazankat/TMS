@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import mongoose from "mongoose";
 import { jwtDecode } from "jwt-decode";
 import fs from "fs";
+import path from "path";
 
 /* ------------------ Helpers ------------------ */
 
@@ -234,169 +235,14 @@ export const createTask = async (req, res) => {
 };
 
 // UPDATE TASK
-// export const updateTask = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const body = cleanBody(req.body);
-
-//     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
-
-//     // Apply safeParseArray to convert the JSON string arrays (from FormData) 
-//     // back into JavaScript arrays in the body object.
-//     urlFields.forEach(field => {
-//       if (body[field] !== undefined) {
-//         body[field] = safeParseArray(body[field]);
-//       }
-//     });
-
-//     const task = await Task.findById(id);
-//     if (!task) return res.status(404).json({ error: "Task not found" });
-
-//     // ---------- 1️⃣ Update basic fields ----------
-//     const fields = [
-//       "title",
-//       "assignedBy",
-//       "assignedTo",
-//       "description",
-//       "taskAssignedDate",
-//       "targetDate",
-//       "completeDate",
-//       "complexity",
-//       "status",
-//       "typeOfDelivery",
-//       "typeOfPlatform",
-//       "sowUrls",
-//       "inputUrls",
-//       "outputUrls",
-//       "clientSampleSchemaUrls",
-//     ];
-
-//     const urlFieldsToMark = new Set([
-//       "sowUrls",
-//       "inputUrls",
-//       "outputUrls",
-//       "clientSampleSchemaUrls",
-//     ]);
-
-//     fields.forEach((f) => {
-//       if (body[f] !== undefined) {
-//         if (urlFieldsToMark.has(f)) {
-//           const existing = Array.isArray(task[f]) ? task[f] : [];
-//           const incoming = Array.isArray(body[f]) ? body[f] : [];
-//           task[f] = Array.from(new Set([...existing, ...incoming].filter(Boolean)));
-//           task.markModified(f);
-//         } else {
-//           task[f] = body[f];
-//         }
-//       }
-//     });
-
-
-
-//     // Normalize delivery/platform to lowercase
-//     if (body.typeOfDelivery) task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
-//     if (body.typeOfPlatform) task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
-
-//     // ---------- 2️⃣ Merge domains ----------
-//     let incomingDomains = [];
-//     if (body.domains) {
-//       incomingDomains =
-//         typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
-//     }
-
-//     const existingDomainNames = task.domains.map((d) => d.name);
-//     incomingDomains.forEach((d) => {
-//       if (!existingDomainNames.includes(d.name)) {
-//         task.domains.push({
-//           name: d.name,
-//           status: "pending",
-//           developers: [],
-//           submission: { files: [], outputUrl: "" },
-//         });
-//       }
-//     });
-
-//     // ---------- 3️⃣ Assign developers ----------
-//     if (body.developers) {
-//       const devObj =
-//         typeof body.developers === "string" ? JSON.parse(body.developers) : body.developers;
-
-//       const assignedDevelopers = new Set();
-
-//       task.domains = task.domains.map((domain) => {
-//         const devsForDomain = devObj[domain.name] || [];
-//         const uniqueDevs = [];
-
-//         for (const dev of devsForDomain) {
-//           const devId = typeof dev === "object" ? dev._id : dev;
-//           if (mongoose.Types.ObjectId.isValid(devId) && !assignedDevelopers.has(String(devId))) {
-//             uniqueDevs.push(devId);
-//             assignedDevelopers.add(String(devId));
-//           }
-//         }
-
-//         return {
-//           ...domain.toObject(),
-//           developers: uniqueDevs,
-//           status:
-//             domain.status === "submitted" // if already submitted, keep it
-//               ? "submitted"
-//               : uniqueDevs.length > 0
-//                 ? "in-progress"
-//                 : "pending",
-//         };
-//       });
-
-//       // Update task status if any developer is assigned
-//       const hasAnyDev = Object.values(devObj).some(
-//         (arr) => Array.isArray(arr) && arr.length > 0
-//       );
-//       if (hasAnyDev) task.status = "in-progress";
-//     }
-
-//     // ---------- 4️⃣ Handle file uploads ----------
-//     ["sowFile", "inputFile", "outputFile", "clientSampleSchemaFiles"].forEach((key) => {
-//       if (req.files?.[key]?.length) {
-//         const fieldName =
-//           key === "sowFile"
-//             ? "sowFiles"
-//             : key === "inputFile"
-//               ? "inputFiles"
-//               : key === "outputFile"
-//                 ? "outputFiles"
-//                 : "clientSampleSchemaFiles"; // 👈 new field added
-
-//         console.log("Files received:", req.files);
-
-//         // taskController.js (Original/Current logic for files)
-
-//         // ...
-//         const filePaths = req.files[key].map((f) => `uploads/${f.filename}`);
-//         // Append new uploads to existing array
-//         task[fieldName] = [...(task[fieldName] || []), ...filePaths]; // THIS IS THE PROBLEM
-//         // ...
-//       }
-//     });
-
-
-//     // ---------- 5️⃣ Save task ----------
-//     await task.save();
-
-//     const taskObj = task.toObject();
-//     taskObj.submissions = decodeSubmissions(taskObj.submissions || {});
-
-//     res.json(taskObj);
-//   } catch (err) {
-//     console.error("UpdateTask Error:", err);
-//     res.status(500).json({ error: err.message || "Server error while updating task" });
-//   }
-// };
-
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = cleanBody(req.body);
-    console.log("🧩 Multer received files:", Object.keys(req.files || {}));
+    //console.log("Files:-",req.files);
+    
+
+    console.log("req.body", req.body);
 
 
     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
@@ -420,58 +266,216 @@ export const updateTask = async (req, res) => {
       }
     }
 
+
+
+
     // ---------- Handle File Uploads ----------
-    for (const key of ["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"]) {
-      if (req.files?.[key]?.length) {
-        console.log("📂 Files received in updateTask:", Object.keys(req.files));
-        const fieldName =
-          key === "sowFile"
-            ? "sowFiles"
-            : key === "inputFile"
-              ? "inputFiles"
-              : key === "outputFiles"
-                ? "outputFiles"
-                : "clientSampleSchemaFiles";
+    const allFileKeys = ["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFile"];
 
-                if (req.files?.outputFiles?.length) {
-  const uploadedPaths = req.files.outputFiles.map((f) => `uploads/${f.filename}`);
+for (const key of allFileKeys) {
+  if (req.files?.[key]?.length) {
+    const fieldName =
+      key === "sowFile"
+        ? "sowFiles"
+        : key === "inputFile"
+        ? "inputFiles"
+        : key === "outputFiles"
+        ? "outputFiles"
+        : "clientSampleSchemaFiles";
 
-  if (task.domains && Array.isArray(task.domains)) {
-    task.domains.forEach((domain) => {
-      if (!domain.submission) domain.submission = {};
-      if (!Array.isArray(domain.submission.outputFiles)) domain.submission.outputFiles = [];
-      domain.submission.outputFiles.push(...uploadedPaths);
-    });
+    const uploadedPaths = req.files[key].map((f) => `uploads/${f.filename}`);
+    task[fieldName] = [...(task[fieldName] || []), ...uploadedPaths];
+    task.markModified(fieldName);
   }
 }
 
-        const uploadedPaths = req.files[key].map((f) => `uploads/${f.filename}`);
+    
 
-        // Merge with existing files
-        task[fieldName] = [...(task[fieldName] || []), ...uploadedPaths];
-      }
+
+// ---------- ✅ Domain-wise Output File Handling ----------
+if (req.files?.outputFiles?.length) {
+  const uploadedPaths = req.files.outputFiles.map((f) => `uploads/${f.filename}`);
+  console.log("upload", uploadedPaths);
+
+  let domainsForEachFile = req.body.outputFileDomains;
+  if (!Array.isArray(domainsForEachFile)) domainsForEachFile = [domainsForEachFile];
+
+  uploadedPaths.forEach((path, i) => {
+    const domainName = domainsForEachFile[i];
+    const domainIndex = task.domains.findIndex((d) => d.name === domainName);
+    if (domainIndex === -1) {
+      console.warn(`⚠️ No domain found for output file: ${path}`);
+      return;
     }
+
+    const domain = task.domains[domainIndex];
+    const oldSubmission = domain.submission || {};
+    const oldFiles = oldSubmission.outputFiles || [];
+
+    // ✅ Build new submission object (ensures a new reference)
+    const newSubmission = {
+      ...oldSubmission,
+      outputFiles: [...oldFiles, path],
+    };
+
+    // ✅ Replace the entire domain object inside the array
+    task.domains[domainIndex] = {
+      ...(domain.toObject?.() || domain),
+      name: domain.name,
+      submission: newSubmission,
+    };
+
+    console.log(`✅ Added output file "${path}" to domain "${domainName}"`);
+  });
+
+  task.markModified("domains");
+}
+
+
+
+   // ---------- ✅ Handle Output URLs (Safe + Flexible) ----------
+if (req.body.outputUrls) {
+  let outputUrlsData = req.body.outputUrls;
+
+  // 🧠 Case 1: If it's already an array (like ['[]','{"domain":["url"]}'])
+  if (Array.isArray(outputUrlsData)) {
+    try {
+      // Merge all JSON fragments into one object
+      const merged = {};
+      outputUrlsData.forEach((item) => {
+        if (typeof item === "string" && item.trim() !== "" && item !== "[]") {
+          const parsed = JSON.parse(item);
+          Object.assign(merged, parsed);
+        }
+      });
+      outputUrlsData = merged;
+    } catch (err) {
+      console.error("❌ Error parsing outputUrls array:", err);
+      outputUrlsData = {};
+    }
+  } 
+  // 🧠 Case 2: If it's a stringified JSON
+  else if (typeof outputUrlsData === "string") {
+    try {
+      outputUrlsData = JSON.parse(outputUrlsData);
+    } catch (err) {
+      console.warn("⚠️ Could not parse outputUrls JSON, using raw value:", outputUrlsData);
+      outputUrlsData = {};
+    }
+  }
+
+  // 🧠 Case 3: If it's already an object
+  if (typeof outputUrlsData === "object" && outputUrlsData !== null) {
+    Object.entries(outputUrlsData).forEach(([domainName, urls]) => {
+      const domain = task.domains.find((d) => d.name === domainName);
+      if (!domain) return;
+
+      if (!domain.submission) domain.submission = {};
+
+      // ✅ Always store as array
+      domain.submission.outputUrls = Array.isArray(urls) ? urls : [urls];
+    });
+
+    
+  }
+}
+
+task.markModified("domains");
+
+// ✅ Domain submission output file cleanup
+if (body.keptOutputFiles) {
+  try {
+    const keptOutputFiles = JSON.parse(body.keptOutputFiles);
+    Object.entries(keptOutputFiles).forEach(([domainName, keptFiles]) => {
+      const domain = task.domains.find((d) => d.name === domainName);
+      if (!domain || !domain.submission) return;
+
+      const currentFiles = domain.submission.outputFiles || [];
+      const removed = currentFiles.filter(f => !keptFiles.includes(f));
+
+      // 🗑️ Remove from DB + disk
+      removed.forEach(f => {
+        try {
+          fs.unlinkSync(f);
+          console.log("🗑️ Deleted output file:", f);
+        } catch (err) {
+          console.warn("⚠️ Failed to delete output file:", f, err.message);
+        }
+      });
+
+      // ✅ Keep only remaining files
+      domain.submission.outputFiles = keptFiles;
+    });
+    task.markModified("domains");
+  } catch (err) {
+    console.error("❌ Error parsing keptOutputFiles:", err);
+  }
+}
+
 
     // ---------- Handle File Deletions ----------
-    for (const field of fileFields) {
-      if (body[field] !== undefined && Array.isArray(body[field])) {
-        // Only keep what the frontend sent
-        const keptFiles = new Set(body[field]);
-        const removedFiles = (task[field] || []).filter((f) => !keptFiles.has(f));
 
-        // Delete removed files from disk
-        for (const f of removedFiles) {
-          try {
-            fs.unlinkSync(f);
-          } catch (err) {
-            console.warn("⚠️ Failed to delete file:", f, err.message);
-          }
-        }
 
-        // Update DB field
-        task[field] = Array.from(keptFiles);
+    // for (const field of fileFields) {
+    //   const keptField = field + "Kept";
+    //   if (body[keptField] !== undefined) {
+    //     const keptFilesArr = safeParseArray(body[keptField]);
+    //     const keptFiles = new Set(keptFilesArr);
+
+    //     const removedFiles = (task[field] || []).filter((f) => !keptFiles.has(f));
+
+    //     for (const f of removedFiles) {
+    //       try {
+    //         fs.unlinkSync(f);
+    //         console.log("🗑️ Deleted:", f);
+    //       } catch (err) {
+    //         console.warn("⚠️ Failed to delete:", f, err.message);
+    //       }
+    //     }
+
+    //     task[field] = keptFilesArr;
+    //   }
+    // }
+
+   for (const field of ["sowFiles", "inputFiles", "outputFiles", "clientSampleSchemaFiles"]) {
+  const possibleKeys = [
+    field + "Kept",
+    field.replace("Files", "File") + "Kept",
+  ];
+
+  const keptKey = possibleKeys.find((k) => body[k] !== undefined);
+  const keptFilesArr = keptKey ? safeParseArray(body[keptKey]) : [];
+  const keptFiles = new Set(keptFilesArr);
+
+  // 🔹 Delete removed files
+  const removedFiles = (task[field] || []).filter((f) => !keptFiles.has(f));
+  for (const f of removedFiles) {
+    try {
+      const abs = path.resolve(f);
+      if (fs.existsSync(abs)) {
+        fs.unlinkSync(abs);
+        console.log("🗑️ Deleted file:", abs);
       }
+    } catch (err) {
+      console.warn("⚠️ Failed to delete:", f, err.message);
     }
+  }
+
+  // 🔹 Handle new uploads correctly
+  const uploadKey =
+    field === "clientSampleSchemaFiles"
+      ? "clientSampleSchemaFile"
+      : field.replace("Files", "File");
+
+  const newUploads = req.files?.[uploadKey]?.map((f) => `uploads/${f.filename}`) || [];
+
+  // 🔹 Merge kept + new
+  const merged = Array.from(new Set([...keptFilesArr, ...newUploads]));
+  task[field] = merged;
+  task.markModified(field);
+}
+
+
 
     // ---------- Update Other Fields ----------
     const fieldsToUpdate = [
@@ -483,12 +487,12 @@ export const updateTask = async (req, res) => {
       "requiredValumeOfSampleFile",
       //"taskAssignedDate",
       // "targetDate",
-       //"completeDate",
-       "sowFiles",
-      "inputFiles",
-      "outputFiles",
+      //"completeDate",
+      //"sowFiles",
+      //"inputFiles",
+      //"outputFiles",
       "outputUrls",
-      "clientSampleSchemaFiles",
+      //"clientSampleSchemaFiles",
       "complexity",
       "status",
       "typeOfDelivery",
@@ -496,7 +500,20 @@ export const updateTask = async (req, res) => {
     ];
 
     fieldsToUpdate.forEach((f) => {
-      if (body[f] !== undefined) task[f] = body[f];
+      if (body[f] !== undefined) {
+        // --- START FIX ---
+        if (f === "sampleFileRequired") {
+          // Explicitly cast the incoming string "true" or "false" to a boolean
+          task[f] = body[f] === "true";
+        } else if (f === "requiredValumeOfSampleFile") {
+          // Explicitly cast the incoming string to a number
+          task[f] = Number(body[f]);
+        } else {
+          // Use the original value for all other fields
+          task[f] = body[f];
+        }
+        // --- END FIX ---
+      }
     });
 
     // Normalize Delivery/Platform
@@ -561,14 +578,19 @@ export const updateTask = async (req, res) => {
       );
       if (hasAnyDev) task.status = "in-progress";
     }
+//console.log("🔎 Final domains:", JSON.stringify(task.domains, null, 2));
 
-    await task.save();
+  await task.save();
+const check = await Task.findById(id);
+console.log("✅ DB Saved Output Files:", check.domains[0].submission.outputFiles);
+
     res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {
     console.error("UpdateTask Error:", err);
     res.status(500).json({ error: err.message || "Server error while updating task" });
   }
 };
+
 
 
 // SUBMIT TASK
@@ -579,6 +601,8 @@ export const submitTask = async (req, res) => {
     const body = cleanBody(req.body);
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: "Task not found" });
+
+
 
     // Safely parse domains from body, ensuring it's an array
     let domains = [];
@@ -596,7 +620,7 @@ export const submitTask = async (req, res) => {
     if (!Array.isArray(domains)) domains = [domains];
 
     //const outputFiles = req.files?.outputFiles?.map(f => `uploads/${f.filename}`) || [];
-    const newOutputFiles = req.files?.outputFile?.map(f => `uploads/${f.filename}`) || [];
+    const newOutputFiles = req.files?.outputFiles?.map(f => `uploads/${f.filename}`) || [];
 
     // 🔥 FIX: 2. Store the new file paths into the main task document
     if (newOutputFiles.length > 0) {
@@ -614,45 +638,45 @@ export const submitTask = async (req, res) => {
 
     const getScalar = (v) => (Array.isArray(v) ? v[0] : v);
     const getArray = (v) => {
-  if (v === undefined || v === null) return [];
-  
-  // 1. If it's already an array, flatten it and process elements
-  if (Array.isArray(v)) {
-    let result = [];
-    v.forEach(item => {
-      // Recursively process array items to handle nested arrays/strings
-      result = result.concat(getArray(item));
-    });
-    // Remove duplicates
-    return [...new Set(result.filter(Boolean))];
-  }
+      if (v === undefined || v === null) return [];
 
-  // 2. If it's a string, first attempt JSON parsing (for array strings from FormData)
-  if (typeof v === 'string') {
-    try {
-      const parsed = JSON.parse(v);
-      // If parsing yields an array, recursively process it
-      if (Array.isArray(parsed)) {
-          return getArray(parsed);
+      // 1. If it's already an array, flatten it and process elements
+      if (Array.isArray(v)) {
+        let result = [];
+        v.forEach(item => {
+          // Recursively process array items to handle nested arrays/strings
+          result = result.concat(getArray(item));
+        });
+        // Remove duplicates
+        return [...new Set(result.filter(Boolean))];
       }
-    } catch (e) {
-      // JSON parsing failed, assume it's a simple string.
-    }
 
-    // 3. Check for comma-separated values (the root cause of "Afghanistan,Anguilla")
-    // This splits the string only if it contains a comma.
-    if (v.includes(',')) {
-      // Split by comma, trim whitespace from each part, and filter out empty strings
-      return v.split(',').map(s => s.trim()).filter(s => s.length > 0);
-    }
+      // 2. If it's a string, first attempt JSON parsing (for array strings from FormData)
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          // If parsing yields an array, recursively process it
+          if (Array.isArray(parsed)) {
+            return getArray(parsed);
+          }
+        } catch (e) {
+          // JSON parsing failed, assume it's a simple string.
+        }
 
-    // 4. Otherwise, return the single string value wrapped in an array
-    return [v];
-  }
-  
-  // 5. Default: return single non-array, non-string value in an array
-  return [v];
-};
+        // 3. Check for comma-separated values (the root cause of "Afghanistan,Anguilla")
+        // This splits the string only if it contains a comma.
+        if (v.includes(',')) {
+          // Split by comma, trim whitespace from each part, and filter out empty strings
+          return v.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        }
+
+        // 4. Otherwise, return the single string value wrapped in an array
+        return [v];
+      }
+
+      // 5. Default: return single non-array, non-string value in an array
+      return [v];
+    };
 
     const submissionData = {
       platform: body.platform,
@@ -680,9 +704,7 @@ export const submitTask = async (req, res) => {
       outputFiles: submissionOutputFiles,
       outputUrls: submissionOutputUrls,
       loginType: getScalar(body.loginType),
-      credentials: body.credentials,
-
-
+      credentials: getScalar(body.credentials),
       status: body.status ? String(body.status).toLowerCase() : "submitted",
       remarks: body.remarks || ""
     };
@@ -752,6 +774,7 @@ export const submitTask = async (req, res) => {
 
   } catch (err) { console.error("SubmitTask Error:", err); res.status(500).json({ error: err.message || "Server error" }); }
 };
+
 
 // get all tasks
 export const getTask = async (req, res) => {
@@ -875,7 +898,7 @@ export const getTask = async (req, res) => {
 
     const tasksData = tasksAggregate[0]?.data || [];
     const total = tasksAggregate[0]?.metadata[0]?.total || 0;
-    console.log("dioshicojs", tasksData)
+
     res.json({
       tasks: tasksData,
       total,

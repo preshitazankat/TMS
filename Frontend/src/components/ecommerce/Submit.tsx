@@ -33,7 +33,7 @@ interface Submission {
   lastCheckedDate: string;
   complexity: string;
   githubLink: string;
-  outputfiles: File[],
+  outputFiles: File[],
   outputUrl: string[];
   remark: string;
 }
@@ -98,7 +98,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     lastCheckedDate: format(today, "yyyy-MM-dd"),
     complexity: "Medium",
     githubLink: "",
-    outputfiles: [],
+    outputFiles: [],
     outputUrl: [],
     remark: "",
   });
@@ -119,7 +119,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
         lastCheckedDate: taskData.lastCheckedDate
           ? taskData.lastCheckedDate.slice(0, 10)
           : new Date().toISOString().slice(0, 10),
-        outputfiles: [],
+        outputFiles: [],
         country: Array.isArray(taskData.country)
           ? taskData.country
           : taskData.country
@@ -139,7 +139,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
             lastCheckedDate: data.lastCheckedDate
               ? data.lastCheckedDate.slice(0, 10)
               : new Date().toISOString().slice(0, 10),
-            outputfiles: [],
+            outputFiles: [],
             country: Array.isArray(data.country)
               ? data.country
               : data.country
@@ -158,7 +158,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     if (e.target.files) {
       setSubmission((prev) => ({
         ...prev,
-        outputfiles: Array.from(e.target.files as FileList),
+        outputFiles: Array.from(e.target.files as FileList),
       }));
     }
   };
@@ -177,7 +177,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     if (type === "checkbox") {
       setSubmission({ ...submission, [name]: checked });
     } else if (type === "file") {
-      setSubmission({ ...submission, outputfiles: files ? Array.from(files) : [] });
+      setSubmission({ ...submission, outputFiles: files ? Array.from(files) : [] });
     } else if (multiple) {
       // multi-select <select multiple>
       const selected = Array.from((target as HTMLSelectElement).options)
@@ -241,7 +241,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     // src/pages/SubmitTaskUI.tsx - Around line 405
 
     if (
-      (!submission.outputfiles || submission.outputfiles.length === 0) &&
+      (!submission.outputFiles || submission.outputFiles.length === 0) &&
       !submission.outputUrls?.[0] // ✅ Check if the array has a non-empty first element
     ) {
       newErrors.outputUrls = "Upload a file or provide a output document URL."; // ✅ Updated error key
@@ -310,9 +310,9 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
           formData.append(key, JSON.stringify(value));
         }
         // Handle file arrays
-        else if (key === "outputfiles") {
+        else if (key === "outputFiles") {
           (value as File[]).forEach((file) => {
-            formData.append("outputFile", file);
+            formData.append("outputFiles", file);
           });
         }
         else {
@@ -890,10 +890,10 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                     Attach Output Document{" "}
                     <span className="text-red-500 ml-1">*</span>
                   </label>
-                  {submission.outputfiles && submission.outputfiles.length > 0 ? (
+                  {submission.outputFiles && submission.outputFiles.length > 0 ? (
                     // Show list of files with remove button
                     <ul className="space-y-2 mb-2 p-2 border rounded-md bg-gray-50">
-                      {submission.outputfiles.map((file: File, index: number) => (
+                      {submission.outputFiles.map((file: File, index: number) => (
                         <li
                           key={file.name + index}
                           className="flex items-center justify-between text-sm py-1 px-2 border-b last:border-b-0"
@@ -905,7 +905,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
                               // Remove the file at the specific index
                               setSubmission((prev) => ({
                                 ...prev,
-                                outputfiles: prev.outputfiles.filter(
+                                outputFiles: prev.outputFiles.filter(
                                   (_: File, i: number) => i !== index
                                 ),
                               }));

@@ -278,9 +278,9 @@ const TaskDetail: React.FC = () => {
                     </label>
 
                     {/* Check if the outputUrls array exists and has at least one element */}
-                    {task.outputUrls && task.outputUrls.length > 0 ? (
+                    {submission.outputUrls && submission.outputUrls.length > 0 ? (
                       <div className="space-y-1">
-                        {task.outputUrls.map((url, index) => (
+                        { submission.outputUrls.map((url, index) => (
                           // Only render if the URL string is not empty
                           url.trim() && (
                             <div key={index} className="flex">
