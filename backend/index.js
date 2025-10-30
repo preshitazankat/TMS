@@ -30,7 +30,16 @@ dotenv.config();
 //   }
 // }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res, filePath) => {
+      const mimeType = mime.getType(filePath);
+      if (mimeType) res.setHeader("Content-Type", mimeType);
+    },
+  })
+);
+
 
 connectDB();
 

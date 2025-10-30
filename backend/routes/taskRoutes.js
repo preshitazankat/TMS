@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-import { authorize, developerOnly} from "../middleware/Autho.js";
+import { authorize, developerOnly } from "../middleware/Autho.js";
 
 import {
   createTask,
@@ -11,12 +11,12 @@ import {
   //getStats,
   updateTask,
   submitTask,
-  getSingleTask, 
-  updateTaskDomainStatus, 
- getDevelopersDomainStatus,
- getDomainStats
+  getSingleTask,
+  updateTaskDomainStatus,
+  getDevelopersDomainStatus,
+  getDomainStats
 } from "../controllers/taskController.js";
-   
+
 const router = express.Router();
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -54,7 +54,7 @@ const storage = multer.diskStorage({
 
 
 const upload = multer({ storage });
-router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
+router.post("/tasks", authorize(['Admin', 'Sales', 'Manager']), upload.fields([
   { name: "sowFile", maxCount: 10 },
   { name: "inputFile", maxCount: 10 },
   { name: "clientSampleSchemaFiles", maxCount: 20 },
@@ -62,13 +62,13 @@ router.post("/tasks", authorize(['Admin','Sales','Manager']), upload.fields([
 
 router.put(
   "/tasks/domain-status",
-  authorize(['TL','Manager','Admin']),
-  upload.single('file'), 
+  authorize(['TL', 'Manager', 'Admin']),
+  upload.single('file'),
   updateTaskDomainStatus
 );
 router.put(
   "/tasks/:id",
-  authorize(['Admin','Sales','TL','Manager']),
+  authorize(['Admin', 'Sales', 'TL', 'Manager']),
   upload.fields([
     { name: "sowFile", maxCount: 10 },
     { name: "inputFile", maxCount: 10 },
@@ -80,14 +80,14 @@ router.put(
 
 
 
-router.post("/tasks/:id/submit", authorize(['Admin','TL','Developer','Manager']), upload.fields([
-  
+router.post("/tasks/:id/submit", authorize(['Admin', 'TL', 'Developer', 'Manager']), upload.fields([
+
   { name: "outputFiles", maxCount: 20 },
 ]), submitTask);
-router.get("/tasks/developers", authorize(['Manager','Admin']), getDevelopersDomainStatus);
-router.get("/tasks/stats", authorize(['Admin','Sales','TL','Developer','Manager']), getDomainStats);
-router.get("/tasks", authorize(['Admin','Sales','TL','Developer','Manager']), developerOnly, getTask);
-router.get("/tasks/:id", authorize(['Admin','Sales','TL','Developer','Manager']), getSingleTask);
+router.get("/tasks/developers", authorize(['Manager', 'Admin']), getDevelopersDomainStatus);
+router.get("/tasks/stats", authorize(['Admin', 'Sales', 'TL', 'Developer', 'Manager']), getDomainStats);
+router.get("/tasks", authorize(['Admin', 'Sales', 'TL', 'Developer', 'Manager']), developerOnly, getTask);
+router.get("/tasks/:id", authorize(['Admin', 'Sales', 'TL', 'Developer', 'Manager']), getSingleTask);
 // TL and Manager can update domain status
 
 

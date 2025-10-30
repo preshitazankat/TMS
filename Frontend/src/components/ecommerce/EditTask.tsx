@@ -162,6 +162,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     if (!fileUrl) return "";
     if (fileUrl.startsWith("http")) return fileUrl;
     const base = apiUrl.replace(/\/api$/, "");
+    
     return `${base}/${fileUrl}`;
   };
 
@@ -451,289 +452,331 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   // --------------------------- FILE DROP COMPONENT -----------------------------
 
 
-    const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setLoading(true);
+//     const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!validateForm()) return;
+//     setLoading(true);
 
-    try {
-      const formData = new FormData();
+//     try {
+//       const formData = new FormData();
 
-      // 🔹 Convert developer names → IDs before sending
-      const developersForBackend = Object.fromEntries(
-        Object.entries(task.developers).map(([domain, devs]) => [
-          domain,
-          devs.map((d) => {
-            const found = users.find((u) => u.name === d || u._id === d);
-            return found ? found._id : d;
-          }),
-        ])
-      );
+//       // 🔹 Convert developer names → IDs before sending
+//       const developersForBackend = Object.fromEntries(
+//         Object.entries(task.developers).map(([domain, devs]) => [
+//           domain,
+//           devs.map((d) => {
+//             const found = users.find((u) => u.name === d || u._id === d);
+//             return found ? found._id : d;
+//           }),
+//         ])
+//       );
 
-      const fileKeys = ["sowFile", "inputFile", "outputFiles", "clientSampleSchemaFiles"];
-      const fieldMap: Record<string, string> = {
-        sowFile: "sowFile",
-        inputFile: "inputFile",
-        outputFiles: "outputFiles",
-        clientSampleSchemaFiles: "clientSampleSchemaFile",
-      };
+//       const fileKeys = ["sowFile", "inputFile", "clientSampleSchemaFiles"];
+//       const fieldMap: Record<string, string> = {
+//         sowFile: "sowFile",
+//         inputFile: "inputFile",
+       
+//         clientSampleSchemaFiles: "clientSampleSchemaFile",
+//       };
 
-      // ✅ 1️⃣ Handle kept (existing) file paths ONCE
-      fileKeys.forEach((key) => {
-        const files = task[key as keyof Task];
-        if (Array.isArray(files)) {
-          const keptPaths: string[] = files.filter((f) => typeof f === "string") as string[];
-          formData.append(`${key}Kept`, JSON.stringify(keptPaths));
-        }
-      });
+//       // ✅ 1️⃣ Handle kept (existing) file paths ONCE
+//       fileKeys.forEach((key) => {
+//         const files = task[key as keyof Task];
+//         if (Array.isArray(files)) {
+//           const keptPaths: string[] = files.filter((f) => typeof f === "string") as string[];
+//           formData.append(`${key}Kept`, JSON.stringify(keptPaths));
+//         }
+//       });
 
-      // ✅ 2️⃣ Handle top-level fields
-      Object.entries(task).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === "") return;
+//       // ✅ 2️⃣ Handle top-level fields
+//       Object.entries(task).forEach(([key, value]) => {
+//         if (value === null || value === undefined || value === "") return;
 
-        if (key === "developers") {
-          formData.append("developers", JSON.stringify(developersForBackend));
-        } else if (key === "domains") {
-          // handled later
-          return;
-        } else if (
-          ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrl"].includes(key)
-        ) {
-          const arr = Array.isArray(value)
-            ? value.filter(Boolean)
-            : typeof value === "string" && value
-              ? [value]
-              : [];
-          formData.append(key, JSON.stringify(arr));
-        } else if (fileKeys.includes(key)) {
-          // ✅ Only add *new uploads* here
-          (value as File[]).forEach((f) => {
-            if (f instanceof File) formData.append(fieldMap[key], f);
-          });
-        } else {
-          formData.append(key, value as any);
-        }
-      });
+//         if (key === "outputFiles") {
+//     return;
+//   }
 
-      // ✅ 3️⃣ Handle per-domain submissions
-      task.domains.forEach((domain) => {
-        formData.append("domainNames", domain.name);
+//         if (key === "developers") {
+//           formData.append("developers", JSON.stringify(developersForBackend));
+//         } else if (key === "domains") {
+//           // handled later
+//           return;
+//         } else if (
+//           ["sowUrls", "inputUrls", "clientSampleSchemaUrl"].includes(key)
+//         ) {
+//           const arr = Array.isArray(value)
+//             ? value.filter(Boolean)
+//             : typeof value === "string" && value
+//               ? [value]
+//               : [];
+//           formData.append(key, JSON.stringify(arr));
+//         }
+        
+//          else if (fileKeys.includes(key)) {
+//           // ✅ Only add *new uploads* here
+//           (value as File[]).forEach((f) => {
+//             if (f instanceof File) formData.append(fieldMap[key], f);
+//           });
+//         } else {
+//           formData.append(key, value as any);
+//         }
+//       });
 
-        // new uploaded files
-        if (domain.submission?.outputFiles?.length) {
-          domain.submission.outputFiles.forEach((file) => {
-            if (file instanceof File) {
-              formData.append("outputFiles", file);
-              formData.append("outputFileDomains", domain.name);
-            }
-          });
-        }
+//       const keptOutputFiles = {}; // Collect all kept files into one object
 
-        // kept output files
-        const keptFiles = domain.submission?.outputFiles?.filter(
-          (f) => typeof f === "string"
-        );
-        if (keptFiles?.length) {
-          formData.append(
-            "keptOutputFiles",
-            JSON.stringify({ [domain.name]: keptFiles })
-          );
-        }
+// task.domains.forEach((domain) => {
+//   formData.append("domainNames", domain.name);
 
-        // output URLs
-        if (domain.submission?.outputUrls?.length) {
-          formData.append(
-            "outputUrls",
-            JSON.stringify({ [domain.name]: domain.submission.outputUrls })
-          );
-        }
-      });
+//   // New uploaded files (ADDITION)
+//   if (domain.submission?.outputFiles?.length) {
+//     domain.submission.outputFiles.forEach((file) => {
+//       if (file instanceof File) {
+//         // This is where new files are added to FormData
+//         formData.append("outputFiles", file);
+//         formData.append("outputFileDomains", domain.name);
+//       }
+//     });
+//   }
 
-      // ✅ 4️⃣ Format dates
-      if (task.taskAssignedDate)
-        formData.set("taskAssignedDate", format(new Date(task.taskAssignedDate), "yyyy-MM-dd"));
-      if (task.targetDate)
-        formData.set("targetDate", format(new Date(task.targetDate), "yyyy-MM-dd"));
-      if (task.completeDate)
-        formData.set("completeDate", format(new Date(task.completeDate), "yyyy-MM-dd"));
+//   // Kept output files (DELETION preparation)
+//   const keptFiles = domain.submission?.outputFiles?.filter(
+//     (f) => typeof f === "string" // Filter for existing file paths only
+//   );
+//   if (keptFiles?.length) {
+//     keptOutputFiles[domain.name] = keptFiles;
+//   }
+  
+//   // ... (Your logic for outputUrls remains here)
+//   if (domain.submission?.outputUrls?.length) {
+//     formData.append(
+//       "outputUrls",
+//       JSON.stringify({ [domain.name]: domain.submission.outputUrls })
+//     );
+//   }
+// });
 
-      console.log("📦 Final files before submit:", {
-        sowFile: task.sowFile,
-        inputFile: task.inputFile,
-        outputFiles: task.outputFiles,
-        clientSampleSchemaFile: task.clientSampleSchemaFile,
-      });
+// // Finalize kept files after the loop to prevent duplicate entries/corruption
+// if (Object.keys(keptOutputFiles).length) {
+//     // This sends one, clean keptOutputFiles JSON string
+//     formData.append("keptOutputFiles", JSON.stringify(keptOutputFiles)); 
+// }
 
-      // ✅ 5️⃣ Submit to backend
-      const res = await fetch(`${apiUrl}/tasks/${id}`, {
-        method: "PUT",
-        body: formData,
-        credentials: "include",
-      });
+//       // ✅ 3️⃣ Handle per-domain submissions
+//       task.domains.forEach((domain) => {
+//         formData.append("domainNames", domain.name);
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
-        return;
+//         // new uploaded files
+//         if (domain.submission?.outputFiles?.length) {
+//           domain.submission.outputFiles.forEach((file) => {
+//             if (file instanceof File) {
+//               formData.append("outputFiles", file);
+//               formData.append("outputFileDomains", domain.name);
+//             }
+//           });
+//         }
+
+//         // kept output files
+//         const keptFiles = domain.submission?.outputFiles?.filter(
+//           (f) => typeof f === "string"
+//         );
+//         if (keptFiles?.length) {
+//           formData.append(
+//             "keptOutputFiles",
+//             JSON.stringify({ [domain.name]: keptFiles })
+//           );
+//         }
+
+//         // output URLs
+//         if (domain.submission?.outputUrls?.length) {
+//           formData.append(
+//             "outputUrls",
+//             JSON.stringify({ [domain.name]: domain.submission.outputUrls })
+//           );
+//         }
+//       });
+
+//       // ✅ 4️⃣ Format dates
+//       if (task.taskAssignedDate)
+//         formData.set("taskAssignedDate", format(new Date(task.taskAssignedDate), "yyyy-MM-dd"));
+//       if (task.targetDate)
+//         formData.set("targetDate", format(new Date(task.targetDate), "yyyy-MM-dd"));
+//       if (task.completeDate)
+//         formData.set("completeDate", format(new Date(task.completeDate), "yyyy-MM-dd"));
+
+//       console.log("📦 Final files before submit:", {
+//         sowFile: task.sowFile,
+//         inputFile: task.inputFile,
+//         outputFiles: task.outputFiles,
+//         clientSampleSchemaFile: task.clientSampleSchemaFile,
+//       });
+
+//       // ✅ 5️⃣ Submit to backend
+//       const res = await fetch(`${apiUrl}/tasks/${id}`, {
+//         method: "PUT",
+//         body: formData,
+//         credentials: "include",
+//       });
+
+//       const data = await res.json();
+//       if (!res.ok) {
+//         toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
+//         return;
+//       }
+
+//       toast.success("✅ Task updated successfully!");
+//       setTimeout(() => navigate("/tasks"), 1500);
+//     } catch (err) {
+//       console.error("❌ Error updating task:", err);
+//       toast.error("❌ Error updating task!");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setLoading(true);
+
+  try {
+    const formData = new FormData();
+
+    
+
+    // 🔹 Convert developer names → IDs before sending
+    const developersForBackend = Object.fromEntries(
+      Object.entries(task.developers).map(([domain, devs]) => [
+        domain,
+        devs.map((d) => {
+          const found = users.find((u) => u.name === d || u._id === d);
+          return found ? found._id : d;
+        }),
+      ])
+    );
+
+    // ✅ 1️⃣ Handle kept (existing) top-level files
+    const fileKeys = ["sowFile", "inputFile", "clientSampleSchemaFiles"];
+    const fieldMap: Record<string, string> = {
+      sowFile: "sowFile",
+      inputFile: "inputFile",
+      clientSampleSchemaFiles: "clientSampleSchemaFile",
+    };
+
+    fileKeys.forEach((key) => {
+      const files = task[key as keyof Task];
+      if (Array.isArray(files)) {
+        const keptPaths = files.filter((f) => typeof f === "string");
+        formData.append(`${key}Kept`, JSON.stringify(keptPaths));
       }
+    });
 
-      toast.success("✅ Task updated successfully!");
-      setTimeout(() => navigate("/tasks"), 1500);
-    } catch (err) {
-      console.error("❌ Error updating task:", err);
-      toast.error("❌ Error updating task!");
-    } finally {
-      setLoading(false);
+    // ✅ 2️⃣ Handle simple top-level fields
+    Object.entries(task).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") return;
+      if (["outputFiles", "domains"].includes(key)) return;
+
+      if (key === "developers") {
+        formData.append("developers", JSON.stringify(developersForBackend));
+      } else if (["sowUrls", "inputUrls", "clientSampleSchemaUrls"].includes(key)) {
+        const arr = Array.isArray(value)
+          ? value.filter(Boolean)
+          : typeof value === "string" && value
+          ? [value]
+          : [];
+        formData.append(key, JSON.stringify(arr));
+      } else if (fileKeys.includes(key)) {
+        (value as File[]).forEach((f) => {
+          if (f instanceof File) formData.append(fieldMap[key], f);
+        });
+      } else {
+        formData.append(key, value as any);
+      }
+    });
+
+    // ✅ 3️⃣ Domain-based logic (output files + URLs)
+    const keptOutputMap: Record<string, string[]> = {};
+    const outputUrlsMap: Record<string, string[]> = {};
+
+    
+
+    (task.domains || []).forEach((domain) => {
+  
+  
+  // Prepare kept list for this domain
+  let keptFiles = domain.submission?.outputFiles?.filter(
+    (f) => typeof f === "string"
+  ) || [];
+
+  // ✅ NEW: include both kept (string) and newly added files
+  if (domain.submission?.outputFiles?.length) {
+    
+    domain.submission.outputFiles.forEach((file) => {
+      if (file instanceof File) {
+        // add file to upload formData
+        formData.append("outputFiles", file);
+        formData.append("outputFileDomains", domain.name);
+
+        // this prevents deletion in backend
+        const tempPath = `uploads/${file.name}`;
+        keptFiles.push(tempPath);
+      }
+    });
+  }
+
+
+  // ✅ Save combined kept + new file paths
+  if (keptFiles.length) {
+    keptOutputMap[domain.name] = Array.from(new Set(keptFiles));
+  }
+
+  // ✅ Handle output URLs (no change)
+  if (domain.submission?.outputUrls?.length) {
+    outputUrlsMap[domain.name] = domain.submission.outputUrls;
+  }
+});
+
+
+   
+
+    if (Object.keys(keptOutputMap).length)
+      formData.append("keptOutputFiles", JSON.stringify(keptOutputMap));
+
+    if (Object.keys(outputUrlsMap).length)
+      formData.append("outputUrls", JSON.stringify(outputUrlsMap));
+
+    formData.append("domains", JSON.stringify(task.domains));
+
+
+    // ✅ 4️⃣ Format dates
+    if (task.taskAssignedDate)
+      formData.set("taskAssignedDate", format(new Date(task.taskAssignedDate), "yyyy-MM-dd"));
+    if (task.targetDate)
+      formData.set("targetDate", format(new Date(task.targetDate), "yyyy-MM-dd"));
+    if (task.completeDate)
+      formData.set("completeDate", format(new Date(task.completeDate), "yyyy-MM-dd"));
+
+    // ✅ 5️⃣ Submit to backend
+    const res = await fetch(`${apiUrl}/tasks/${id}`, {
+      method: "PUT",
+      body: formData,
+      credentials: "include",
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
+      return;
     }
-  };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!validateForm()) return;
-
-  //   setLoading(true);
-
-  //   try {
-  //     // 🧠 Ensure React state is up-to-date before reading
-  //     await new Promise((r) => setTimeout(r, 50)); // allows last setTask() to settle
-
-  //     console.log("🧠 Task before submit:", JSON.parse(JSON.stringify(task)));
-
-  //     const formData = new FormData();
-
-  //     // 🔹 Convert developer names → IDs before sending
-  //     const developersForBackend = Object.fromEntries(
-  //       Object.entries(task.developers || {}).map(([domain, devs]) => [
-  //         domain,
-  //         devs.map((d) => {
-  //           const found = users.find((u) => u.name === d || u._id === d);
-  //           return found ? found._id : d;
-  //         }),
-  //       ])
-  //     );
-
-  //     // 🔹 File field keys (match backend!)
-  //     const fileKeys = [
-  //       "sowFile",
-  //       "inputFile",
-  //       "outputFiles",
-  //       "clientSampleSchemaFiles",
-  //     ] as const;
-
-  //     const fieldMap: Record<string, string> = {
-  //       sowFile: "sowFile",
-  //       inputFile: "inputFile",
-  //       outputFiles: "outputFiles",
-  //       clientSampleSchemaFiles: "clientSampleSchemaFiles",
-  //     };
-
-  //     // ✅ 1️⃣ Append kept (string) file paths correctly
-  //     fileKeys.forEach((key) => {
-  //       const value = task[key];
-  //       if (Array.isArray(value)) {
-  //         // Filter out strings only → means existing (kept) files
-  //         const keptPaths = value.filter((f) => typeof f === "string");
-  //         formData.append(`${key}Kept`, JSON.stringify(keptPaths));
-  //       }
-  //     });
-
-  //     // ✅ 2️⃣ Append all other top-level fields
-  //     Object.entries(task).forEach(([key, value]) => {
-  //       if (value === null || value === undefined || value === "") return;
-
-  //       if (key === "developers") {
-  //         formData.append("developers", JSON.stringify(developersForBackend));
-  //       } else if (key === "domains") {
-  //         return; // handled separately
-  //       } else if (
-  //         ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"].includes(
-  //           key
-  //         )
-  //       ) {
-  //         const arr = Array.isArray(value)
-  //           ? value.filter(Boolean)
-  //           : typeof value === "string" && value
-  //             ? [value]
-  //             : [];
-  //         formData.append(key, JSON.stringify(arr));
-  //       } else if (fileKeys.includes(key as any)) {
-  //         // Append only *new uploads*
-  //         (value as any[]).forEach((f) => {
-  //           if (f instanceof File) formData.append(fieldMap[key], f);
-  //         });
-  //       } else {
-  //         formData.append(key, value as any);
-  //       }
-  //     });
-
-  //     // ✅ 3️⃣ Handle per-domain submissions
-  //     (task.domains || []).forEach((domain) => {
-  //       formData.append("domainNames", domain.name);
-
-  //       const outputFiles = domain.submission?.outputFiles || [];
-
-  //       // Append new uploaded files
-  //       outputFiles.forEach((file) => {
-  //         if (file instanceof File) {
-  //           formData.append("outputFiles", file);
-  //           formData.append("outputFileDomains", domain.name);
-  //         }
-  //       });
-
-  //       // Append kept (existing) files
-  //       const kept = outputFiles.filter((f) => typeof f === "string");
-  //       if (kept.length) {
-  //         formData.append(
-  //           "keptOutputFiles",
-  //           JSON.stringify({ [domain.name]: kept })
-  //         );
-  //       }
-
-  //       // Append output URLs
-  //       if (domain.submission?.outputUrls?.length) {
-  //         formData.append(
-  //           "outputUrls",
-  //           JSON.stringify({ [domain.name]: domain.submission.outputUrls })
-  //         );
-  //       }
-  //     });
-
-  //     // ✅ 4️⃣ Format dates properly
-  //     const fmt = (d: any) => format(new Date(d), "yyyy-MM-dd");
-  //     if (task.taskAssignedDate) formData.set("taskAssignedDate", fmt(task.taskAssignedDate));
-  //     if (task.targetDate) formData.set("targetDate", fmt(task.targetDate));
-  //     if (task.completeDate) formData.set("completeDate", fmt(task.completeDate));
-
-  //     // console.log("📦 Final FormData content:", {
-  //     //   sowFile: task.sowFile,
-  //     //   inputFile: task.inputFile,
-  //     //   outputFiles: task.outputFiles,
-  //     //   clientSampleSchemaFiles: task.clientSampleSchemaFiles,
-  //     // });
-
-  //     // ✅ 5️⃣ Submit
-  //     const res = await fetch(`${apiUrl}/tasks/${id}`, {
-  //       method: "PUT",
-  //       body: formData,
-  //       credentials: "include",
-  //     });
-
-  //     const data = await res.json();
-  //     if (!res.ok) {
-  //       toast.error("❌ Error updating task: " + JSON.stringify(data.errors || data));
-  //       return;
-  //     }
-
-  //     toast.success("✅ Task updated successfully!");
-  //     setTimeout(() => navigate("/tasks"), 1500);
-  //   } catch (err) {
-  //     console.error("❌ Error updating task:", err);
-  //     toast.error("❌ Error updating task!");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
+    toast.success("✅ Task updated successfully!");
+    setTimeout(() => navigate("/tasks"), 1500);
+  } catch (err) {
+    console.error("❌ Error updating task:", err);
+    toast.error("❌ Error updating task!");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleFileRemove = (name: keyof Task, index: number) => {
     setTask((prev) => {
@@ -761,8 +804,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   console.log("📦 Final files before update:", {
     sowFile: task.sowFile,
     inputFile: task.inputFile,
-    outputFiles: task.outputFiles,
-    clientSampleSchemaFile: task.clientSampleSchemaFile,
+    outputFiles: task.domains.outputFiles,
+    clientSampleSchemaFiles: task.clientSampleSchemaFiles,
   });
 
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -806,6 +849,8 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                 file instanceof File ? file.name : file.split("/").pop();
               const fileUrlOrPath = file instanceof File ? URL.createObjectURL(file) : (file as string);
               const finalUrl = buildFileUrl(fileUrlOrPath);
+             
+              
 
               return (
                 <div
@@ -840,10 +885,6 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
       </div>
     );
   };
-
-
-
-
 
   const renderUrlInputArea = (
     name: "sowUrls" | "inputUrls" | "outputUrls" | "clientSampleSchemaUrls",
@@ -1338,10 +1379,15 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                             {domain.submission?.outputFiles?.length > 0 && (
                               <div className="mt-3 flex flex-col gap-2">
                                 {domain.submission.outputFiles.map((file, i) => {
+                                  
+                                  
                                   const fileName =
                                     file instanceof File ? file.name : file.split("/").pop();
-                                  const fileUrl =
-                                    file instanceof File ? URL.createObjectURL(file) : file;
+                                   const fileUrlOrPath = file instanceof File ? URL.createObjectURL(file) : (file as string);
+              const finalUrl = buildFileUrl(fileUrlOrPath);
+            
+                                    
+                                 
 
                                   return (
                                     <div
@@ -1349,7 +1395,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
                                       className="flex items-center justify-between bg-gray-100 p-2 rounded"
                                     >
                                       <a
-                                        href={fileUrl}
+                                        href={finalUrl}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-blue-600 underline truncate max-w-[80%]"

@@ -21,7 +21,7 @@ interface Submission {
   githubLink?: string;
   outputFiles?: string[];
   outputUrls?: string[];
-  remarks?: string;
+  remark?: string;
 
   submittedAt?: string;
 }
@@ -217,9 +217,9 @@ const TaskDetail: React.FC = () => {
 
             {showDomainDetails && (
               <div className="mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                {domainObj.remarks && (
+                {domainObj.resone && (
                   <p className="text-gray-900 text-sm mb-2">
-                    <span className="font-semibold ">Reason:</span> {domainObj.remarks}
+                    <span className="font-semibold ">Reason:</span> {domainObj.resone}
                   </p>
                 )}
                 {domainObj.upload && domainObj.upload.filename && (
@@ -381,8 +381,8 @@ const TaskDetail: React.FC = () => {
 
                   <div className="md:col-span-2">
                     <p className="text-gray-700 text-sm">Remark</p>
-                    {submission.remarks ? (
-                      <span className="text-gray-900 whitespace-pre-wrap">{submission.remarks}</span>
+                    {submission.remark ? (
+                      <span className="text-gray-900 whitespace-pre-wrap">{submission.remark}</span>
                     ) : (
                       <p className="text-gray-500">-</p>
                     )}

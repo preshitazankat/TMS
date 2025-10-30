@@ -133,11 +133,11 @@ const Dashboard: React.FC = () => {
 
 
   const cards = [
-    { label: "Total Tasks", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
-    { label: "Pending Tasks", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
-    { label: "In-Progress Tasks", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
-    { label: "Delayed Tasks", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
-    { label: "Completed Tasks", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
+    { label: "Total Platform", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
+    { label: "Pending Platform", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
+    { label: "In-Progress Platform", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
+    { label: "Delayed Platform", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
+    { label: "Completed Platform", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
     { label: "In-R&D", value: stats.inRD, icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
   ];
 

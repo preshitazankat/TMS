@@ -9,7 +9,7 @@ const domainSchema = new mongoose.Schema({
   }, 
   statusKey: { type: String, lowercase: true, trim: true },
   completeDate: { type: Date },
-  remarks: { type: String },
+  reason: { type: String },
   submission: { type: Object, default: {} },
   developers: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -74,7 +74,7 @@ const taskSchema = new mongoose.Schema(
     clientSampleSchemaUrls: { type:   [String], default: [] },
     
     
-    remarks: { type: String },
+    remark: { type: String },
   },
   { timestamps: true }
 );
