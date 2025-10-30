@@ -927,12 +927,14 @@ export const createTask = async (req, res) => {
 //       .json({ error: err.message || "Server error while updating task" });
 //   }
 // };
+
+
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const body = cleanBody(req.body);
 
-    console.log("req.body", req.body);
+    //console.log("req.body", req.body);
 
     const urlFields = ["sowUrls", "inputUrls", "outputUrls", "clientSampleSchemaUrls"];
 
@@ -1199,10 +1201,10 @@ task.domains = task.domains.filter((d) =>
     // ✅ Save task
     await task.save();
     const check = await Task.findById(id);
-    console.log(
-      "✅ DB Saved Output Files:",
-      check.domains[0]?.submission?.outputFiles
-    );
+    // console.log(
+    //   "✅ DB Saved Output Files:",
+    //   check.domains[0]?.submission?.outputFiles
+    // );
 
     res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {

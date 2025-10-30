@@ -76,7 +76,7 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     clientSampleSchemaFile: [],
     clientSampleSchemaUrls: [],
   });
-  console.log("helooo " , task)
+  //console.log("helooo " , task)
 
   const [domainInput, setDomainInput] = useState("");
   const [developerInput, setDeveloperInput] = useState<Record<string, string>>({});
@@ -801,12 +801,12 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
   };
 
 
-  console.log("📦 Final files before update:", {
-    sowFile: task.sowFile,
-    inputFile: task.inputFile,
-    outputFiles: task.domains.outputFiles,
-    clientSampleSchemaFiles: task.clientSampleSchemaFiles,
-  });
+  // console.log("📦 Final files before update:", {
+  //   sowFile: task.sowFile,
+  //   inputFile: task.inputFile,
+  //   outputFiles: task.domains.outputFiles,
+  //   clientSampleSchemaFiles: task.clientSampleSchemaFiles,
+  // });
 
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 

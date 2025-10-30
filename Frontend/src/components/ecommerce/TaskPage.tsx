@@ -202,7 +202,7 @@ const TaskPage: React.FC = () => {
 
   if (token) {
     const decoded = jwtDecode<TokenPayload>(token);
-    console.log("Decoded user info:", decoded);
+    //console.log("Decoded user info:", decoded);
   }
 
   const limit = 10;
@@ -488,7 +488,7 @@ const TaskPage: React.FC = () => {
                     ? domainObj._id.$oid
                     : domainObj._id
                   : ""; // fallback if domainObj is undefined
-                console.log("domainID", domainId);
+                //console.log("domainID", domainId);
 
                 return (
                   <tr

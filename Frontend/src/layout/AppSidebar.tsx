@@ -121,7 +121,7 @@ const AppSidebar: React.FC = () => {
 
   const { user } = useAuth(); // ✅ Get decoded user info from token
   const userId = user?.id;    // ✅ Extract the user’s ID
-  console.log("Current logged-in user ID:", userId);
+  //console.log("Current logged-in user ID:", userId);
 
   const navWithUserId = useMemo(() => {
   return navItems.map((item) => {

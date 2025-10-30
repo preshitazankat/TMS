@@ -18,7 +18,7 @@ interface TokenPayload {
 // Decode JWT token from cookie
 function decodeToken(): TokenPayload | null {
   const token = Cookies.get("token");
-  console.log("token", token)
+  //console.log("token", token)
   if (!token) return null;
 
   try {

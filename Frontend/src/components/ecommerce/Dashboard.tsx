@@ -40,7 +40,7 @@ const Dashboard: React.FC = () => {
     inRD: 0,
   });
   const [developers, setDevelopers] = useState<DeveloperTask[]>([]);
-  console.log("nkodvm", developers)
+  //console.log("nkodvm", developers)
   const [userRole, setUserRole] = useState<string>("");
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
       });
       if (!res.ok) throw new Error("Failed to fetch developers");
       const data: DeveloperTask[] = await res.json();
-      console.log("Data", data);
+      //console.log("Data", data);
       setDevelopers(data);
 
     } catch (err) {
