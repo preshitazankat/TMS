@@ -1175,6 +1175,33 @@ if (req.body.domainOutputUrls) {
 //   incomingDomains.some((nd) => nd.name === d.name)
 // );
 
+        const fieldsToUpdate = [
+      "title",
+      "assignedBy",
+      "assignedTo",
+      "description",
+      "sampleFileRequired",
+      "requiredValumeOfSampleFile",
+      "complexity",
+      "status",
+      "typeOfDelivery",
+      "typeOfPlatform",
+    ];
+
+    fieldsToUpdate.forEach((f) => {
+      if (body[f] !== undefined) {
+        if (f === "sampleFileRequired") task[f] = body[f] === "true";
+        else if (f === "requiredValumeOfSampleFile") task[f] = Number(body[f]);
+        else task[f] = body[f];
+      }
+    });
+
+    if (body.typeOfDelivery)
+      task.typeOfDelivery = body.typeOfDelivery.toLowerCase();
+    if (body.typeOfPlatform)
+      task.typeOfPlatform = body.typeOfPlatform.toLowerCase();
+
+
 let incomingDomains = [];
 if (body.domains) {
   try {
