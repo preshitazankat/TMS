@@ -123,6 +123,9 @@ const TaskDetail: React.FC = () => {
       domainObj = task.domains[0];
       displayedDomain = domainObj.name;
     }
+    
+
+  //const rawOutputUrls = submission?.outputUrls;
 
     // 3️⃣ Extract submission data
     if (domainObj && domainObj.submission) {
@@ -134,6 +137,7 @@ const TaskDetail: React.FC = () => {
       domainObj && domainObj.status && domainObj.status.toLowerCase() === "in-r&d";
   }
   const rawOutputUrls = submission?.outputUrls;
+  const showSubmissionSection = domainObj && domainObj.status?.toLowerCase() === "submitted";
 
   const urlsToDisplay: string[] = Array.isArray(rawOutputUrls)
     ? rawOutputUrls.filter(Boolean) // Keep only non-empty strings if it's already an array
@@ -150,6 +154,8 @@ const TaskDetail: React.FC = () => {
       return url;
     }
   };
+
+  
 
   if (loading) {
     return (
@@ -240,7 +246,7 @@ const TaskDetail: React.FC = () => {
           </div>
 
           {/* SUBMISSION */}
-          {submission ? (
+          {submission && showSubmissionSection ? (
             <Section title="Submission" icon={<FileText size={18} className="text-blue-600 bg-gray-100" />}>
               {submission ? (
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-100">
