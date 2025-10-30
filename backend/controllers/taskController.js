@@ -64,35 +64,31 @@ const normalizeEnum = (value, allowedValues, defaultValue) => {
   return match || defaultValue;
 };
 
-const applyDelayedStatus = (task) => {
+
+
+const applyDelayedStatus = (tasksData) => {
   const now = new Date();
-  if (task.status !== "submitted" && task.status !== "in-R&D" && task.targetDate && new Date(task.targetDate) < now) {
-    task.status = "delayed";
-  }
-  return task;
+  
+  return tasksData.map(task => {
+    const status = task.domainStatus?.toLowerCase();
+    const targetDate = task.targetDate ? new Date(task.targetDate) : null;
+
+    const noDelayStatuses = ["submitted", "in-r&d", "in-rd"];
+
+    if (
+      status &&
+      !noDelayStatuses.includes(status) &&
+      targetDate &&
+      targetDate < now
+    ) {
+      task.domainStatus = "delayed";
+    }
+
+    return task;
+  });
 };
 
-const updateDelayedDomains = async (task) => {
-  const now = new Date();
-  let updated = false;
 
-  if (task.domains && Array.isArray(task.domains)) {
-    task.domains.forEach(domain => {
-      if (
-        domain.status !== "submitted" &&
-        domain.status !== "in-R&D" &&
-        domain.status !== "delayed" &&
-        task.targetDate && new Date(task.targetDate) < now
-      ) {
-        domain.status = "delayed";
-        updated = true;
-      }
-    });
-  }
-
-  if (updated) await task.save();
-  return task;
-};
 
 export const computeTaskOverallStatus = (task) => {
   if (!task.domains || !task.domains.length) return task.status;
@@ -1560,99 +1556,7 @@ export const getTask = async (req, res) => {
 }
 
 
-    // const tasksAggregate = await Task.aggregate([
-    //   { $match: match },
-
-    //   /* ------------- Lookup assignedBy user ------------- */
-    //   {
-    //     $lookup: {
-    //       from: "users",
-    //       localField: "assignedBy",
-    //       foreignField: "_id",
-    //       as: "assignedBy",
-    //     },
-    //   },
-    //   { $unwind: { path: "$assignedBy", preserveNullAndEmptyArrays: true } },
-
-    //   /* ------------- Lookup assignedTo user ------------- */
-    //   {
-    //     $lookup: {
-    //       from: "users",
-    //       localField: "assignedTo",
-    //       foreignField: "_id",
-    //       as: "assignedTo",
-    //     },
-    //   },
-    //   { $unwind: { path: "$assignedTo", preserveNullAndEmptyArrays: true } },
-
-    //   /* ------------- Unwind domains ------------- */
-    //   { $unwind: { path: "$domains", preserveNullAndEmptyArrays: true } },
-
-    //   /* ------------- Lookup developers ------------- */
-    //   {
-    //     $lookup: {
-    //       from: "users",
-    //       localField: "domains.developers",
-    //       foreignField: "_id",
-    //       as: "domainDevelopers",
-    //     },
-    //   },
-
-    //   /* ------------- Second $match (for search) ------------- */
-    //   ...(search.trim()
-    //     ? [
-    //       {
-    //         $match: {
-    //           $or: [
-    //             { projectCode: { $regex: search, $options: "i" } },
-    //             { title: { $regex: search, $options: "i" } },
-    //             { description: { $regex: search, $options: "i" } },
-    //             { "domains.name": { $regex: search, $options: "i" } },
-    //             { "assignedBy.name": { $regex: search, $options: "i" } },
-    //             { "assignedTo.name": { $regex: search, $options: "i" } },
-    //             { "domainDevelopers.name": { $regex: search, $options: "i" } },
-    //           ],
-    //         },
-    //       },
-    //     ]
-    //     : []),
-
-    //   /* ------------- Project flattened fields ------------- */
-    //   {
-    //     $project: {
-    //       _id: 1,
-    //       title: 1,
-    //       projectCode: 1,
-    //       description: 1,
-    //       taskAssignedDate: 1,
-    //       completeDate: {
-    //         $ifNull: ["$domains.completeDate", "$completeDate"],
-    //       },
-    //       domainName: { $ifNull: ["$domains.name", "-"] },
-    //       domainStatus: { $ifNull: ["$domains.status", "pending"] },
-    //       assignedBy: { $ifNull: ["$assignedBy.name", "-"] },
-    //       assignedTo: { $ifNull: ["$assignedTo.name", "-"] },
-    //       domainDevelopers: {
-    //         $map: {
-    //           input: "$domainDevelopers",
-    //           as: "dev",
-    //           in: { $ifNull: ["$$dev.name", "Unknown"] },
-    //         },
-    //       },
-    //       createdAt: 1,
-    //     },
-    //   },
-
-    //   { $sort: { createdAt: -1 } },
-
-
-    //   {
-    //     $facet: {
-    //       metadata: [{ $count: "total" }],
-    //       data: [{ $skip: skip }, { $limit: parseInt(limit) }],
-    //     },
-    //   },
-    // ]);
+    
  
     const tasksAggregate = await Task.aggregate([
   { $match: match }, // initial match (by role, etc.)
@@ -1665,6 +1569,8 @@ export const getTask = async (req, res) => {
 
   // 🔹 Unwind domains so each domain is a separate row
   { $unwind: { path: "$domains", preserveNullAndEmptyArrays: true } },
+
+  
 
   // 🔹 Lookup developers for this domain
   {
@@ -1727,6 +1633,7 @@ export const getTask = async (req, res) => {
       },
       completeDate: { $ifNull: ["$domains.completeDate", "$completeDate"] },
       createdAt: 1,
+      targetDate: 1,
     },
   },
 
@@ -1739,7 +1646,9 @@ export const getTask = async (req, res) => {
   },
 ]);
 
-    const tasksData = tasksAggregate[0]?.data || [];
+  let tasksData = tasksAggregate[0]?.data || [];
+  tasksData = applyDelayedStatus(tasksData);
+
     const total = tasksAggregate[0]?.metadata[0]?.total || 0;
 
     res.json({
