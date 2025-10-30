@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { log } from "console";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -1052,28 +1053,52 @@ export const updateTask = async (req, res) => {
       }
     }
 
-    // ... (rest of the code is unchanged) ...
-    // ✅ Handle domain output URLs
-    if (req.body.outputUrls) {
-      let outputUrlsData = req.body.outputUrls;
-// ... (omitted for brevity, assume unchanged) ...
-      if (typeof outputUrlsData === "object" && outputUrlsData !== null) {
-        const incomingDomainNames = Object.keys(outputUrlsData);
+    
+    
+// ✅ Handle domain output URLs
+if (req.body.domainOutputUrls) {
+  let outputUrlsData = req.body.domainOutputUrls;
 
-        task.domains.forEach((domain) => {
-          if (!domain.submission) domain.submission = {};
-
-          if (!incomingDomainNames.includes(domain.name)) {
-            domain.submission.outputUrls = [];
-          } else {
-            const urls = outputUrlsData[domain.name];
-            domain.submission.outputUrls = Array.isArray(urls) ? urls : [urls];
-          }
-        });
-
-        task.markModified("domains");
+  if (Array.isArray(outputUrlsData)) {
+    const merged = {};
+    outputUrlsData.forEach((item) => {
+      if (typeof item === "string" && item.trim() && item !== "[]") {
+        try { Object.assign(merged, JSON.parse(item)); } catch {}
       }
+    });
+    outputUrlsData = merged;
+  } else if (typeof outputUrlsData === "string") {
+    try { outputUrlsData = JSON.parse(outputUrlsData); } catch { outputUrlsData = {}; }
+  }
+
+  // ✅ Set/Update URLs
+  for (const [domainName, urls] of Object.entries(outputUrlsData)) {
+    const domain = task.domains.find((d) => d.name === domainName);
+    if (!domain) continue;
+    if (!domain.submission) domain.submission = {};
+
+    if (Array.isArray(urls)) {
+      domain.submission.outputUrls = urls.length ? urls : [];
+    } else if (urls) {
+      domain.submission.outputUrls = [urls];
+    } else {
+      domain.submission.outputUrls = [];
     }
+  }
+
+  // ✅ Clear URLs for domains NOT sent from frontend
+  task.domains.forEach((d) => {
+    if (!outputUrlsData[d.name]) {
+      d.submission.outputUrls = [];
+    }
+  });
+
+  task.markModified("domains");
+}
+
+
+
+
 
     // ✅ File deletions for non-domain files
     for (const field of ["sowFiles", "inputFiles", "clientSampleSchemaFiles"]) {
@@ -1122,81 +1147,164 @@ export const updateTask = async (req, res) => {
 
 
     // ✅ Update other basic fields
-// ... (omitted for brevity, assume unchanged) ...
 
-    // ✅ Merge and assign domains
-        let incomingDomains = [];
-    if (body.domains) {
-      incomingDomains =
-        typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
-    }
+//     // ✅ Merge and assign domains
+//         let incomingDomains = [];
+//     if (body.domains) {
+//       incomingDomains =
+//         typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
+//     }
 
-    // ✅ Merge & remove missing domains
-const existingDomainNames = task.domains.map((d) => d.name);
+//     // ✅ Merge & remove missing domains
+// const existingDomainNames = task.domains.map((d) => d.name);
 
-// 1️⃣ Add new domains
-incomingDomains.forEach((d) => {
-  if (!existingDomainNames.includes(d.name)) {
-    task.domains.push({
-      name: d.name,
+// // 1️⃣ Add new domains
+// incomingDomains.forEach((d) => {
+//   if (!existingDomainNames.includes(d.name)) {
+//     task.domains.push({
+//       name: d.name,
+//       status: "pending",
+//       developers: [],
+//       submission: { files: [], outputUrl: "" },
+//     });
+//   }
+// });
+
+// // 2️⃣ Remove domains that were deleted from frontend
+// task.domains = task.domains.filter((d) =>
+//   incomingDomains.some((nd) => nd.name === d.name)
+// );
+
+let incomingDomains = [];
+if (body.domains) {
+  try {
+    // Parse incoming domains (from a stringified array/JSON if sent via FormData)
+    incomingDomains =
+      typeof body.domains === "string" ? JSON.parse(body.domains) : body.domains;
+  } catch (e) {
+    console.error("Failed to parse incoming domains:", e);
+  }
+}
+
+// Create a map of existing domains for quick lookup
+const existingDomainsMap = new Map(
+  task.domains.map((d) => [d.name, d])
+);
+
+const finalDomains = [];
+
+incomingDomains.forEach((incomingDomain) => {
+  const existingDomain = existingDomainsMap.get(incomingDomain.name);
+
+  if (existingDomain) {
+    // 1. Existing Domain: Preserve the existing Mongoose subdocument.
+    // This object already contains the outputUrl update made earlier.
+    finalDomains.push(existingDomain);
+  } else {
+    // 2. New Domain: Create a new structure.
+    finalDomains.push({
+      name: incomingDomain.name,
       status: "pending",
       developers: [],
-      submission: { files: [], outputUrl: "" },
+      // Use array [] for outputUrl and outputFiles for a clean start
+      submission: { outputFiles: [], outputUrls: [] },
     });
   }
 });
 
-// 2️⃣ Remove domains that were deleted from frontend
-task.domains = task.domains.filter((d) =>
-  incomingDomains.some((nd) => nd.name === d.name)
-);
+// Update the task's domains array with the merged list
+task.domains = finalDomains;
 
-
+// Mongoose Subdocuments are automatically marked modified when pushed/updated, 
+// but reassigning the parent array requires marking the array itself.
+task.markModified("domains");
     
 
     // ✅ Assign developers
 // ... (omitted for brevity, assume unchanged) ...
-    if (body.developers) {
-      const devObj =
-        typeof body.developers === "string"
-          ? JSON.parse(body.developers)
-          : body.developers;
+    // if (body.developers) {
+    //   const devObj =
+    //     typeof body.developers === "string"
+    //       ? JSON.parse(body.developers)
+    //       : body.developers;
 
-      const assignedDevelopers = new Set();
+    //   const assignedDevelopers = new Set();
 
-      task.domains = task.domains.map((domain) => {
-        const devsForDomain = devObj[domain.name] || [];
-        const uniqueDevs = [];
+    //   task.domains = task.domains.map((domain) => {
+    //     const devsForDomain = devObj[domain.name] || [];
+    //     const uniqueDevs = [];
 
-        for (const dev of devsForDomain) {
-          const devId = typeof dev === "object" ? dev._id : dev;
-          if (
-            mongoose.Types.ObjectId.isValid(devId) &&
-            !assignedDevelopers.has(String(devId))
-          ) {
-            uniqueDevs.push(devId);
-            assignedDevelopers.add(String(devId));
-          }
-        }
+    //     for (const dev of devsForDomain) {
+    //       const devId = typeof dev === "object" ? dev._id : dev;
+    //       if (
+    //         mongoose.Types.ObjectId.isValid(devId) &&
+    //         !assignedDevelopers.has(String(devId))
+    //       ) {
+    //         uniqueDevs.push(devId);
+    //         assignedDevelopers.add(String(devId));
+    //       }
+    //     }
 
-        return {
-          ...domain.toObject(),
-          developers: uniqueDevs,
-          status:
-            domain.status === "submitted"
-              ? "submitted"
-              : uniqueDevs.length > 0
-              ? "in-progress"
-              : "pending",
-        };
-      });
+    //     return {
+    //       ...domain.toObject(),
+    //       developers: uniqueDevs,
+    //       status:
+    //         domain.status === "submitted"
+    //           ? "submitted"
+    //           : uniqueDevs.length > 0
+    //           ? "in-progress"
+    //           : "pending",
+    //     };
+    //   });
 
-      const hasAnyDev = Object.values(devObj).some(
-        (arr) => Array.isArray(arr) && arr.length > 0
-      );
-      if (hasAnyDev) task.status = "in-progress";
+    //   const hasAnyDev = Object.values(devObj).some(
+    //     (arr) => Array.isArray(arr) && arr.length > 0
+    //   );
+    //   if (hasAnyDev) task.status = "in-progress";
+    // }
+if (body.developers) {
+  const devObj =
+    typeof body.developers === "string"
+      ? JSON.parse(body.developers)
+      : body.developers;
+
+  const assignedDevelopers = new Set();
+
+  // 💡 FIX: Use forEach to mutate the existing Mongoose subdocument in place.
+  for (const domain of task.domains) {
+    const devsForDomain = devObj[domain.name] || [];
+    const uniqueDevs = [];
+
+    for (const dev of devsForDomain) {
+      const devId = typeof dev === "object" ? dev._id : dev;
+      if (
+        mongoose.Types.ObjectId.isValid(devId) &&
+        !assignedDevelopers.has(String(devId))
+      ) {
+        uniqueDevs.push(devId);
+        assignedDevelopers.add(String(devId));
+      }
     }
 
+    // Mutate the existing object properties (outputUrl is safe)
+    domain.developers = uniqueDevs;
+    domain.status =
+      domain.status === "submitted"
+        ? "submitted"
+        : uniqueDevs.length > 0
+        ? "in-progress"
+        : "pending";
+  }
+  
+  // Since we modified nested properties, mark the parent array as modified.
+  task.markModified("domains");
+
+
+  const hasAnyDev = Object.values(devObj).some(
+    (arr) => Array.isArray(arr) && arr.length > 0
+  );
+  if (hasAnyDev) task.status = "in-progress";
+}
 
     // ✅ Save task
     await task.save();

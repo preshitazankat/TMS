@@ -729,10 +729,15 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     keptOutputMap[domain.name] = Array.from(new Set(keptFiles));
   }
 
-  // ✅ Handle output URLs (no change)
-  if (domain.submission?.outputUrls?.length) {
-    outputUrlsMap[domain.name] = domain.submission.outputUrls;
-  }
+  
+  // ✅ Handle output URLs
+if (domain.submission?.outputUrls?.length) {
+  outputUrlsMap[domain.name] = domain.submission.outputUrls.filter(Boolean);
+} else {
+  outputUrlsMap[domain.name] = [];  // Tell backend to clear URLs
+}
+
+
 });
 
 
@@ -741,9 +746,13 @@ const EditTaskUI: React.FC<{ taskData?: Task }> = ({ taskData }) => {
     if (Object.keys(keptOutputMap).length)
       formData.append("keptOutputFiles", JSON.stringify(keptOutputMap));
 
-    if (Object.keys(outputUrlsMap).length)
-      formData.append("outputUrls", JSON.stringify(outputUrlsMap));
 
+    if (Object.keys(outputUrlsMap).length)
+  formData.append("domainOutputUrls", JSON.stringify(outputUrlsMap));
+
+for (const pair of (formData as any).entries()) {
+  console.log("formData entry:", pair[0], pair[1]);
+}
     formData.append("domains", JSON.stringify(task.domains));
 
 
