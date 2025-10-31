@@ -108,9 +108,12 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [method, setMethod] = useState("");
   const [apiName, setApiName] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [taskLoading, setTaskLoading] = useState(true);
 
 
   useEffect(() => {
+    setTaskLoading(true);
     if (taskData) {
       setSubmission((prev) => ({
         ...prev,
@@ -128,6 +131,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       }));
       if (taskData.developers) setDomains(Object.keys(taskData.developers));
       setTaskDetails(taskData);
+      setTaskLoading(false);
     } else if (id) {
       fetch(`${apiUrl}/tasks/${id}`, { method: "GET", credentials: "include" })
         .then((res) => res.json())
@@ -149,8 +153,12 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
           setTaskDetails(data);
           if (data.developers) setDomains(Object.keys(data.developers));
+          setTaskLoading(false);
         })
-        .catch(console.error);
+        .catch(err => {
+        console.error(err);
+        setTaskLoading(false);
+      });
     }
   }, [taskData, id, domainFromUrl]);
 
@@ -270,6 +278,7 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     e.preventDefault();
 
     if (!validateForm()) return;
+    setLoading(true);
 
     try {
       const formData = new FormData();
@@ -346,6 +355,8 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     } catch (err) {
       console.error(err);
       toast.error("❌ Error submitting task!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -387,6 +398,15 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
     </div>
   );
 
+  if (taskLoading) {
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+    </div>
+  );
+}
+
+
   return (
     <>
       <PageBreadcrumb
@@ -398,20 +418,25 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
       />
 
       <div className="min-h-screen w-full   flex justify-center py-10 px-4">
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-        <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
 
+        <div className="w-full max-w-7xl bg-gray-100 dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 lg:p-8">
+          <ToastContainer
+            position="top-center"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            pauseOnHover
+            draggable
+            theme="colored"
+            style={{
+              position: "fixed",
+              top: "10px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 99999
+            }}
+          />
           <h2 className="text-3xl text-center text-[#3903a0] font-semibold mb-8">
             {/* Project codes */}
             {Array.isArray(taskDetails?.projectCode)
@@ -987,14 +1012,16 @@ const SubmitTaskUI: React.FC<SubmitTaskProps> = ({ taskData }) => {
 
             {/* Buttons */}
             <div className="flex gap-4 flex-wrap">
-              <button
+              <button 
                 type="submit"
+                disabled={loading}
                 className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-semibold transition"
               >
-                Submit Task
+                {loading ? "Submitting..." : "Submit Task"}
               </button>
               <button
                 type="button"
+
                 onClick={() => navigate(-1)}
                 className="w-full md:w-auto bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-md font-semibold transition"
               >

@@ -1,9 +1,7 @@
 // backend/middleware/Autho.js
 import jwt from "jsonwebtoken";
 
-// Middleware to authorize by roles
-// Usage: authorize(["Admin", "TL"])
-export const authorize = (allowedRoles = []) => (req, res, next) => {
+export const authorize=(allowedRoles = []) => (req, res, next) => {
   try {
     // Read token from cookies instead of headers
     const token = req.cookies?.token;
@@ -31,7 +29,6 @@ export const authorize = (allowedRoles = []) => (req, res, next) => {
     if (allowedRoles.length > 0 && !allowedRoles.includes(decoded.role)) {
       return res.status(403).json({ message: "Forbidden: Insufficient role" });
     }
-
     next();
   } catch (err) {
     console.error("Auth middleware error:", err.message);

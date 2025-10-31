@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, addDays } from "date-fns";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { toast, ToastContainer } from "react-toastify";
 
 interface TaskType {
   title: string;
@@ -73,6 +74,7 @@ const CreateTaskUI: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const allowedExtensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"];
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -103,26 +105,7 @@ const CreateTaskUI: React.FC = () => {
     return pattern.test(url);
   };
 
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  //   const { name, value, files } = e.target as any;
-  //   if (files) {
-  //     const newFiles = Array.from(files);
-  //     setTask((prev) => ({
-  //       ...prev,
-  //       [name]: [...(prev[name] || []), ...newFiles], // append files
-  //     }));
-  //   }
-  //   else {
-  //     const mappedName = name === "sowUrl" ? "sowUrls" : name === "inputUrl" ? "inputUrls" : name === "clientSampleSchemaUrl" ? "clientSampleSchemaUrls" : name;
-
-  //     let finalValue: any = value;
-  //     if (name === 'requiredValumeOfSampleFile') {
-
-  //       finalValue = value ? Number(value) : undefined;
-  //     }
-  //     setTask({ ...task, [mappedName]: finalValue });
-  //   }
-  // };
+  
 
   
 const handleChange = (
@@ -162,14 +145,14 @@ const handleChange = (
   }
 };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof TaskType) => {
+const handleDrop = (e: React.DragEvent<HTMLDivElement>, name: keyof TaskType) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setTask({ ...task, [name]: e.dataTransfer.files[0] });
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
+const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const handleDomainAdd = () => {
     const trimmed = domainInput.trim();
@@ -234,7 +217,7 @@ const handleChange = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+    setLoading(true);
     try {
       const formData = new FormData();
       Object.entries(task).forEach(([key, value]) => {
@@ -277,13 +260,16 @@ const handleChange = (
         return;
       }
 
-      alert("✅ Task created successfully!");
-      navigate("/tasks");
+    
+      toast.success("✅ Task created successfully!");
+     setTimeout(() => navigate("/tasks"), 1500);
     } catch (err) {
       console.error(err);
       setErrors({ form: "Unexpected error creating task" });
+    }finally{
+      setLoading(false);
     }
-  };
+  }; 
 
   const renderError = (field: string) => errors[field] && <p className="text-red-500 text-sm mt-1">{errors[field]}</p>;
 
@@ -335,63 +321,7 @@ const handleChange = (
     </div>
   );
 
-  // const renderFileDropArea = (
-  //   files: File[] | null,
-  //   name: keyof TaskType,
-  //   label: string
-  // ) => (
-  //   // Use a fragment or container div to hold both parts
-  //   <>
-  //     {/* 1. DROP AREA: Contains only the prompt and the hidden file input */}
-  //     <div
-  //       onDrop={(e) => handleDrop(e, name)}
-  //       onDragOver={handleDragOver}
-  //       className="relative flex flex-col justify-center items-center border-2 border-dashed border-gray-400 rounded-md p-6 mb-2 cursor-pointer hover:border-blue-400 transition bg-gray-100 text-gray-900"
-  //     >
-  //       {/* Prompt Text */}
-  //       <div>
-  //         Drag & Drop {label} here or click to upload
-  //       </div>
-
-  //       {/* Hidden File Input (Covers only the drop area) */}
-  //       <input
-  //         type="file"
-  //         name={name}
-  //         multiple
-  //         onChange={handleChange}
-  //         className="absolute w-full h-full opacity-0 cursor-pointer top-0 left-0"
-  //       />
-  //     </div>
-
-  //     {/* 2. FILE LIST: Rendered BELOW the drop area, ensuring clicks do not trigger the file input */}
-  //     {files && files.length > 0 && (
-  //       <ul className="w-full mt-1 border border-gray-300 rounded-md p-2 bg-white">
-  //         {files.map((file, index) => (
-  //           <li
-  //             key={index}
-  //             className="flex justify-between items-center py-1 px-2 border-b last:border-b-0"
-  //           >
-  //             <span>{file.name}</span>
-  //             <button
-  //               type="button"
-  //               onClick={(e) => {
-  //                 // The structural change ensures this button is outside the file input's influence
-  //                 e.stopPropagation();
-  //                 setTask((prev) => ({
-  //                   ...prev,
-  //                   [name]: prev[name].filter((_: any, i: number) => i !== index),
-  //                 }));
-  //               }}
-  //               className="text-red-500 hover:text-red-700 font-bold"
-  //             >
-  //               ❌
-  //             </button>
-  //           </li>
-  //         ))}
-  //       </ul>
-  //     )}
-  //   </>
-  // );
+  
 
   return (
     <>
@@ -404,6 +334,23 @@ const handleChange = (
       />
       <div className="min-h-screen w-full bg-white flex justify-center py-10 px-4">
         <div className="w-full max-w-6xl bg-gray-100 p-8 rounded-lg shadow-lg">
+          <ToastContainer
+            position="top-center"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            pauseOnHover
+            draggable
+            theme="colored"
+            style={{
+              position: "fixed",
+              top: "10px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 99999
+            }}
+          />
           <h1 className="text-3xl font-semibold text-center text-[#3903a0] mb-8">Create New Task</h1>
           {errors.form && <p className="text-red-500 text-center mb-4">{errors.form}</p>}
 
@@ -597,8 +544,8 @@ const handleChange = (
               </div>
             </div>
 
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition w-full">
-              Create Task
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition w-full" disabled={loading} >
+              {loading ? "Creating Task..." : "Create Task"}
             </button>
           </form>
         </div>

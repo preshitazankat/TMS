@@ -8,7 +8,6 @@ import { authorize, developerOnly } from "../middleware/Autho.js";
 import {
   createTask,
   getTask,
-  //getStats,
   updateTask,
   submitTask,
   getSingleTask,
@@ -52,7 +51,6 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const upload = multer({ storage });
 router.post("/tasks", authorize(['Admin', 'Sales', 'Manager']), upload.fields([
   { name: "sowFile", maxCount: 10 },
@@ -78,11 +76,8 @@ router.put(
   updateTask
 );
 
-
-
 router.post("/tasks/:id/submit", authorize(['Admin', 'TL', 'Developer', 'Manager']), upload.fields([
-
-  { name: "outputFiles", maxCount: 20 },
+{ name: "outputFiles", maxCount: 20 },
 ]), submitTask);
 router.get("/tasks/developers", authorize(['Manager', 'Admin']), getDevelopersDomainStatus);
 router.get("/tasks/stats", authorize(['Admin', 'Sales', 'TL', 'Developer', 'Manager']), getDomainStats);
@@ -93,8 +88,6 @@ router.get("/tasks/:id", authorize(['Admin', 'Sales', 'TL', 'Developer', 'Manage
 
 
 router.get("/tasks/developers", authorize(['Manager',]), getDevelopersDomainStatus);
-
-
 export default router;
 
 

@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"; 
+
 
 const domainSchema = new mongoose.Schema({
   name: { type: String, required: true }, // e.g., "web", "app", "both"

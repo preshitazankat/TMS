@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
+
 
 // Create a new user
 export const createUser = async (req, res) => {
@@ -42,7 +42,6 @@ export const createUser = async (req, res) => {
 
 };
 
-
 // login user
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -78,7 +77,6 @@ secure: false,
 
 }
 
-
 //Get All Users
 export const getAllUsers = async (req, res) => {
   const users = await User.find().select("-password");
@@ -105,7 +103,6 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-
 // edit user
 export const editUser = async (req, res) => {
   try {
@@ -122,7 +119,6 @@ export const editUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 }
-
 
 export const changePassword = async (req, res) => {
   try {
