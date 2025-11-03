@@ -102,7 +102,9 @@ const TaskDetail: React.FC = () => {
     });
   };
 
-  //if (!task) return <div className="p-6 text-gray-800">Loading task details...</div>;
+  if (!task) return <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+    </div>;
 
   let domainObj: any = null;
   console.log("123", domainObj);
@@ -245,7 +247,7 @@ const TaskDetail: React.FC = () => {
 
 
           </div>
-
+ 
           {/* SUBMISSION */}
           {submission && showSubmissionSection ? (
             <Section title="Submission" icon={<FileText size={18} className="text-blue-600 bg-gray-100" />}>

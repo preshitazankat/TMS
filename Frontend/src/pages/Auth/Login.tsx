@@ -2,16 +2,53 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Svg from "../../assets/Computer login-amico (1).svg";
 import icon from "../../assets/icon.svg";
+import { toast, ToastContainer } from "react-toastify";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isFormValid = validateEmail(email)
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!email.trim() && !password.trim()) {
+    toast.error("Email & Password are required!");
+    return;
+  }
+
+  if (!email.trim()) {
+    toast.error("Email is required!");
+    return;
+  }
+
+  if (!password.trim()) {
+    toast.error("Password is required!");
+    return;
+  }
+    if (!validateEmail(email)) {
+      toast.error("Invalid email format!");
+      setEmailError("Please enter a valid email");
+      return;
+    }
+    if (!validateEmail(email)) {
+  setEmailError("Please enter a valid email");
+  return;
+}
+    setLoading(true);
     try {
       const res = await fetch(`${apiUrl}/users/login`, {
         method: "POST",
@@ -22,17 +59,27 @@ export default function SignInPage() {
 
       const data = await res.json();
       if (res.ok) {
-        navigate("/");
+        toast.success("Login successful! 🎉");
+        setTimeout(() => navigate("/"), 1500);
       } else {
-        alert(data.message);
+        if (data.message?.toLowerCase().includes("invalid")) {
+          toast.error("Invalid email or password ❌");
+        } else {
+          toast.error(data.message || "Something went wrong!");
+        }
       }
     } catch (err) {
-      console.error(err);
+      toast.error("Something went wrong! Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <ToastContainer position="top-center" autoClose={2000} />
+
       {/* Card Container */}
       <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl shadow-lg overflow-hidden max-w-5xl w-full">
         {/* Left: Form */}
@@ -51,7 +98,7 @@ export default function SignInPage() {
           </h2>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div>
               <label className="block mb-1 font-medium text-gray-700">
                 Email
@@ -59,11 +106,15 @@ export default function SignInPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+    setEmail(e.target.value);
+    setEmailError("");
+  }}
                 placeholder="Enter your email"
                 className="w-full p-3 rounded-lg bg-white border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-800 placeholder-gray-400"
-                required
+
               />
+              {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
             </div>
 
             <div>
@@ -77,8 +128,9 @@ export default function SignInPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="w-full p-3 rounded-lg bg-white border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-800 placeholder-gray-400"
-                  required
+                  
                 />
+                
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -91,10 +143,21 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition"
+              disabled={loading}
+              className={`w-full py-3 rounded-lg font-semibold text-white transition flex justify-center items-center gap-2 ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                }`}
             >
-              Sign In
+              {loading ? (
+                <>
+                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
+
+
           </form>
         </div>
 

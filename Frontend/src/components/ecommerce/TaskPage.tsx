@@ -102,11 +102,15 @@ const TaskPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState("in-R&D");
   const [statusReason, setStatusReason] = useState("");
 
+   const [hoveredTask, setHoveredTask] = useState<string | null>(null);
+
+
   const normalizedFilter = statusFilter
     .toLowerCase()
     .replace(/\s/g, "")
     .replace(/&/g, "and");
   const [loading, setLoading] = useState(true);
+  const [tableloading, setTableLoading] = useState(false)
 
   // --- openStatusModal (update so domain includes id + status) ---
   const openStatusModal = (
@@ -141,6 +145,7 @@ const TaskPage: React.FC = () => {
   };
 
   const fetchStats = async (token: string) => {
+    setLoading(true)
     try {
       const res = await fetch(`${apiUrl}/tasks/stats`, {
         method: "GET",
@@ -172,6 +177,8 @@ const TaskPage: React.FC = () => {
       setStats({ total, pending, inProgress, delayed, inRD, completed });
     } catch (err) {
       console.error("Stats fetch error:", err);
+    } finally {
+      setLoading(false)
     }
   };
 
@@ -192,11 +199,11 @@ const TaskPage: React.FC = () => {
   }, []);
 
   const cards = [
-    { label: "Total Platform", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
-    { label: "Pending Platform", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
-    { label: "In-Progress Platform", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
-    { label: "Delayed Platform", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
-    { label: "Completed Platform", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
+    { label: "Total ", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
+    { label: "Pending ", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
+    { label: "In-Progress ", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
+    { label: "Delayed ", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
+    { label: "Completed ", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
     { label: "In-R&D", value: stats.inRD, icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
   ];
 
@@ -219,7 +226,7 @@ const TaskPage: React.FC = () => {
 
 
   const fetchTasks = async () => {
-    setLoading(true);
+    setTableLoading(true)
     try {
       const statusParam =
         statusFilter && statusFilter !== "All" ? statusFilter : "";
@@ -242,25 +249,23 @@ const TaskPage: React.FC = () => {
 
       const data = await res.json();
       setTasks(data.tasks || []);
-//       setTasks(prev =>
-//   prev.map(t =>
-//     t._id === updatedTask._id ? { ...t, ...updatedTask } : t
-//   )
-// );
+      //       setTasks(prev =>
+      //   prev.map(t =>
+      //     t._id === updatedTask._id ? { ...t, ...updatedTask } : t
+      //   )
+      // );
 
       setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+
+      setTableLoading(false)
     }
   };
 
   useEffect(() => {
-
     fetchTasks();
-
-
   }, [searchText, statusFilter, page]);
 
   const expandedRows = useMemo(() => {
@@ -380,7 +385,16 @@ const TaskPage: React.FC = () => {
     );
   }
 
-    
+
+
+ 
+
+const avatarColor = (name: string) => {
+  const colors = ["#FFCA28", "#29B6F6", "#AB47BC", "#FF7043", "#66BB6A"];
+  return colors[name.length % colors.length];
+};
+
+
 
 
   return (
@@ -396,12 +410,12 @@ const TaskPage: React.FC = () => {
         {cards.map((card, idx) => (
           <div
             key={idx}
-            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg `}
+            className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg transition text-black grid grid-cols-1 items-center justify-center`}
 
           >
             <div className="flex items-center justify-center gap-2">
               <span className="text-2xl">{card.icon}</span>
-              <h3 className="text-lg font-medium">{card.label}</h3>
+              <h3 className="text-lg font-medium whitespace-nowrap">{card.label}</h3>
             </div>
             <p className="text-2xl font-bold">{card.value}</p>
           </div>
@@ -446,220 +460,275 @@ const TaskPage: React.FC = () => {
           </button>
         )}
       </div>
+      {tableloading ? <>  <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+      </div></> : <>
 
-      <div className="rounded-lg border border-gray-300 bg-white p-5">
-        <div className="w-full overflow-x-auto border border-gray-300 rounded-lg bg-gray-100">
-          <table className="text-left text-sm w-full">
-            <thead className="bg-gray-200">
-              <tr>
-                {[
-                  "No.",
-                  "Project Code",
-                  "Project",
-                  "Assigned By",
-                  "Assigned To",
-                  "Assigned Date",
-                  "Completion Date",
-                  "Platform",
-                  "Developers",
-                  "Status",
-                  "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-gray-800 font-medium border-b border-gray-300"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRows.map((row, idx) => {
-                const srNo = (page - 1) * limit + idx + 1;
-
-                const developers = row.developers || [];
-                const domainObj =
-                  row.task?.domains?.find((d) => d.name === row.domainName) ||
-                  row.task?.domains?.[0];
-
-                const domainId = domainObj
-                  ? typeof domainObj._id === "object"
-                    ? domainObj._id.$oid
-                    : domainObj._id
-                  : ""; // fallback if domainObj is undefined
-                //console.log("domainID", domainId);
-
-                return (
-                  <tr
-                    //key={`${row.task.srNo}-${row.domainName ?? "none"}-${idx}`}
-                    key={`${row.task._id}-${row.domainName ?? "none"}`}
-
-                    className="hover:bg-gray-100 transition-colors"
-                  >
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {srNo}
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.task.projectCode}
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.task.title}
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.task.assignedBy?.name || row.task.assignedBy || "-"}
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.task.assignedTo?.name || row.task.assignedTo || "-"}
-                    </td>
-                    {/* Assigned Date → task.createdAt */}
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {formatDate(row.task.taskAssignedDate)}
-                    </td>
-
-                    {/* Completion Date → domain completeDate */}
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {formatDate(row.task.completeDate)}
-                    </td>
-
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {row.domainName || "-"}
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-                      {developers.length ? developers.join(", ") : "-"}
-                    </td>
-                    <td
-                      className="px-4 py-3 border-b border-gray-300 whitespace-nowrap cursor-pointer"
-                      onClick={() => {
-                        if (
-                          role === "TL" ||
-                          role === "Manager" ||
-                          role === "Admin"
-                        ) {
-                          const domainObj =
-                            row.task?.domains?.find(
-                              (d) => d.name === row.domainName
-                            ) || row.task?.domains?.[0];
-
-                          const domainId =
-                            typeof domainObj?._id === "object"
-                              ? domainObj._id.$oid ?? ""
-                              : domainObj?._id ?? "";
-
-                          openStatusModal(row.task, {
-                            id: domainId,
-                            name: domainObj?.name || "Unknown",
-                            status:
-                              domainObj?.status ||
-                              row.domainStatus ||
-                              "Pending",
-                          });
-                        }
-                      }}
+        <div className="rounded-lg border border-gray-300 bg-white p-5">
+          <div className="w-full overflow-x-auto border border-gray-300 rounded-lg bg-gray-100">
+            <table className="text-left text-sm w-full">
+              <thead className="bg-gray-200">
+                <tr>
+                  {[
+                    "No.",
+                    "Project Code",
+                    "Project",
+                    "Assigned By",
+                    "Assigned To",
+                    "Assigned Date",
+                    "Completion Date",
+                    "Platform",
+                    "Developers",
+                    "Status",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-gray-800 font-medium border-b border-gray-300"
                     >
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(
-                          row.domainStatus
-                        )}`}
-                        title={
-                          role === "TL" || role === "Manager"
-                            ? "Click to change status"
-                            : ""
-                        }
-                      >
-                        {formatStatus(row.domainStatus)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 border-b border-gray-300">
-                      <div className="flex gap-4 items-center">
-                        <FiEye
-                          onClick={() =>
-                            navigate(
-                              `/tasks/${row.task._id}${row.domainName
-                                ? `?domain=${encodeURIComponent(
-                                  row.domainName
-                                )}`
-                                : ""
-                              }`
-                            )
-                          }
-                          className="cursor-pointer text-blue-600 hover:text-blue-800"
-                          title="View"
-                          size={20}
-                        />
-                        {(role === "Admin" ||
-                          role === "Sales" ||
-                          role === "TL" ||
-                          role === "Manager") && (
-                            <FiEdit2
-                              onClick={() => navigate(`/edit/${row.task._id}`)}
-                              className="cursor-pointer text-yellow-500 hover:text-yellow-600"
-                              title="Edit"
-                              size={20}
-                            />
-                          )}
-                        {/* ✅ Show Submit button only if not submitted and developer is assigned */}
-                        {(role === "Admin" ||
-                          role === "TL" ||
-                          role === "Developer" ||
-                          role === "Manager") &&
-                          row.domainStatus?.toLowerCase() !== "submitted" &&
-                          (row.developers?.length > 0 ? (
-                            <GrCompliance
-                              onClick={() =>
-                                navigate(
-                                  `/submit/${row.task._id}${row.domainName
-                                    ? `?domain=${encodeURIComponent(row.domainName)}`
-                                    : ""
-                                  }`
-                                )
-                              }
-                              className="cursor-pointer text-green-600 hover:text-green-700"
-                              title="Submit"
-                              size={20}
-                            />
-                          ) : (
-                            // Show popup instead of disabled icon
-                            <GrCompliance
-                              onClick={() => setShowAssignDevPopup(true)}
-                              className="cursor-pointer text-gray-400"
-                              title="Assign a developer first"
-                              size={20}
-                            />
-                          ))}
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedRows.map((row, idx) => {
+                  const srNo = (page - 1) * limit + idx + 1;
 
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  const developers = row.developers || [];
+                  const domainObj =
+                    row.task?.domains?.find((d) => d.name === row.domainName) ||
+                    row.task?.domains?.[0];
 
-        <div className="flex justify-end gap-2 mt-4 items-center">
-          <div className="text-gray-600">
-            No. Of Rows: {paginatedRows.length}
-          </div>
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span>
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+                  const domainId = domainObj
+                    ? typeof domainObj._id === "object"
+                      ? domainObj._id.$oid
+                      : domainObj._id
+                    : ""; // fallback if domainObj is undefined
+                  //console.log("domainID", domainId);
+
+                  return (
+                    <tr
+                      //key={`${row.task.srNo}-${row.domainName ?? "none"}-${idx}`}
+                      key={`${row.task._id}-${row.domainName ?? "none"}`}
+
+                      className="hover:bg-gray-100 transition-colors"
+                    >
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {srNo}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {row.task.projectCode}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {row.task.title}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {row.task.assignedBy?.name || row.task.assignedBy || "-"}
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {row.task.assignedTo?.name || row.task.assignedTo || "-"}
+                      </td>
+                      {/* Assigned Date → task.createdAt */}
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {formatDate(row.task.taskAssignedDate)}
+                      </td>
+
+                      {/* Completion Date → domain completeDate */}
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {formatDate(row.task.completeDate)}
+                      </td>
+
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                        {row.domainName || "-"}
+                      </td>
+                      {/* <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+                      {developers.length ? developers.join(", ") : "-"}
+                    </td> */}
+                      <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
+  <div 
+    className="flex items-center gap-1 relative"
+    onMouseEnter={() => setHoveredTask(row.task._id)}
+    onMouseLeave={() => setHoveredTask(null)}
+  >
+
+    {/* show only first 2 dev bubbles */}
+    {developers.slice(0,2).map((dev: string, i: number) => (
+      <div
+        key={i}
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition"
+        style={{ backgroundColor: avatarColor(dev) }}
+      >
+        {dev.split(" ").map(n => n[0]).join("")}
       </div>
+    ))}
+
+    {/* +X bubble if more than 2 */}
+    {developers.length > 2 && (
+      <div
+        className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center cursor-pointer hover:scale-110 transition"
+      >
+        +{developers.length - 2}
+      </div>
+    )}
+
+    {/* Hover dropdown */}
+    {hoveredTask === row.task._id && developers.length > 0 && (
+      <div className="absolute top-10 left-0 bg-white shadow-lg rounded-lg p-2 w-56 z-50 border animate-fade-in">
+        <p className="text-xs font-semibold mb-2 text-gray-700">All Assignees</p>
+
+        {developers.map((dev: string, i: number) => (
+          <div key={i} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 transition">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+              style={{ backgroundColor: avatarColor(dev) }}
+            >
+              {dev.split(" ").map(n => n[0]).join("")}
+            </div>
+            <span className="text-sm">{dev}</span>
+          </div>
+        ))}
+      </div>
+    )}
+
+  </div>
+</td>
+
+
+
+                      <td
+                        className="px-4 py-3 border-b border-gray-300 whitespace-nowrap cursor-pointer"
+                        onClick={() => {
+                          if (
+                            role === "TL" ||
+                            role === "Manager" ||
+                            role === "Admin"
+                          ) {
+                            const domainObj =
+                              row.task?.domains?.find(
+                                (d) => d.name === row.domainName
+                              ) || row.task?.domains?.[0];
+
+                            const domainId =
+                              typeof domainObj?._id === "object"
+                                ? domainObj._id.$oid ?? ""
+                                : domainObj?._id ?? "";
+
+                            openStatusModal(row.task, {
+                              id: domainId,
+                              name: domainObj?.name || "Unknown",
+                              status:
+                                domainObj?.status ||
+                                row.domainStatus ||
+                                "Pending",
+                            });
+                          }
+                        }}
+                      >
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusClass(
+                            row.domainStatus
+                          )}`}
+                          title={
+                            role === "TL" || role === "Manager"
+                              ? "Click to change status"
+                              : ""
+                          }
+                        >
+                          {formatStatus(row.domainStatus)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border-b border-gray-300">
+                        <div className="flex gap-4 items-center">
+                          <FiEye
+                            onClick={() =>
+                              navigate(
+                                `/tasks/${row.task._id}${row.domainName
+                                  ? `?domain=${encodeURIComponent(
+                                    row.domainName
+                                  )}`
+                                  : ""
+                                }`
+                              )
+                            }
+                            className="cursor-pointer text-blue-600 hover:text-blue-800"
+                            title="View"
+                            size={20}
+                          />
+                          {(role === "Admin" ||
+                            role === "Sales" ||
+                            role === "TL" ||
+                            role === "Manager") && (
+                              <FiEdit2
+                                onClick={() => navigate(`/edit/${row.task._id}`)}
+                                className="cursor-pointer text-yellow-500 hover:text-yellow-600"
+                                title="Edit"
+                                size={20}
+                              />
+                            )}
+                          {/* ✅ Show Submit button only if not submitted and developer is assigned */}
+                          {(role === "Admin" ||
+                            role === "TL" ||
+                            role === "Developer" ||
+                            role === "Manager") &&
+                            row.domainStatus?.toLowerCase() !== "submitted" &&
+                            (row.developers?.length > 0 ? (
+                              <GrCompliance
+                                onClick={() =>
+                                  navigate(
+                                    `/submit/${row.task._id}${row.domainName
+                                      ? `?domain=${encodeURIComponent(row.domainName)}`
+                                      : ""
+                                    }`
+                                  )
+                                }
+                                className="cursor-pointer text-green-600 hover:text-green-700"
+                                title="Submit"
+                                size={20}
+                              />
+                            ) : (
+                              // Show popup instead of disabled icon
+                              <GrCompliance
+                                onClick={() => setShowAssignDevPopup(true)}
+                                className="cursor-pointer text-gray-400"
+                                title="Assign a developer first"
+                                size={20}
+                              />
+                            ))}
+
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 items-center">
+            <div className="text-gray-600">
+              No. Of Rows: {paginatedRows.length}
+            </div>
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span>
+              {page} / {totalPages}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </>}
 
       {statusModalOpen && currentTask && currentDomain && currentDomain.status.toLowerCase() !== 'submitted' && (
         <div className="fixed inset-0 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-30">

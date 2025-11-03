@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { FiClipboard, FiClock, FiCheckCircle, FiAlertCircle, FiPlay, FiBox } from "react-icons/fi";
-import { set } from "date-fns";
- import Skeleton from "react-loading-skeleton";
 
 interface DomainStats {
   total: number;
@@ -92,7 +90,7 @@ const Dashboard: React.FC = () => {
       setStats({ total, pending, inProgress, delayed, inRD, completed });
     } catch (err) {
       console.error("Stats fetch error:", err);
-    } finally {
+    }finally {
       setLoading(false);
     }
   };
@@ -100,7 +98,6 @@ const Dashboard: React.FC = () => {
 
 
   const fetchDevelopers = async (token: string) => {
-
     setDevelopersLoading(true);
     try {
       const res = await fetch(`${apiUrl}/tasks/developers`, {
@@ -115,7 +112,7 @@ const Dashboard: React.FC = () => {
 
     } catch (err) {
       console.error("Developer fetch error:", err);
-    } finally {
+    }finally {
 
       setDevelopersLoading(false);
     }
@@ -133,7 +130,7 @@ const Dashboard: React.FC = () => {
         const payload = JSON.parse(atob(token.split(".")[1]));
         setUserRole(payload.role);
         await fetchStats(token);
-        fetchDevelopers(token);
+        await fetchDevelopers(token);
         // if (payload.role === "Manager") fetchDevelopers(token);
       } catch (err) {
         console.error("Invalid token", err);
@@ -142,15 +139,15 @@ const Dashboard: React.FC = () => {
     };
 
     init();
-  }, []); 
+  }, []);
 
 
   const cards = [
-    { label: "Total Platform", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
-    { label: "Pending Platform", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
-    { label: "In-Progress Platform", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
-    { label: "Delayed Platform", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
-    { label: "Completed Platform", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
+    { label: "Total ", value: stats.total, icon: <FiClipboard />, bgColor: "bg-blue-50", textColor: "text-gray-500" },
+    { label: "Pending ", value: stats.pending, icon: <FiClock />, bgColor: "bg-yellow-50", textColor: "text-gray-500" },
+    { label: "In-Progress ", value: stats.inProgress, icon: <FiPlay />, bgColor: "bg-purple-50", textColor: "text-gray-500" },
+    { label: "Delayed ", value: stats.delayed, icon: <FiAlertCircle />, bgColor: "bg-red-50", textColor: "text-gray-500" },
+    { label: "Completed ", value: stats.completed, icon: <FiCheckCircle />, bgColor: "bg-green-50", textColor: "text-gray-500" },
     { label: "In-R&D", value: stats.inRD, icon: <FiBox />, bgColor: "bg-orange-50", textColor: "text-gray-500" },
   ];
 
@@ -169,38 +166,25 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  
-
-
   return (
     <div className="min-h-screen p-6">
       {/* Cards */}
-      {loading ? (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-    {[...Array(6)].map((_, i) => (
-      <div key={i} className="p-4 bg-white rounded-lg shadow">
-        <Skeleton height={30} style={{ marginBottom: "10px" }} />
-        <Skeleton height={20} width={70} />
-      </div>
-    ))}
-  </div>
-) : (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-    {cards.map((card, idx) => (
-      <div
-        key={idx}
-        className={`${card.bgColor} rounded-lg p-4 text-center shadow hover:shadow-lg transition text-black`}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-2xl">{card.icon}</span>
-          <h3 className="text-lg font-medium">{card.label}</h3>
-        </div>
-        <p className="text-2xl font-bold">{card.value}</p>
-      </div>
-    ))}
-  </div>
-)}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+        {cards.map((card, idx) => (
+          <div
+            key={idx}
+            className={`${card.bgColor}  rounded-lg p-4 text-center shadow hover:shadow-lg transition text-black grid grid-cols-1 items-center justify-center`}
 
+          >
+
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">{card.icon}</span>
+              <h3 className="text-lg font-medium whitespace-nowrap">{card.label}</h3>
+            </div>
+            <p className="text-2xl font-bold">{card.value}</p>
+          </div>
+        ))}
+      </div>
 
 
 
@@ -210,23 +194,9 @@ const Dashboard: React.FC = () => {
     <h2 className="text-xl font-semibold mb-4">Developer Summary</h2>
 
     {developersLoading ? (
-      <>
-        {/* Skeleton table header */}
-        <Skeleton height={30} className="mb-3" />
-
-        {/* Skeleton rows */}
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex gap-3 mb-2">
-            <Skeleton width={40} height={20} />
-            <Skeleton width={120} height={20} />
-            <Skeleton width={60} height={20} />
-            <Skeleton width={60} height={20} />
-            <Skeleton width={60} height={20} />
-            <Skeleton width={60} height={20} />
-            <Skeleton width={60} height={20} />
-          </div>
-        ))}
-      </>
+      <div className="flex justify-center items-center py-10">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-blue-600"></div>
+      </div>
     ) : developers.length > 0 ? (
       <table className="w-full border-collapse bg-white">
         <thead className="bg-gray-300">
@@ -284,11 +254,8 @@ const Dashboard: React.FC = () => {
 )}
 
 
-
     </div>
   );
-
-  
 };
 
 export default Dashboard;

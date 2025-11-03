@@ -1034,8 +1034,10 @@ export const getSingleTask = async (req, res) => {
 // GET DOMAIN STATS PER DOMAIN NAME
 export const getDomainStats = async (req, res) => {
   try {
+    // 🔐 Token validation
     const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    if (!token)
+      return res.status(401).json({ success: false, message: "Unauthorized" });
 
     let userId, role;
     try {
@@ -1043,26 +1045,23 @@ export const getDomainStats = async (req, res) => {
       userId = decoded?.id;
       role = decoded?.role;
     } catch {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ success: false, message: "Invalid token" });
     }
 
+    // 🎯 Match condition (restrict Developer to their own domains)
     const matchStage = {};
-
-    // ✅ If developer, only include tasks where they are assigned in domain
     if (role === "Developer") {
       matchStage["domains.developers"] = new mongoose.Types.ObjectId(userId);
     }
 
+    // ⚡ MongoDB aggregation for fast domain-level stats
     const stats = await Task.aggregate([
-      { $unwind: "$domains" }, // each domain becomes a row
-      ...(role === "Developer"
-        ? [{ $match: matchStage }]
-        : []
-      ),
+      { $unwind: "$domains" },
+      ...(role === "Developer" ? [{ $match: matchStage }] : []),
 
       {
         $group: {
-          _id: "$domains.name",
+          _id: null,
           total: { $sum: 1 },
           pending: {
             $sum: { $cond: [{ $eq: ["$domains.status", "pending"] }, 1, 0] },
@@ -1078,28 +1077,50 @@ export const getDomainStats = async (req, res) => {
           },
           submitted: {
             $sum: { $cond: [{ $eq: ["$domains.status", "submitted"] }, 1, 0] },
-          }
-        }
+          },
+          deployed: {
+            $sum: { $cond: [{ $eq: ["$domains.status", "deployed"] }, 1, 0] },
+          },
+        },
       },
 
       {
         $project: {
           _id: 0,
-          domain: "$_id",
           total: 1,
           pending: 1,
           "in-progress": "$inProgress",
           delayed: 1,
           "in-R&D": "$inRAndD",
           submitted: 1,
-        }
-      }
+          deployed: 1,
+        },
+      },
     ]);
 
-    res.json(stats);
+    // 🧾 Response (return 0s if no data)
+    const result = stats[0] || {
+      total: 0,
+      pending: 0,
+      "in-progress": 0,
+      delayed: 0,
+      "in-R&D": 0,
+      submitted: 0,
+      deployed: 0,
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Domain stats fetched successfully",
+      data: result,
+    });
   } catch (err) {
     console.error("DomainStats Error:", err);
-    res.status(500).json({ message: "Failed to fetch domain stats" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch domain stats",
+      error: err.message,
+    });
   }
 };
 
