@@ -9,7 +9,13 @@ import { FiEye, FiEdit2, FiSend } from "react-icons/fi";
 import { GrCompliance } from "react-icons/gr"; // View, Edit, Submit
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiClipboard, FiClock, FiCheckCircle, FiAlertCircle, FiPlay, FiBox } from "react-icons/fi";
+import { FiClipboard, FiClock, FiCheckCircle, FiAlertCircle, FiPlay, FiBox, } from "react-icons/fi";
+import { FaThumbtack } from "react-icons/fa";
+import { FaFileExcel } from "react-icons/fa";
+import { FiArrowLeft } from "react-icons/fi";
+
+import { createPortal } from "react-dom";
+
 
 
 interface Stats {
@@ -102,7 +108,9 @@ const TaskPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState("in-R&D");
   const [statusReason, setStatusReason] = useState("");
 
-   const [hoveredTask, setHoveredTask] = useState<string | null>(null);
+  const [hoveredTask, setHoveredTask] = useState<string | null>(null);
+
+  const [dropdownPos, setDropdownPos] = useState({ x: 0, y: 0 });
 
 
   const normalizedFilter = statusFilter
@@ -387,12 +395,12 @@ const TaskPage: React.FC = () => {
 
 
 
- 
 
-const avatarColor = (name: string) => {
-  const colors = ["#FFCA28", "#29B6F6", "#AB47BC", "#FF7043", "#66BB6A"];
-  return colors[name.length % colors.length];
-};
+
+  const avatarColor = (name: string) => {
+    const colors = ["#FFCA28", "#29B6F6", "#AB47BC", "#FF7043", "#66BB6A"];
+    return colors[name.length % colors.length];
+  };
 
 
 
@@ -421,6 +429,16 @@ const avatarColor = (name: string) => {
           </div>
         ))}
       </div>
+      {(role === "Admin" || role === "Sales" || role === "Manager" || role === "TL") && (
+        <div className="my-5 text-xl flex items-center font-semibold">
+          <FaThumbtack className="inline-block mr-2 text-blue-600" />
+          <p>Pinned Previous Tasks:-</p>
+          <a href="https://docs.google.com/spreadsheets/d/1aueJRZmmT49KjgqDFEeuXUEKNO-fcLGQ8AEyiRQUPtE/edit?gid=615270440#gid=615270440" target="_blank"
+            rel="noopener noreferrer"><FaFileExcel className="inline-block mb-1 ml-2 text-green-600" size={25} /></a>
+          <p className="text-[20px] ml-2 flex items-center" ><FiArrowLeft /> Click Here To View</p>
+        </div>
+
+      )}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex gap-2 flex-1">
@@ -546,53 +564,69 @@ const avatarColor = (name: string) => {
                       {developers.length ? developers.join(", ") : "-"}
                     </td> */}
                       <td className="px-4 py-3 border-b border-gray-300 text-gray-800">
-  <div 
-    className="flex items-center gap-1 relative"
-    onMouseEnter={() => setHoveredTask(row.task._id)}
-    onMouseLeave={() => setHoveredTask(null)}
-  >
+                        <div
+                          className="flex items-center gap-1 relative"
+                          onMouseEnter={(e) => {
+                            setHoveredTask(row.task._id);
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setDropdownPos({
+                              x: rect.left,
+                              y: rect.bottom + 8, // shows below bubble
+                            });
+                          }}
 
-    {/* show only first 2 dev bubbles */}
-    {developers.slice(0,2).map((dev: string, i: number) => (
-      <div
-        key={i}
-        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition"
-        style={{ backgroundColor: avatarColor(dev) }}
-      >
-        {dev.split(" ").map(n => n[0]).join("")}
-      </div>
-    ))}
+                          onMouseLeave={() => setHoveredTask(null)}
+                        >
 
-    {/* +X bubble if more than 2 */}
-    {developers.length > 2 && (
-      <div
-        className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center cursor-pointer hover:scale-110 transition"
-      >
-        +{developers.length - 2}
-      </div>
-    )}
+                          {/* show only first 2 dev bubbles */}
+                          {developers.slice(0, 2).map((dev: string, i: number) => (
+                            <div
+                              key={i}
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition"
+                              style={{ backgroundColor: avatarColor(dev) }}
+                            >
+                              {dev.split(" ").map(n => n[0]).join("")}
+                            </div>
+                          ))}
 
-    {/* Hover dropdown */}
-    {hoveredTask === row.task._id && developers.length > 0 && (
-      <div className="absolute top-10 left-0 bg-white shadow-lg rounded-lg p-2 w-56 z-50 border animate-fade-in">
-        <p className="text-xs font-semibold mb-2 text-gray-700">All Assignees</p>
+                          {/* +X bubble if more than 2 */}
+                          {developers.length > 2 && (
+                            <div
+                              className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center cursor-pointer hover:scale-110 transition"
+                            >
+                              +{developers.length - 2}
+                            </div>
+                          )}
 
-        {developers.map((dev: string, i: number) => (
-          <div key={i} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 transition">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              style={{ backgroundColor: avatarColor(dev) }}
-            >
-              {dev.split(" ").map(n => n[0]).join("")}
-            </div>
-            <span className="text-sm">{dev}</span>
-          </div>
-        ))}
-      </div>
-    )}
+                          {/* Hover dropdown */}
+                          {hoveredTask === row.task._id && developers.length > 0 &&
+                            createPortal(
+                              <div
+                                className="fixed bg-white shadow-lg rounded-lg p-2 w-56 z-[9999] border animate-fade-in"
+                                style={{ top: dropdownPos.y, left: dropdownPos.x }}
+                                onMouseLeave={() => setHoveredTask(null)}
+                              >
+                                <p className="text-xs font-semibold mb-2 text-gray-700">All Assignees</p>
 
-  </div>
-</td>
+                                {developers.map((dev: string, i: number) => (
+                                  <div key={i} className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 transition">
+                                    <div
+                                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                      style={{ backgroundColor: avatarColor(dev) }}
+                                    >
+                                      {dev.split(" ").map(n => n[0]).join("")}
+                                    </div>
+                                    <span className="text-sm">{dev}</span>
+                                  </div>
+                                ))}
+                              </div>,
+                              document.getElementById("dev-hover-portal")
+                            )
+                          }
+
+
+                        </div>
+                      </td>
 
 
 

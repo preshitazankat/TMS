@@ -3,6 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { FileText, Users, Calendar, Folder, ArrowLeft } from "lucide-react";
 import PageBreadcrumb from "../common/PageBreadCrumb";
+import { FiFolder } from "react-icons/fi";
+import { FiFile } from "react-icons/fi";
+import { MdDescription } from "react-icons/md";
 
 interface Submission {
   files?: string[];
@@ -254,7 +257,7 @@ const TaskDetail: React.FC = () => {
               {submission ? (
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-100">
                   <div className="mb-4">
-                    <label className="block text-[14px] text-gray-800 mb-1">Sample Output Data</label>
+                    <label className="font-semibold text-[18px] text-gray-900 mb-1 flex items-center"> Sample Output Data<MdDescription size={20} className="text-green-400"/></label>
                     {submission.outputFiles && submission.outputFiles.length > 0 ? (
                       <ul className="list-disc list-inside space-y-1 max-h-32 overflow-y-auto list-none">
                         {(Array.isArray(submission.outputFiles) ? submission.outputFiles : [submission.outputFiles]).map((file, idx) => (

@@ -1,9 +1,10 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
+import { sendSlackMessage } from "../utils/sendSlackMessage.js";
 import mongoose from "mongoose";
 import { jwtDecode } from "jwt-decode";
 import fs from "fs";
-import path from "path"; 
+import path from "path";
 
 /* ------------------ Helpers ------------------ */
 
@@ -187,6 +188,23 @@ export const createTask = async (req, res) => {
 
     const task = new Task(taskData);
     await task.save();
+
+    const assignedUser = await User.findById(assignedByUserId).lean();
+    const slackTag = assignedUser?.slackId ? `<@${assignedUser.slackId}>` : assignedUser?.email;
+
+
+    const slackMessage = `
+🆕 *New Task Created*
+*Project Code:* ${projectCode}
+*Task:* ${raw.taskName}
+*Domains:* ${(domain || []).join(", ")}
+*Description:* ${raw.description || "N/A"}
+*Assigned to:* ${slackTag}
+*Target Date:* ${targetDate.toLocaleDateString()}
+`;
+
+
+    await sendSlackMessage(process.env.sales - rd - channel - test, slackMessage);
 
     const obj = task.toObject();
     obj.developers = decodeDevelopers(obj.developers || {});
@@ -385,7 +403,7 @@ export const updateTask = async (req, res) => {
       const newUploadsSet = new Set(newUploads); // Set of new file paths
 
       // 2. Filter files for removal
-      
+
       const removedFiles = (task[field] || []).filter((f) => {
         // Only consider files that are NOT newly uploaded for deletion
         if (newUploadsSet.has(f)) return false;
@@ -532,11 +550,41 @@ export const updateTask = async (req, res) => {
 
     // ✅ Save task
     await task.save();
-    const check = await Task.findById(id);
-    // console.log(
-    //   "✅ DB Saved Output Files:",
-    //   check.domains[0]?.submission?.outputFiles
-    // );
+    try {
+
+      const assignedDevs = [];
+      updateTask.domains.forEach((d) => {
+        if (Array.isArray(d.developers) && d.developers.length > 0) {
+          assignedDevs.push(...d.developers);
+        }
+      });
+
+      if (assignedDevs.length > 0) {
+        // Unique devs
+        const uniqueDevs = Array.from(
+          new Map(assignedDevs.map((d) => [d._id, d])).values()
+        );
+
+        // Tag devs
+        const slackMentions = uniqueDevs
+          .map((u) => (u.slackId ? `<@${u.slackId}>` : u.email))
+          .join(", ");
+
+        const domainNames = updateTask.domains.map((d) => d.name).join(", ");
+
+        const slackMessage = `
+🆕 *Developers Assigned to Task*
+*Task:* ${updateTask.title || updateTask.projectCode}
+*Domains:* ${domainNames}
+*Assigned Developers:* ${slackMentions}
+🔗 Task ID: ${updateTask._id}
+    `;
+
+        await sendSlackMessage(process.env.rd - developer - channel - test, slackMessage);
+      }
+    } catch (err) {
+      console.error("⚠️ Slack Notification Error:", err.message);
+    }
 
     res.json({ message: "✅ Task updated successfully", task });
   } catch (err) {
@@ -551,7 +599,7 @@ export const updateTask = async (req, res) => {
 export const submitTask = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const body = cleanBody(req.body);
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ error: "Task not found" });
@@ -721,6 +769,42 @@ export const submitTask = async (req, res) => {
 
     await task.save();
     const obj = task.toObject();
+    //     try {
+    //   // fetch assigner & submitter user info
+    //   const assigner = await User.findById(task.assignedBy).lean();
+
+    //   // submitted dev id = first developer on that domain OR assignedTo fallback
+    //   let submittedDevId;
+    //   if (task.domains?.length) {
+    //     for (const d of task.domains) {
+    //       if (domains.includes(d.name) && d.developers?.length) {
+    //         submittedDevId = d.developers[0];
+    //         break;
+    //       }
+    //     }
+    //   }
+    //   if (!submittedDevId) submittedDevId = task.assignedTo;
+
+    //   const dev = await User.findById(submittedDevId).lean();
+
+    //   const submittedDomains = domains
+    //     .map(d => typeof d === "object" ? d.name : d)
+    //     .join(", ");
+
+    //   const slackMsg = `✅ *Task Submitted*\n*Task:* ${task.title || task.projectCode}\n*Domains:* ${submittedDomains}\n*Submitted by:* <@${dev?.slackId || ''}>`;
+
+    //   // ✅ DM assigner
+    //   if (assigner?.slackId) {
+    //     await sendSlackMessage(assigner.slackId, slackMsg);
+    //   }
+
+    //   // ✅ Send to 2 channels
+    //   await sendSlackMessage(process.env.sales-rd-channel-test, slackMsg);
+    //   await sendSlackMessage(process.env.rd-developer-channel-test, slackMsg);
+
+    // } catch (err) {
+    //   console.error("⚠️ Slack notify error:", err.message);
+    // }
     // Assuming these helper functions exist to decode the fields before sending
     obj.developers = decodeDevelopers(obj.developers || {});
     obj.submissions = decodeSubmissions(obj.submissions || {});
@@ -778,8 +862,8 @@ export const submitTask = async (req, res) => {
 // Get All Tasks
 export const getTask = async (req, res) => {
   try {
-   
-     //await updateDelayedDomainsDebug();
+
+    //await updateDelayedDomainsDebug();
     const { search = "", status = "", page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -796,21 +880,21 @@ export const getTask = async (req, res) => {
     const now = new Date();
 
     await Task.updateMany(
-  {
-    targetDate: { $lt: now }, // target date passed
-    "domains.status": { $in: ["pending", "in-progress"] }, // match both
-  },
-  {
-    $set: {
-      "domains.$[elem].status": "delayed",
-    },
-  },
-  {
-    arrayFilters: [
-      { "elem.status": { $in: ["pending", "in-progress"] } } // filter both
-    ],
-  }
-);
+      {
+        targetDate: { $lt: now }, // target date passed
+        "domains.status": { $in: ["pending", "in-progress"] }, // match both
+      },
+      {
+        $set: {
+          "domains.$[elem].status": "delayed",
+        },
+      },
+      {
+        arrayFilters: [
+          { "elem.status": { $in: ["pending", "in-progress"] } } // filter both
+        ],
+      }
+    );
 
     /* ---------------- Match before lookups ---------------- */
 
@@ -818,13 +902,13 @@ export const getTask = async (req, res) => {
       match["domains.developers"] = new mongoose.Types.ObjectId(userId);
     }
 
-        if (status) {
+    if (status) {
       match["domains.status"] = { $regex: new RegExp(`^${status}$`, "i") };
     }
 
-    
 
-    
+
+
 
     const tasksAggregate = await Task.aggregate([
       { $match: match }, // initial match (by role, etc.)
@@ -922,7 +1006,7 @@ export const getTask = async (req, res) => {
       },
     ]);
 
-    
+
 
     let tasksData = tasksAggregate[0]?.data || [];
     //tasksData = applyDelayedStatus(tasksData);

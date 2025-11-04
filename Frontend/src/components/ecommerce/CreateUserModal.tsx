@@ -7,6 +7,7 @@ interface UserForm {
   department: string;
   designation:string;
   role: "Admin" | "Sales" | "TL" | "Developer" |"Manager";
+  slackId?: string;
 }
 
 interface CreateUserModalProps {
@@ -23,6 +24,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
     department: "",
     designation:"",
     role: "Developer",
+    slackId: "",
   });
 
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -55,7 +57,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
     console.log("User created:", data);
 
     // Reset form after successful creation
-    setForm({ name: "", email: "", password: "", department: "",designation:"", role: "Developer" });
+    setForm({ name: "", email: "", password: "", department: "",designation:"", role: "Developer" ,slackId:""});
 
     // Close the modal
     onClose();
@@ -134,6 +136,13 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
            <option value="Manager">Manager</option>
           <option value="Developer">Developer</option>
         </select>
+        <input
+          name="slackId"
+          placeholder="Slack ID"
+          value={form.slackId}
+          onChange={handleChange}
+          className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 placeholder-gray-400"
+        />
 
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
           <button

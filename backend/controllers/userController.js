@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 // Create a new user
 export const createUser = async (req, res) => {
-  const { name, email, password, department, designation, role } = req.body;
+  const { name, email, password, department, designation, role,slackId} = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: "Name, email, and password are required." });
@@ -22,7 +22,8 @@ export const createUser = async (req, res) => {
     password: hashedPassword,
     department,
     designation,
-    role
+    role,
+    slackId
   });
   const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 

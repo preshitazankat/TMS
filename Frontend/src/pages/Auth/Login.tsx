@@ -19,7 +19,7 @@ export default function SignInPage() {
     return emailRegex.test(email);
   };
 
-  const isFormValid = validateEmail(email)
+  //const isFormValid = validateEmail(email)
 
 
   const handleSubmit = async (e: React.FormEvent) => {
